@@ -8,11 +8,13 @@
 # Eclipse
 .classpath
 .project
+.cproject
 .settings/
 
 # Other
 resources/PheGenI/
 resources/PathwayMatcher.jar
+Overlap/lib/
 
 # C++
 
