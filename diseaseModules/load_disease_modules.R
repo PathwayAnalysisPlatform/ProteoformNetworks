@@ -1,5 +1,3 @@
-library(datastructures)
-
 
 # Read GWAS table with all the phenotypes ----
 
@@ -98,24 +96,9 @@ LoadGraphProteoform <- LoadGraph("proteoform")
 
 ### Create functions to calculate graph intersections
 
-Overlap <- function(m) {
-  # Create function to set the values in the corresponding entity matrix ----
-  #
-  # Args:
-  #  m: squared integer matrix of size length(traits) to store the values
-  # ----
-  function(t1, t2, g1, g2) {
-    print(V(g1)$name)
-    print(V(g2)$name)
-    m[t1,t2] <- length(intersect(V(g1)$name, V(g2)$name))
-    cat("Finished intersect: ", m[t1, t2], "\n")
-    return(m[t1,t2])
-  }
+Overlap <- function(g1, g2) {
+  return(length(intersect(V(g1)$name, V(g2)$name)))
 }
-
-OverlapGene <- Overlap(m.g)
-OverlapProtein <- Overlap(m.pt)
-OverlapProteoform <- Overlap(m.pf)
 
 ### Traverse each ordered pair
 
@@ -123,15 +106,17 @@ set.candidate.gene <- c()
 set.candidate.protein <- c()
 set.candidate.proteoform <- c()
 
-for(t1 in traits[1:2]) {
+hnf1a <- c(45, 207, 279, 370)
+
+for(t1 in traits) {
   
   cat("----------")
-  
+    
   t1.graph.genes <- LoadGraphGene(t1)
   t1.graph.protein <- LoadGraphProtein(t1)
   t1.graph.proteoform <- LoadGraphProteoform(t1)
   
-  for(t2 in traits[1:2]) {
+  for(t2 in traits) {
     
     if(t1 < t2) {
       cat("Comparing ", t1, " with ", t2, "\n")
@@ -140,20 +125,13 @@ for(t1 in traits[1:2]) {
       t2.graph.protein <- LoadGraphProtein(t2)
       t2.graph.proteoform <- LoadGraphProteoform(t2)
 
-      OverlapGene(t1, t2, t1.graph.genes, t2.graph.genes)
-      OverlapProtein(t1, t2, t1.graph.protein, t2.graph.protein)
-      OverlapProteoform(t1, t2, t1.graph.proteoform, t2.graph.proteoform)
+      m.g[t1, t2] <- Overlap(t1.graph.genes, t2.graph.genes)
+      #cat(t1, " -- ", m.g[t1, t2], ": " , m.g[t1, t2], "\n")
+      m.pt[t1, t2] <- Overlap(t1.graph.protein, t2.graph.protein)
+      m.pf[t1, t2] <- Overlap(t1.graph.proteoform, t2.graph.proteoform)
       
       ## If the overlapping entities are proteoforms add to the candidates
       ## If they overlap just in the protein or the proteoform network
     }
   }
 }
-
-t1 <- "1_Alkyl_2_acetylglycerophosphocholineEsterase"
-t2 <- "AlanineTransaminase"
-
-g1 <- LoadGraphGene(t1)
-g2 <- LoadGraphGene(t2)
-
-cat(OverlapGene(t1, t2, g1, g2))
