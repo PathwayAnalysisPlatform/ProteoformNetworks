@@ -12,9 +12,9 @@
 .settings/
 
 # Other
-resources/PheGenI/
+diseaseModules/
 resources/PathwayMatcher.jar
-Overlap/lib/
+NetworkOverlap/Debug/
 
 # C++
 
