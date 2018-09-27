@@ -1,7 +1,7 @@
 //============================================================================
 // Name        : NetworkOverlap.cpp
 // Author      : Luis Francisco Hernández Sánchez
-// Version     : 0.0.2
+// Version     : 0.0.3
 // Copyright   : Licence Apache 2.0
 // Description : Get trait pairs with different network overlap for proteins
 //               and proteoforms.
@@ -24,19 +24,19 @@
 using namespace std;
 
 enum Entity { gene, protein, proteoform };
-vector<string> entity_str = {"gene", "protein", "proteoform"};
 
+const vector<string> entity_str = {"gene", "protein", "proteoform"};
 const float MIN_PERCENTAGE_MODIFIED {0.9};
+
 const string PATH_PHENI = "../resources/PheGenI/";
 const string PATH_DISEASE_MODULES = "../diseaseModules/";
 
 void create_ratios_file() {
 
-	ifstream trait_file((PATH_PHENI + "traits.txt").c_str());;
-	ofstream file_modified_percentage((PATH_PHENI + "modified_percentage.csv").c_str());
+	ifstream trait_file(PATH_PHENI + "traits.txt");;
+	ofstream file_modified_percentage(PATH_PHENI + "modified_percentage.csv");
 
-	string gene = "";
-	string proteoform = "";
+	string proteoform;
 
 	std::regex expression { "[;,]\\d{5}" };
 
@@ -53,7 +53,7 @@ void create_ratios_file() {
 			int num_modified = 0;
 			int num_proteoforms = 0;
 			double ratio = 0.0;
-			ifstream file_vertices_proteoforms((PATH_DISEASE_MODULES + trait + "/proteoformVertices.tsv").c_str());
+			ifstream file_vertices_proteoforms(PATH_DISEASE_MODULES + trait + "/proteoformVertices.tsv");
 
 			if (file_vertices_proteoforms.good()) {
 				getline(file_vertices_proteoforms, proteoform);	// Skip the first line
@@ -92,7 +92,7 @@ set<string> getVertices(Entity entity, string trait) {
 	string vertex_name;															// Entity label: protein accession, gene name, etc.
 	string line_leftover;
 	string path_file_vertices = PATH_DISEASE_MODULES + trait + "/" + entity_str[entity] + "Vertices.tsv";
-	ifstream file_vertices(path_file_vertices.c_str());
+	ifstream file_vertices(path_file_vertices);
 
 	if(file_vertices) {
 		getline(file_vertices, line_leftover); 									// Discard the first line
@@ -130,13 +130,13 @@ int main() {
 	int num_modified = -1;
 	int combination = 0;
 	float ratio = -1.0;
-	string trait{};
+	string trait;
 
-	multimap<string, string> candidates;										// Disease pairs with different overlap size for proteins and proteoform networks
-	map<string, double> trait_to_ratio_modified; 								// Percentage of modified proteins
+	multimap<string, string> pairs_diff_overlap;										// Disease pairs with different overlap size for proteins and proteoform networks
+	map<string, double> trait_to_ratio_modified; 											// Percentage of modified proteins
 
 	freopen((PATH_PHENI + "modified_percentage.csv").c_str(), "r", stdin);
-	ofstream file_candidates(PATH_PHENI + "candidate_disease_pairs.csv");
+	ofstream file_pairs_diff_overlap(PATH_PHENI + "pairs_diff_overlap.csv");
 
 	// Read all traits
 	getline(cin, trait); // Discard file header
@@ -148,7 +148,7 @@ int main() {
 
 	fclose(stdin);
 
-	file_candidates << "Trait1\t"
+	file_pairs_diff_overlap << "Trait1\t"
 					<< "Trait2\t"
 					<< "RatioModified1\t"
 					<< "RatioModified2\t"
@@ -171,8 +171,8 @@ int main() {
 				if(overlap_proteins.size() != overlap_proteoforms.size()) {
 					unsigned diff = abs((int)overlap_proteins.size() - (int)overlap_proteoforms.size());
 					cout << "-- Found candidate: " << one_trait.first << " and " << other_trait.first << " with difference " << diff << endl;
-					candidates.insert(std::make_pair(one_trait.first, other_trait.first));
-					file_candidates << one_trait.first << "\t"
+					pairs_diff_overlap.insert(std::make_pair(one_trait.first, other_trait.first));
+					file_pairs_diff_overlap << one_trait.first << "\t"
 									<< other_trait.first << "\t"
 									<< one_trait.second << "\t"
 									<< other_trait.second << "\t"
@@ -184,9 +184,9 @@ int main() {
 		}
 	}
 
-	cout << " --------------- Candidates -------------------- " << endl << endl;
+	cout << " --------------- pairs_diff_overlap -------------------- " << endl << endl;
 
-	for(const auto &candidate : candidates) {
+	for(const auto &candidate : pairs_diff_overlap) {
 		cout << candidate.first << " -- " << candidate.second << endl;
 	}
 	return 0;
