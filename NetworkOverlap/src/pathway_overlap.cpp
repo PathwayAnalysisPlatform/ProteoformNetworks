@@ -1,17 +1,16 @@
 //============================================================================
-// Name        : NetworkOverlap.cpp
-// Author      : Luis Francisco Hernández Sánchez
-// Version     : 0.0.3
-// Copyright   : Licence Apache 2.0
-// Description : Get trait pairs with different network overlap for proteins
+// Description : Get pathway pairs with different overlap for genes, proteins
 //               and proteoforms.
+// Author      : Luis Francisco Hernández Sánchez
+// Copyright   : Licence Apache 2.0
 //============================================================================
+
+#include "pathway_overlap.h"
 
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
-#include <initializer_list>
 #include <iostream>
 #include <iterator>
 #include <map>
@@ -23,18 +22,14 @@
 
 using namespace std;
 
-enum Entity { gene, protein, proteoform };
-
-const vector<string> entity_str = {"gene", "protein", "proteoform"};
-const float MIN_PERCENTAGE_MODIFIED {0.9};
-
 const string PATH_PHENI = "../resources/PheGenI/";
 const string PATH_DISEASE_MODULES = "../diseaseModules/";
+const string PATH_FILE_RATIOS = PATH_PHENI + "modified_percentage.csv";
 
-void create_ratios_file() {
+void CreateRatiosFile() {
 
-	ifstream trait_file(PATH_PHENI + "traits.txt");;
-	ofstream file_modified_percentage(PATH_PHENI + "modified_percentage.csv");
+	ifstream trait_file(PATH_PHENI + "phenotypes.txt");
+	ofstream file_modified_percentage(PATH_FILE_RATIOS);
 
 	string proteoform;
 
@@ -79,19 +74,19 @@ void create_ratios_file() {
 				 << num_modified << "\t"
 				 << ratio << endl;
 			file_modified_percentage << trait << "\t"
-					  	  	  	  	 << num_proteoforms << "\t"
+									 << num_proteoforms << "\t"
 									 << num_modified << "\t"
 									 << ratio << endl;
 		}
 	}
 }
 
-set<string> getVertices(Entity entity, string trait) {
+set<string> GetVertices(Entity entity, string pathway) {
 
 	set<string> vertices;
 	string vertex_name;															// Entity label: protein accession, gene name, etc.
 	string line_leftover;
-	string path_file_vertices = PATH_DISEASE_MODULES + trait + "/" + entity_str[entity] + "Vertices.tsv";
+	string path_file_vertices = PATH_DISEASE_MODULES + pathway + "/" + entity_str[entity] + "Vertices.tsv";
 	ifstream file_vertices(path_file_vertices);
 
 	if(file_vertices) {
@@ -106,12 +101,12 @@ set<string> getVertices(Entity entity, string trait) {
 	return vertices;
 }
 
-set<string> getOverlap(Entity entity, const string& one_trait, const string& other_trait) {
+set<string> GetOverlap(Entity entity, const string& one_trait, const string& other_trait) {
 
 //	cout << "getOverlap: " << entity_str[entity] << "\t" << one_trait << "\t" << other_trait << endl;
 
-	set<string> one_trait_vertices = getVertices(entity, one_trait);
-	set<string> other_trait_vertices = getVertices(entity, other_trait);
+	set<string> one_trait_vertices = GetVertices(entity, one_trait);
+	set<string> other_trait_vertices = GetVertices(entity, other_trait);
 	set<string> overlap;
 	set_intersection(one_trait_vertices.begin(),
 								one_trait_vertices.end(),
@@ -121,9 +116,12 @@ set<string> getOverlap(Entity entity, const string& one_trait, const string& oth
 	return overlap;
 }
 
-int main() {
+void CreatePairsFile(float min_modified_percentage) {
 
-//	create_ratios_file();
+	ifstream file_modified_percentage(PATH_FILE_RATIOS);
+	if(!file_modified_percentage.good()) {
+		CreateRatiosFile();
+	}
 
 	char trait_arr[80];
 	int num_proteoforms = -1;
@@ -157,7 +155,7 @@ int main() {
 					<< "Difference" << endl;
 
 	for(const auto &one_trait : trait_to_ratio_modified) {
-		if (one_trait.second >= MIN_PERCENTAGE_MODIFIED) {						// For all phenotypes that have percentage higher than threshold
+		if (one_trait.second >= min_modified_percentage) {						// For all phenotypes that have percentage higher than threshold
 			for(const auto &other_trait : trait_to_ratio_modified) { 			// Compare to all other phenotypes for overlap
 				if(one_trait == other_trait) {
 					continue;
@@ -165,8 +163,8 @@ int main() {
 				cout << "Comparing combination " << ++combination << ": " << one_trait.first << " with " << other_trait.first << endl;
 
 				// If overlap in proteoforms is different than in proteins, add to candidate list
-				set<string> overlap_proteins = getOverlap(protein, one_trait.first, other_trait.first);
-				set<string> overlap_proteoforms = getOverlap(proteoform, one_trait.first, other_trait.first);
+				set<string> overlap_proteins = GetOverlap(protein, one_trait.first, other_trait.first);
+				set<string> overlap_proteoforms = GetOverlap(proteoform, one_trait.first, other_trait.first);
 
 				if(overlap_proteins.size() != overlap_proteoforms.size()) {
 					unsigned diff = abs((int)overlap_proteins.size() - (int)overlap_proteoforms.size());
@@ -189,5 +187,4 @@ int main() {
 	for(const auto &candidate : pairs_diff_overlap) {
 		cout << candidate.first << " -- " << candidate.second << endl;
 	}
-	return 0;
 }
