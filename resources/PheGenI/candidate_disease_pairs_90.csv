@@ -1,0 +1,6 @@
+Trait1	Trait2	RatioModified1	RatioModified2	OverlapProteins	OverlapProteoforms	Difference
+Parasitemia	CoronaryArteryDisease	0.916667	0.5	1	12	11
+Parasitemia	Trypanosomacruzi	0.916667	0.690141	1	12	11
+TouretteSyndrome	BodyHeight	0.916667	0.339093	1	12	11
+VascularStiffness	BodyWeight	0.916667	0.335878	1	12	11
+VascularStiffness	CoronaryDisease	0.916667	0.338983	1	12	11
