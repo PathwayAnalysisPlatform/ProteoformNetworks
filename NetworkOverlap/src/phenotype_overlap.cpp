@@ -25,14 +25,34 @@ using namespace std;
 const string PATH_PHENI = "../resources/PheGenI/";
 const string PATH_DISEASE_MODULES = "../diseaseModules/";
 
+const std::regex expression { "[;,]\\d{5}" };
+
+bool IsModified(const string& proteoform) {
+	std::smatch modification;
+	return std::regex_search(proteoform, modification, expression);
+}
+
+set<string> GetTraits() {
+	ifstream trait_file(PATH_PHENI + "traits.txt");
+	set<string> traits;
+
+	if(trait_file) {
+		string trait = "";
+		getline(trait_file, trait); 						// Discard the first line of header
+		while (getline(trait_file, trait)) {
+			traits.insert(trait);
+		}
+	}
+
+	return traits;
+}
+
 void CreatePhenotypeRatiosFile() {
 
 	ifstream trait_file(PATH_PHENI + "Phenotype.txt");
 	ofstream file_modified_percentage(PATH_PHENI + "modified_percentage.csv");
 
 	string proteoform;
-
-	std::regex expression { "[;,]\\d{5}" };
 
 	file_modified_percentage << "Trait" << "\t"
 							 << "Num_proteoforms" << "\t"
@@ -57,8 +77,7 @@ void CreatePhenotypeRatiosFile() {
 					string rest_of_line;
 					getline(file_vertices_proteoforms, rest_of_line);
 
-					std::smatch modification;
-					if (std::regex_search(proteoform, modification, expression)) {
+					if (IsModified(proteoform)) {
 						num_modified++;
 					}
 				}
@@ -73,7 +92,7 @@ void CreatePhenotypeRatiosFile() {
 				 << num_modified << "\t"
 				 << ratio << endl;
 			file_modified_percentage << trait << "\t"
-					  	  	  	  	 << num_proteoforms << "\t"
+									 << num_proteoforms << "\t"
 									 << num_modified << "\t"
 									 << ratio << endl;
 		}
@@ -100,22 +119,95 @@ set<string> GetPhenotypeVertices(Entity entity, const string& trait) {
 	return vertices;
 }
 
-set<string> GetPhenotypeOverlap(Entity entity, const string& one_trait, const string& other_trait) {
+set<string> GetPhenotypeVerticesFromEdgesFile(Entity entity, const string& trait) {
+	set<string> vertices;
 
-//	cout << "getOverlap: " << entity_str[entity] << "\t" << one_trait << "\t" << other_trait << endl;
+	string one_vertex, other_vertex;
+	string line_leftover;
+	string path_file_edges = PATH_DISEASE_MODULES + trait + "/" + entity_str[entity] + "InternalEdges.tsv";
+	ifstream file_edges(path_file_edges);
 
-	set<string> one_trait_vertices = GetPhenotypeVertices(entity, one_trait);
-	set<string> other_trait_vertices = GetPhenotypeVertices(entity, other_trait);
-	set<string> overlap;
+	if(file_edges) {
+		getline(file_edges, line_leftover);										//Discard first line with the header
+		while(file_edges >> one_vertex >> other_vertex) {
+			getline(file_edges, line_leftover);
+			vertices.insert(one_vertex);
+			vertices.insert(other_vertex);
+		}
+	}
+
+	return vertices;
+}
+
+multimap<string, string> GetPhenotypeEdges(Entity entity, const string& trait) {
+	multimap<string, string> edges;
+
+	string one_vertex, other_vertex;
+	string line_leftover;
+	string path_file_edges = PATH_DISEASE_MODULES + trait + "/" + entity_str[entity] + "InternalEdges.tsv";
+	ifstream file_edges(path_file_edges);
+
+	if(file_edges) {
+		getline(file_edges, line_leftover);										//Discard first line with the header
+		while(file_edges >> one_vertex >> other_vertex) {
+			getline(file_edges, line_leftover);
+			edges.insert(make_pair(one_vertex, other_vertex));
+			edges.insert(make_pair(other_vertex, one_vertex));
+		}
+	}
+
+	return edges;
+}
+
+set<string> GetVertexOverlap(Entity entity, const string& one_trait, const string& other_trait) {
+
+	set<string> one_trait_vertices, other_trait_vertices, overlap;
+
+	one_trait_vertices = GetPhenotypeVerticesFromEdgesFile(entity, one_trait);	// Reads from edges file, to keep only connected vertices
+	other_trait_vertices = GetPhenotypeVerticesFromEdgesFile(entity, other_trait);
+
 	set_intersection(one_trait_vertices.begin(),
-								one_trait_vertices.end(),
-								other_trait_vertices.begin(),
-								other_trait_vertices.end(),
-								std::inserter(overlap, overlap.begin()));
+					 one_trait_vertices.end(),
+					 other_trait_vertices.begin(),
+					 other_trait_vertices.end(),
+					 std::inserter(overlap, overlap.begin()));
+
 	return overlap;
 }
 
-void CreatePhenotypePairsFile(float min_modified_percentage) {
+set<string> GetVertexOverlap(Entity entity, const string& one_trait, const string& other_trait, bool verbose) {
+
+	set<string> overlap = GetVertexOverlap(entity, one_trait, other_trait);
+
+	if(verbose) {
+		cout << " ----- " << entity_str[entity] << " ----- " << endl;
+		for(const auto &entity : overlap) {
+			cout << entity << endl;
+		}
+		cout << " *********************** " << endl;
+	}
+
+	return overlap;
+}
+
+set<string> GetVertexOverlap(Entity entity, set<string> one_trait_vertices, set<string> other_trait_vertices) {
+
+	set<string> overlap;
+
+	set_intersection(one_trait_vertices.begin(),
+					 one_trait_vertices.end(),
+					 other_trait_vertices.begin(),
+					 other_trait_vertices.end(),
+					 std::inserter(overlap, overlap.begin()));
+
+	return overlap;
+}
+
+void CreatePhenotypePairsFile(float min_modified_percentage, Entity entity_type) {
+
+	// Find the phenotype pairs of two types:
+	//		* Type 1: Overlapping nodes are only modified proteoforms
+	// 		* Type 2: They overlap in the gene or protein network, but not in the proteoform network
 
 	ifstream file_modified_percentage(PATH_PHENI + "modified_percentage.csv");
 	if(!file_modified_percentage.good()) {
@@ -151,31 +243,67 @@ void CreatePhenotypePairsFile(float min_modified_percentage) {
 					<< "RatioModified2\t"
 					<< "OverlapProteins\t"
 					<< "OverlapProteoforms\t"
-					<< "Difference" << endl;
+					<< "Type" << endl;
 
 	for(const auto &one_trait : trait_to_ratio_modified) {
 		if (one_trait.second >= min_modified_percentage) {						// For all Phenotype that have percentage higher than threshold
+
+			set<string> one_trait_entity_type_vertices = GetPhenotypeVertices(entity_type, one_trait.first);	// Reads from edges file, to keep only connected vertices
+			set<string> one_trait_proteoform_vertices = GetPhenotypeVerticesFromEdgesFile(proteoform, one_trait.first);
+
 			for(const auto &other_trait : trait_to_ratio_modified) { 			// Compare to all other Phenotype for overlap
-				if(one_trait == other_trait) {
+				if(one_trait == other_trait) {									// Discard pairs a -- a
 					continue;
 				}
-				cout << "Comparing combination " << ++combination << ": " << one_trait.first << " with " << other_trait.first << endl;
+
+				if(other_trait.second >= min_modified_percentage) {				// Discard inverted pairs to avoid, having a -- b and b -- a
+					if(one_trait.first > other_trait.first) {
+						continue;
+					}
+				}
+				cout << "Comparing " << ++combination << ": " << one_trait.first << " -- " << other_trait.first << endl;
+
+				set<string> other_trait_entity_type_vertices = GetPhenotypeVertices(entity_type, other_trait.first);
+				set<string> other_trait_proteoform_vertices = GetPhenotypeVerticesFromEdgesFile(proteoform, other_trait.first);
 
 				// If overlap in proteoforms is different than in proteins, add to candidate list
-				set<string> overlap_proteins = GetPhenotypeOverlap(protein, one_trait.first, other_trait.first);
-				set<string> overlap_proteoforms = GetPhenotypeOverlap(proteoform, one_trait.first, other_trait.first);
+				set<string> overlap_entity_type = GetVertexOverlap(entity_type, one_trait_entity_type_vertices, other_trait_entity_type_vertices);
+				set<string> overlap_proteoforms = GetVertexOverlap(proteoform, one_trait_proteoform_vertices, other_trait_proteoform_vertices);
 
-				if(overlap_proteins.size() != overlap_proteoforms.size()) {
-					unsigned diff = abs((int)overlap_proteins.size() - (int)overlap_proteoforms.size());
-					cout << "-- Found candidate: " << one_trait.first << " and " << other_trait.first << " with difference " << diff << endl;
-					pairs_diff_overlap.insert(std::make_pair(one_trait.first, other_trait.first));
-					file_pairs_diff_overlap << one_trait.first << "\t"
-									<< other_trait.first << "\t"
-									<< one_trait.second << "\t"
-									<< other_trait.second << "\t"
-									<< overlap_proteins.size() << "\t"
-									<< overlap_proteoforms.size() << "\t"
-									<< diff << endl;
+				if(overlap_entity_type.size() != overlap_proteoforms.size()) {
+
+					// Check for type 1: If all overlapping proteoforms are modified
+					bool overlaps_only_with_modified_proteoforms = overlap_proteoforms.size();
+					for(const auto &proteoform : overlap_proteoforms) {
+						if(!IsModified(proteoform)) {
+							overlaps_only_with_modified_proteoforms = false;
+						}
+					}
+
+					if(overlaps_only_with_modified_proteoforms) {
+						cout << "-- Found candidate type 1: " << one_trait.first << " and " << other_trait.first << " opo" << endl;
+						pairs_diff_overlap.insert(std::make_pair(one_trait.first, other_trait.first));
+						file_pairs_diff_overlap << one_trait.first << "\t"
+												<< other_trait.first << "\t"
+												<< one_trait.second << "\t"
+												<< other_trait.second << "\t"
+												<< overlap_entity_type.size() << "\t"
+												<< overlap_proteoforms.size() << "\t"
+												<< "opo" << endl;
+					}
+
+					// Check for type 2: If diseases do not overlap in the proteoform network but overlap in the other network
+					if(overlap_entity_type.size() && !overlap_proteoforms.size()) {
+						cout << "-- Found candidate: " << one_trait.first << " and " << other_trait.first << " sep" << endl;
+						pairs_diff_overlap.insert(std::make_pair(one_trait.first, other_trait.first));
+						file_pairs_diff_overlap << one_trait.first << "\t"
+										<< other_trait.first << "\t"
+										<< one_trait.second << "\t"
+										<< other_trait.second << "\t"
+										<< overlap_entity_type.size() << "\t"
+										<< overlap_proteoforms.size() << "\t"
+										<< "sep" << endl;
+					}
 				}
 			}
 		}
@@ -185,5 +313,92 @@ void CreatePhenotypePairsFile(float min_modified_percentage) {
 
 	for(const auto &candidate : pairs_diff_overlap) {
 		cout << candidate.first << " -- " << candidate.second << endl;
+	}
+}
+
+void CheckNumVerticesForTraits() {
+	// Check number of connected vertices and total number vertices in the graph
+
+	std::set<std::string> traits = GetTraits();
+
+	for(const auto &trait : traits) {
+
+		std::set<std::string> vertices_from_vertices_file = GetPhenotypeVertices(gene, trait);
+		std::set<std::string> vertices_from_edges_file = GetPhenotypeVerticesFromEdgesFile(gene, trait);
+
+		if(vertices_from_vertices_file.size() != vertices_from_edges_file.size()) {
+			std::cout << "Difference in " << trait << "\t\t\t";
+			std::cout << "from vertices: " << vertices_from_vertices_file.size();
+			std::cout << "\tfrom edges: " << vertices_from_edges_file.size() << std::endl;
+		}
+	}
+}
+
+multimap<string, string> GetPairsOverlappingAtEntities(set<string> entities, Entity entity_type, multimap<string, string> candidate_pairs) {
+
+	multimap<string, string> pairs;
+
+	for(const auto &pair : candidate_pairs) {
+		set<string> overlap = GetVertexOverlap(entity_type, pair.first, pair.second);
+
+			bool contains_all = true;
+			for(const auto &entity : entities) {
+				if(overlap.find(entity) == overlap.end()) {
+					contains_all = false;
+					break;
+				}
+			}
+
+			if(contains_all) {
+				pairs.insert(std::make_pair(pair.first, pair.second));
+			}
+	}
+
+	return pairs;
+}
+
+set<string> GetProteoformsWithAccession(const string& protein_accession, set<string> candidate_proteoforms) {
+	set<string> proteoforms;
+	for(const auto &proteoform : candidate_proteoforms) {
+		if(proteoform.find(protein_accession) != string::npos) {
+			proteoforms.insert(proteoform);
+		}
+	}
+	return proteoforms;
+}
+
+void ShowOverlapsAndSplittingProteoforms(std::multimap<std::string, std::string> pairs) {
+	// For each pair of entity sets, show why they are not overlapping in the proteoform network
+
+	for(const auto &pair : pairs) {
+		string one_trait = pair.first;
+		string other_trait = pair.second;
+
+		cout << " ---- " << one_trait << " ---- " << other_trait << " ---- " << endl;
+
+		set<string> overlap_genes = GetVertexOverlap(gene, one_trait, other_trait, true);
+		set<string> overlap_proteins = GetVertexOverlap(protein, one_trait, other_trait, true);
+		set<string> overlap_proteoforms = GetVertexOverlap(proteoform, one_trait, other_trait, true);
+
+		// Show the members of the proteoform network with that accession
+		set<string> proteoforms_splitting;
+
+		cout << " ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << endl;
+		cout << one_trait << " has: " << endl;
+		for(const auto &protein : overlap_proteins) {
+			set<string> proteoforms = GetProteoformsWithAccession(protein, GetPhenotypeVerticesFromEdgesFile(proteoform, one_trait));
+			for(const auto &proteoform : proteoforms) {
+				cout << proteoform << endl;
+			}
+		}
+		cout << " <<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>" << endl;
+		cout << other_trait << " has: " << endl;
+		for(const auto &protein : overlap_proteins) {
+			set<string> proteoforms = GetProteoformsWithAccession(protein, GetPhenotypeVerticesFromEdgesFile(proteoform, other_trait));
+			for(const auto &proteoform : proteoforms) {
+				cout << proteoform << endl;
+			}
+		}
+		cout << " <<<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>" << endl << endl;
 	}
 }

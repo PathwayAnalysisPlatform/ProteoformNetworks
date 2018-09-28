@@ -55,7 +55,7 @@ write.csv(unique(gene.set), paste(path, trait, ".txt", sep = ""), quote = FALSE,
 traits <- sort(unique(phenotypes.csv$Trait))
 write.csv(traits, paste("../../resources/PheGenI/traits.txt"), quote = FALSE, row.names = FALSE)
 
-for(t in traits[921:922]){
+for(t in traits){
   cat("Creating networks for: ", t, "\n")
   command <- paste("java", "-jar", "../../resources/PathwayMatcher.jar", 
                    "-i", paste(path, t, ".txt", sep = ""),
