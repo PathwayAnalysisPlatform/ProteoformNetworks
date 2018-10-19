@@ -11,6 +11,12 @@
 .cproject
 .settings/
 
+# Visual studio
+Debug/
+*.vcxproj*
+.vs/
+*.sln
+
 # Other
 diseaseModules/
 resources/PathwayMatcher.jar
