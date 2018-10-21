@@ -1,17 +1,18 @@
 #ifndef PATHWAY_OVERLAP_H_
 #define PATHWAY_OVERLAP_H_
 
-#include "entity.h"
-
 #include <set>
+#include <map>
 #include <string>
+#include <cstdio>
 
-void CreatePathwayRatiosFile();
+using namespace std;
 
-std::set<std::string> GetPathwayVertices(Entity entity, std::string& trait);
+set<pair<string, string>> findPathwayPairsWithKeyPTMExamples(
+		float min_modified_percentage, string path_file_proteoform_search);
 
-std::set<std::string> GetPathwayOverlap(Entity entity, const std::string& one_trait, const std::string& other_trait);
-
-void CreatePathwayPairsFile(float min_modified_percentage);
+set<pair<string, string>> findPathwayPairsWithArtifactualOverlapExamples(
+		double minModifiedPercentage, string path_gene_search_file,
+		string path_protein_search_file, string path_file_proteoform_search);
 
 #endif /* PATHWAY_OVERLAP_H_ */

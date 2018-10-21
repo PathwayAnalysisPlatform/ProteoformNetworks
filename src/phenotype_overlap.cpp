@@ -1,7 +1,7 @@
 //============================================================================
-// Description : Get phenotype pairs with different overlap size for proteins
-//               and proteoforms.
-// Author      : Luis Francisco Hern√°ndez S√°nchez
+// Description : Get phenotype pairs that overlap only with modified proteins,
+// 				 or that artefactually overlap at the gene or protein level
+// Author      : Luis Francisco Hern·ndez S·nchez
 // Copyright   : Licence Apache 2.0
 //============================================================================
 

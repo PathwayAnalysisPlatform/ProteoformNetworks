@@ -6,6 +6,7 @@
 //============================================================================
 
 #include "phenotype_overlap.h"
+#include "pathway_overlap.h"
 
 #include <fstream>
 #include <iostream>
@@ -17,20 +18,23 @@ using namespace std;
 
 int main() {
 
-	CreatePhenotypePairsFile(0.95, protein);
+	set<pair<string, string>> pairs = findPathwayPairsWithKeyPTMExamples(
+			0.2, "resources/reactome/all_proteoforms/search.tsv");
+
+	//CreatePhenotypePairsFile(0.95, protein);
 	// Read all pairs with opo and sep types
 
 	/*multimap<string, string> pairs;
-	ifstream pairs_file("../resources/PheGenI/pairs_diff_overlap_genes_vs_proteoforms.csv");
+	 ifstream pairs_file("../resources/PheGenI/pairs_diff_overlap_genes_vs_proteoforms.csv");
 
-	if(pairs_file) {
-		string one_trait, other_trait;
-		string line_leftover;
-		while(pairs_file >> one_trait >> other_trait) {
-			getline(pairs_file, line_leftover);
-			pairs.insert(make_pair(one_trait, other_trait));
-		}
-	}*/
+	 if(pairs_file) {
+	 string one_trait, other_trait;
+	 string line_leftover;
+	 while(pairs_file >> one_trait >> other_trait) {
+	 getline(pairs_file, line_leftover);
+	 pairs.insert(make_pair(one_trait, other_trait));
+	 }
+	 }*/
 
 //	pairs.insert(make_pair("Aorta", "Asthma"));
 //	pairs.insert(make_pair("ColitisUlcerative", "Creatinine"));
@@ -40,8 +44,6 @@ int main() {
 //	pairs.insert(make_pair("MacularDegeneration", "Hypothyroidism"));
 //	pairs.insert(make_pair("WaistCircumference", "Hypothyroidism"));
 //	pairs.insert(make_pair("WetMacularDegeneration", "Hypothyroidism"));
-
 	//ShowOverlapsAndSplittingProteoforms(pairs);
-
 	return 0;
 }
