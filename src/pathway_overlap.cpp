@@ -1,7 +1,7 @@
 //============================================================================
 // Description : Get pathway pairs that overlap only with modified proteins,
 // 				 or that artefactually overlap at the gene or protein level
-// Author      : Luis Francisco Hernández Sánchez
+// Author      : Luis Francisco Hernï¿½ndez Sï¿½nchez
 // Copyright   : Licence Apache 2.0
 //============================================================================
 
@@ -12,6 +12,7 @@
 #include <fstream>
 #include <algorithm>
 #include <regex>
+#include <string>
 
 using namespace std;
 
@@ -31,18 +32,31 @@ bool areAllModified(set<string> proteoforms) {
 	return true;
 }
 
+float calculateModifiedRatio(set<string> proteoforms) {
+	int cont = 0;
+
+	for (const auto &proteoform : proteoforms) {
+		if (!isModified(proteoform)) {
+			cont++;
+		}
+	}
+
+	return (float) cont / (float) proteoforms.size();
+}
+
+//TODO: Find pairs of reactions that overlap only in modified proteoforms.
+
 /**
  * Find key PTM examples: pairs of pathways that only share nodes that are
  * proteins with at least one modification
  */
-set<pair<string, string>> findPathwayPairsWithKeyPTMExamples(
+set<pair<string, string>> findPairsWithKeyPTMExamples(
 		float min_modified_percentage, string path_file_proteoform_search) {
 	ifstream file_proteoform_search(path_file_proteoform_search);
 	string field, pathway, proteoform;
-	set<string> pathways;	// Selected pathways to compare: at least one modified proteoform member
+	set<string> pathways; // Selected pathways to compare: at least one modified proteoform member
 	multimap<string, string> pathways_to_proteoforms;
 	set<pair<string, string>> result; // Insert always pairs ordering lexicographically the members
-	set<string> overlap;
 
 	getline(file_proteoform_search, field);	// Skip csv header line
 	while (getline(file_proteoform_search, proteoform, '\t')) {	// Read the members of each pathway
@@ -67,9 +81,11 @@ set<pair<string, string>> findPathwayPairsWithKeyPTMExamples(
 		}
 
 		for (const auto &other_pathway : pathways) {
-			if (one_pathway == other_pathway) {
+			if (one_pathway.compare(other_pathway) >= 0) {
 				continue;
 			}
+
+//			cout << "Comparing " << one_pathway << " with " << other_pathway << "\n";
 
 			set<string> other_set;
 			ret = pathways_to_proteoforms.equal_range(other_pathway);
@@ -77,19 +93,34 @@ set<pair<string, string>> findPathwayPairsWithKeyPTMExamples(
 				other_set.insert(it->second);
 			}
 
+			set<string> overlap;
+
 			set_intersection(one_set.begin(), one_set.end(), other_set.begin(),
 					other_set.end(), inserter(overlap, overlap.begin()));
 
 			if (overlap.size() > 0) {
-				if (areAllModified(overlap)) {
+				if (calculateModifiedRatio(overlap) > min_modified_percentage) {
 					result.emplace(one_pathway, other_pathway);
+
+					cout << "===============================================\n";
+					cout << one_pathway << " with " << other_pathway << "\n";
+					cout << "-----------------------------------------------\n";
+					for (auto const $proteoform : overlap) {
+						cout << proteoform << "\t";
+					}
+					cout << "\n";
+//
+//					for (auto const $proteoform : one_set) {
+//						cout << proteoform << "\n";
+//					}
+//					cout << "-----------------------------------------------\n";
+//					for (auto const $proteoform : other_set) {
+//						cout << proteoform << "\n";
+//					}
+					cout << "===============================================\n";
 				}
 			}
 		}
-	}
-
-	for (const auto &duple : result) {
-		cout << duple.first << " with " << duple.second << "\n";
 	}
 
 	return result;
