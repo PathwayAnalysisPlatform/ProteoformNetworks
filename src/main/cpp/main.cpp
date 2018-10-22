@@ -19,8 +19,10 @@ using namespace std;
 int main() {
 
 	freopen("pathway_overlap.txt", "w", stdout);
-	set<pair<string, string>> pairs = findPathwayPairsWithKeyPTMExamples(
+
+	set<pair<string, string>> pairs = findPairsWithKeyPTMExamples_v2(
 			0.5, "resources/reactome/all_proteoforms/search.tsv");
+	cout << endl;
 
 	//CreatePhenotypePairsFile(0.95, protein);
 	// Read all pairs with opo and sep types
