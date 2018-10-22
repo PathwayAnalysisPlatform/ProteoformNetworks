@@ -16,13 +16,21 @@
 
 using namespace std;
 
+const string path_file_gene_search = "resources/reactome/all_genes/search.tsv";
+const string path_file_protein_search = "resources/reactome/all_proteins/search.tsv";
+const string path_file_proteoform_search = "resources/reactome/all_proteoforms/search.tsv";
+
 int main() {
+	set<pair<string, string>> pairs;
 
-	freopen("pathway_overlap.txt", "w", stdout);
-
-	set<pair<string, string>> pairs = findPairsWithKeyPTMExamples_v2(
-			0.5, "resources/reactome/all_proteoforms/search.tsv");
-	cout << endl;
+	//freopen(, "w", stdout);
+	//pairs = findPairsWithKeyPTMExamples(0.8, path_file_proteoform_search, "resources/reactome/pathway_pairs_with_key_ptms.txt");
+	pairs = findPathwayPairsWithArtifactualOverlapExamples(
+		path_file_gene_search, 
+		path_file_protein_search, 
+		path_file_proteoform_search, 
+		"resources/reactome/gene_art_pairs.txt", 
+		"resources/reactome/protein_art_pairs.txt");
 
 	//CreatePhenotypePairsFile(0.95, protein);
 	// Read all pairs with opo and sep types
