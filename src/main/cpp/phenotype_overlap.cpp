@@ -25,11 +25,11 @@ using namespace std;
 const string PATH_PHENI = "../resources/PheGenI/";
 const string PATH_DISEASE_MODULES = "../diseaseModules/";
 
-const std::regex expression { "[;,]\\d{5}" };
+const std::regex modification_rgx { "[;,]\\d{5}" };
 
 bool IsModified(const string& proteoform) {
 	std::smatch modification;
-	return std::regex_search(proteoform, modification, expression);
+	return std::regex_search(proteoform, modification, modification_rgx);
 }
 
 set<string> GetTraits() {

@@ -16,21 +16,39 @@
 
 using namespace std;
 
+// Input files
 const string path_file_gene_search = "resources/reactome/all_genes/search.tsv";
 const string path_file_protein_search = "resources/reactome/all_proteins/search.tsv";
-const string path_file_proteoform_search = "resources/reactome/all_proteoforms/search.tsv";
+string path_file_proteoform_search = "resources/reactome/all_proteoforms/test.txt";
 
-int main() {
+// Output files
+const string path_file_pathways_in_key_ptm_overlaps = "resources/reactome/key_ptm_overlap/pathway_pairs.txt";
+const string path_file_proteins_in_key_ptm_overlaps = "resources/reactome/key_ptm_overlap/proteins.txt";
+const string path_file_proteoforms_in_key_ptm_overlaps = "resources/reactome/key_ptm_overlap/proteoforms.txt";
+const string path_file_modifications_in_key_ptm_overlaps = "resources/reactome/key_ptm_overlap/modifications.txt";
+
+int main(int argc, char *argv[]) {
+	if (argc >= 1) {
+		path_file_proteoform_search = argv[1];
+	}
+
 	set<pair<string, string>> pairs;
 
-	//freopen(, "w", stdout);
-	//pairs = findPairsWithKeyPTMExamples(0.8, path_file_proteoform_search, "resources/reactome/pathway_pairs_with_key_ptms.txt");
-	pairs = findPathwayPairsWithArtifactualOverlapExamples(
+	pairs = findPairsWithKeyPTMExamples( 
+		0.0, 
+		path_file_proteoform_search,
+		path_file_pathways_in_key_ptm_overlaps,
+		path_file_proteins_in_key_ptm_overlaps,
+		path_file_proteoforms_in_key_ptm_overlaps,
+		path_file_modifications_in_key_ptm_overlaps);
+
+
+	/*pairs = findPathwayPairsWithArtifactualOverlapExamples(
 		path_file_gene_search, 
 		path_file_protein_search, 
 		path_file_proteoform_search, 
 		"resources/reactome/gene_art_pairs.txt", 
-		"resources/reactome/protein_art_pairs.txt");
+		"resources/reactome/protein_art_pairs.txt");*/
 
 	//CreatePhenotypePairsFile(0.95, protein);
 	// Read all pairs with opo and sep types
