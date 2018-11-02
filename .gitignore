@@ -1,11 +1,26 @@
 # VS Code
-.vs/*
-.vscode/*
+.vs/
+.vscode/
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 Debug/
+
+# Visual studio
+*.sln
+Debug
+Release
+*.suo
+*.csproj.user
+*.vcxproj*
+ipch
+*sdf
+
+## Compiled Object files
+*.slo
+*.lo
+*.o
 
 # C++
 
@@ -26,4 +41,5 @@ Debug/
 # Datasets
 *.tsv
 *.csv
+*.txt
 resources/PhenGenI/diseaseModules/
