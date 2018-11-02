@@ -143,8 +143,9 @@ map<string, bitset<NUM_PROTEOFORMS>> loadPathwaysProteoformMembers(const string&
 
 // SINGLE-CORE
 template <size_t set_size>
-set<pair<string, string>> findOverlappingPairs(const map<string, bitset<set_size>>& sets_to_members, int min_overlap, int max_overlap, int min_set_size,
-                                               int max_set_size) {
+set<pair<string, string>> findOverlappingPairs(const map<string, bitset<set_size>>& sets_to_members,
+                                               int min_overlap, int max_overlap,
+                                               int min_set_size, int max_set_size) {
    std::vector<typename map<string, bitset<set_size>>::const_iterator> nav;
    for (auto it = sets_to_members.begin(); it != sets_to_members.end(); it++) {
       nav.push_back(it);
@@ -155,8 +156,7 @@ set<pair<string, string>> findOverlappingPairs(const map<string, bitset<set_size
    set<pair<string, string>> result;
    for (auto vit1 = nav.begin(); vit1 != nav.end(); vit1++) {
       for (auto vit2 = std::next(vit1); vit2 != nav.end(); vit2++) {
-         if (min_set_size <= (*vit1)->second.count() && (*vit1)->second.count() <= max_set_size && min_set_size <= (*vit2)->second.count() &&
-             (*vit2)->second.count() <= max_set_size) {
+         if (min_set_size <= (*vit1)->second.count() && (*vit1)->second.count() <= max_set_size && min_set_size <= (*vit2)->second.count() && (*vit2)->second.count() <= max_set_size) {
             bitset<set_size> overlap = (*vit1)->second & (*vit2)->second;
             if (min_overlap <= overlap.count() && overlap.count() <= max_overlap) {
                result.emplace((*vit1)->first, (*vit2)->first);
@@ -171,41 +171,43 @@ set<pair<string, string>> findOverlappingPairs(const map<string, bitset<set_size
 
 // MULTI-CORE
 /*template <size_t set_size>
-set<pair<string, string>> findOverlappingPairs(const map<string, bitset<set_size>>& sets_to_members, int min_overlap, int max_overlap) {
-   std::vector<int> acc(sets_to_members.size( ));
-   std::iota(acc.begin( ), acc.end( ), 0), std::partial_sum(acc.begin( ), acc.end( ), acc.begin( ));
-   int pairs = (sets_to_members.size( ) * sets_to_members.size( ) - sets_to_members.size( )) / 2;
-   int pairs_per_thread = pairs / std::thread::hardware_concurrency( ) + bool(pairs % std::thread::hardware_concurrency( ));
-std::cerr << "elementos: " << sets_to_members.size( ) << ", parejas: " << pairs << "\n";
-auto t0 = std::clock( );
-        std::vector<typename map<string, bitset<set_size>>::const_iterator> nav;
+set<pair<string, string>> findOverlappingPairsMulti(const map<string, bitset<set_size>>& sets_to_members, int min_overlap, int max_overlap) {
+   std::vector<int> acc(sets_to_members.size());
+   std::iota(acc.begin(), acc.end(), 0), std::partial_sum(acc.begin(), acc.end(), acc.begin());
+   int pairs = (sets_to_members.size() * sets_to_members.size() - sets_to_members.size()) / 2;
+   int pairs_per_thread = pairs / std::thread::hardware_concurrency() + bool(pairs % std::thread::hardware_concurrency());
+   std::cerr << "elementos: " << sets_to_members.size() << ", parejas: " << pairs << "\n";
+   auto t0 = std::clock();
+   std::vector<typename map<string, bitset<set_size>>::const_iterator> nav;
    for (auto it = sets_to_members.begin(); it != sets_to_members.end(); it++) {
       nav.push_back(it);
    }
    std::vector<std::future<set<pair<string, string>>>> futures;
-   for (int i = 0; i < std::thread::hardware_concurrency( ); ++i) {
+   for (int i = 0; i < std::thread::hardware_concurrency(); ++i) {
       futures.push_back(std::async(std::launch::async, [&](int begin, int end) {
          set<pair<string, string>> result;
          for (int i = begin, row = 0, col; i < end; ++i) {
             while (acc[row] <= i) {
                ++row;
-            }; col = i - acc[row - 1];
+            };
+            col = i - acc[row - 1];
             bitset<set_size> overlap = nav[row]->second & nav[col]->second;
             if (min_overlap <= overlap.count() && overlap.count() <= max_overlap) {
                result.emplace(nav[row]->first, nav[col]->first);
             }
          }
          return result;
-      }, i * pairs_per_thread, std::min(pairs, (i + 1) * pairs_per_thread)));
+      },
+                                   i * pairs_per_thread, std::min(pairs, (i + 1) * pairs_per_thread)));
    }
 
    set<pair<string, string>> result;
    for (auto& fut : futures) {
-      result.merge(fut.get( ));
+      result.merge(fut.get());
    }
-auto t1 = std::clock( );
-std::cerr << "tardamos " << double(t1 - t0) / CLOCKS_PER_SEC << "\n";
-        return result;
+   auto t1 = std::clock();
+   std::cerr << "tardamos " << double(t1 - t0) / CLOCKS_PER_SEC << "\n";
+   return result;
 }*/
 
 template <size_t set_size>
@@ -343,6 +345,7 @@ void doArtefactualOverlapAnalysis(const string& path_file_gene_search, const str
                                                                                path_file_gene_art_pairs,
                                                                                path_file_protein_art_pairs);
 
+   //TODO: Report the different states of the proteins that are shared in the protein level, but not in the proteoform level.
    reportPathwayPairsWithArtefactualOverlap(examples,
                                             index_to_genes,
                                             index_to_proteins,
@@ -355,30 +358,3 @@ void doArtefactualOverlapAnalysis(const string& path_file_gene_search, const str
                                             overlaping_proteoform_set_pairs,
                                             report_file_path);
 }
-
-/* set<pair<string, string>> findDiseaseModulePairsWithArtefactualOverlap(string path_file_gene_art_pairs,
-                                                                       string path_file_protein_art_pairs) {
-    CreatePhenotypePairsFile(0.95, protein);
-
-    multimap<string, string> pairs;
-    ifstream pairs_file("../resources/PheGenI/pairs_diff_overlap_genes_vs_proteoforms.csv");
-
-    if (pairs_file) {
-        string one_trait, other_trait;
-        string line_leftover;
-        while (pairs_file >> one_trait >> other_trait) {
-            getline(pairs_file, line_leftover);
-            pairs.insert(make_pair(one_trait, other_trait));
-        }
-    }
-
-    pairs.insert(make_pair("Aorta", "Asthma"));
-    pairs.insert(make_pair("ColitisUlcerative", "Creatinine"));
-    pairs.insert(make_pair("Creatinine", "Adiponectin"));
-    pairs.insert(make_pair("Creatinine", "Prostate_SpecificAntigen"));
-    pairs.insert(make_pair("Creatinine", "WetMacularDegeneration"));
-    pairs.insert(make_pair("MacularDegeneration", "Hypothyroidism"));
-    pairs.insert(make_pair("WaistCircumference", "Hypothyroidism"));
-    pairs.insert(make_pair("WetMacularDegeneration", "Hypothyroidism"));
-    ShowOverlapsAndSplittingProteoforms(pairs);
-} */

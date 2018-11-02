@@ -2,6 +2,7 @@
 #include <string>
 
 #include "3_artefactual_overlap/artefactual_overlap.hpp"
+#include "4_Key_PTMs_Overlaps/key_ptm_overlap.hpp"
 
 using namespace std;
 
@@ -23,34 +24,38 @@ const string path_file_proteoforms_in_key_ptm_overlaps = "reports/4_key_ptms_ove
 const string path_file_modifications_in_key_ptm_overlaps = "reports/4_key_ptms_overlaps/modifications.txt";
 
 void doDegreeReductionAnalysis() {
-    // TODO
+   // TODO
 }
 
 void doPercolationAnalysis() {
-    // TODO
+   // TODO
 }
 
 void doKeyPtmAnalysis() {
-    // set<pair<string, string>> pairs = findPairsWithKeyPTMExamples(
-    //     0.0,
-    //     path_file_proteoform_search,
-    //     path_file_pathways_in_key_ptm_overlaps,
-    //     path_file_proteins_in_key_ptm_overlaps,
-    //     path_file_proteoforms_in_key_ptm_overlaps,
-    //     path_file_modifications_in_key_ptm_overlaps);
+   doKeyPTMOverlapAnalysis(path_file_gene_search,
+                           path_file_protein_search,
+                           path_file_proteoform_search,
+                           path_file_report_key_ptm_analysis);
+
+   // set<pair<string, string>> pairs = findPairsWithKeyPTMExamples(
+   //     0.0,
+   //     path_file_proteoform_search,
+   //     path_file_pathways_in_key_ptm_overlaps,
+   //     path_file_proteins_in_key_ptm_overlaps,
+   //     path_file_proteoforms_in_key_ptm_overlaps,
+   //     path_file_modifications_in_key_ptm_overlaps);
 }
 
-int main()
-try {
-    doDegreeReductionAnalysis();  // 1)
-    doPercolationAnalysis();      // 2)
-    doArtefactualOverlapAnalysis(path_file_gene_search,
-                                 path_file_protein_search,
-                                 path_file_proteoform_search,
-                                 path_file_report_artefactual_overlap_analysis,
-                                 path_file_gene_art_pairs,
-                                 path_file_protein_art_pairs);  // 3)
-    doKeyPtmAnalysis();                                         // 4)
+int main() try {
+   doDegreeReductionAnalysis();  // 1)
+   doPercolationAnalysis();      // 2)
+   doArtefactualOverlapAnalysis(path_file_gene_search,
+                                path_file_protein_search,
+                                path_file_proteoform_search,
+                                path_file_report_artefactual_overlap_analysis,
+                                path_file_gene_art_pairs,
+                                path_file_protein_art_pairs);  // 3)
+   doKeyPtmAnalysis();                                         // 4)
 } catch (const std::exception& ex) {
    cout << ex.what() << "\n";
 }
