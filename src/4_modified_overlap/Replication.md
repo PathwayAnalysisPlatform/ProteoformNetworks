@@ -105,3 +105,24 @@ RETURN pathway.stId, pathway.displayName, reaction, isoform, ptms
 ORDER BY isoform, ptms
 ~~~~
 
+## Examples of modified overlap
+
+Follow the same steps of the artefactual overlap. At the final step veryfy the overlap of proteoforms with the following queries:
+
+* Proteoform level:
+~~~~
+MATCH (pathway:Pathway{speciesName:"Homo sapiens"})-[:hasEvent*]->(rle:Reaction{speciesName:"Homo sapiens"}),
+      (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity{speciesName:"Homo sapiens"})-[:referenceEntity]->(re:ReferenceEntity{databaseName:'UniProt'})
+      WHERE pathway.stId IN ["R-HSA-109703", "R-HSA-111447"]
+WITH DISTINCT pathway, rle, pe, re
+OPTIONAL MATCH (pe)-[:hasModifiedResidue]->(tm:TranslationalModification)-[:psiMod]->(mod:PsiMod)
+WITH DISTINCT pathway, rle.stId as reaction, pe.stId AS physicalEntity,
+                re.identifier AS protein, re.variantIdentifier AS isoform,  tm.coordinate as coordinate, 
+                mod.identifier as type 
+ORDER BY type, coordinate
+WITH DISTINCT pathway, reaction, physicalEntity, protein,
+                CASE WHEN isoform IS NOT NULL THEN isoform ELSE protein END as isoform,
+                COLLECT(type + ":" + CASE WHEN coordinate IS NOT NULL THEN coordinate ELSE "null" END) AS ptms
+RETURN DISTINCT collect(DISTINCT pathway.stId), isoform, ptms
+ORDER BY isoform, ptms
+~~~~
