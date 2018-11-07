@@ -84,13 +84,9 @@ void doArtefactualOverlapAnalysis(const string& path_file_gene_search,
    //    // TODO: Report pairs of disease modules
    //    // findDiseaseModulePairsWithArtefactualOverlap(path_file_gene_art_pairs, path_file_protein_art_pairs);
 
-   vector<string> index_to_genes = loadEntities(path_file_gene_search);
-   vector<string> index_to_proteins = loadEntities(path_file_protein_search);
-   vector<string> index_to_proteoforms = loadEntities(path_file_proteoform_search);
-
-   map<string, int> genes_to_index = fillMap(index_to_genes);
-   map<string, int> proteins_to_index = fillMap(index_to_proteins);
-   map<string, int> proteoforms_to_index = fillMap(index_to_proteoforms);
+   const auto [index_to_genes, genes_to_index] = loadEntities(path_file_gene_search);
+   const auto [index_to_proteins, proteins_to_index] = loadEntities(path_file_protein_search);
+   const auto [index_to_proteoforms, proteoforms_to_index] = loadEntities(path_file_proteoform_search);
 
    map<string, bitset<NUM_GENES>> pathway_to_genes = loadPathwaysGeneMembers(path_file_gene_search, genes_to_index);
    map<string, bitset<NUM_PROTEINS>> pathway_to_proteins = loadPathwaysProteinMembers(path_file_protein_search, proteins_to_index);

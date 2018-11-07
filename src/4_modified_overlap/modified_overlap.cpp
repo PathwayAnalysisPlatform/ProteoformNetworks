@@ -20,10 +20,9 @@ bitset<NUM_PROTEOFORMS> getSetOfModifiedProteoforms(const vector<string>& proteo
 }
 
 void reportPathwayPairsWithKeyPTMOverlap(const string& path_file_proteoform_search, const string& report_file_path) {
-   vector<string> index_to_proteoforms = loadEntities(path_file_proteoform_search);
-   map<string, int> proteoforms_to_index = fillMap(index_to_proteoforms);
-   map<string, bitset<NUM_PROTEOFORMS>> pathways_to_proteoforms = loadPathwaysProteoformMembers(path_file_proteoform_search, proteoforms_to_index);
-   bitset<NUM_PROTEOFORMS> modified_proteoforms = getSetOfModifiedProteoforms(index_to_proteoforms);
+   const auto [index_to_proteoforms, proteoforms_to_index] = loadEntities(path_file_proteoform_search);
+   const map<string, bitset<NUM_PROTEOFORMS>> pathways_to_proteoforms = loadPathwaysProteoformMembers(path_file_proteoform_search, proteoforms_to_index);
+   const bitset<NUM_PROTEOFORMS> modified_proteoforms = getSetOfModifiedProteoforms(index_to_proteoforms);
    vector<typename map<string, bitset<NUM_PROTEOFORMS>>::const_iterator> modifiedPathways;
 
    // Compare all the pairs of selected pathways and select pairs that overlap only in a percentage of modified proteins

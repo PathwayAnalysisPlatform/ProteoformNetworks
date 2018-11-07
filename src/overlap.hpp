@@ -22,7 +22,12 @@ const int MAX_OVERLAP_SIZE = 10;
 const int MIN_PATHWAY_SIZE = 1;
 const int MAX_PATHWAY_SIZE = 20;
 
-std::vector<std::string> loadEntities(const std::string& entities_file_path);
+struct Entities_bimap {
+    std::vector<std::string> index_to_entities;
+    std::map<std::string, int> entities_to_index;
+};
+
+Entities_bimap loadEntities(const std::string& entities_file_path);
 
 std::map<std::string, std::string> loadPathwayNames(const std::string& path_protein_search_file);
 

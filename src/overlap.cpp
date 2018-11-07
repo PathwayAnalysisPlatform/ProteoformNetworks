@@ -2,23 +2,38 @@
 
 using namespace std;
 
-vector<string> loadEntities(const string& entities_file_path) {
+vector<string> getIndexToEntities(const string& entities_file_path) {
    ifstream entities_file(entities_file_path);
    string entity, line_leftover;
    unordered_set<string> temp_set;
-   vector<string> entities;
+   vector<string> index_to_entities;
 
    if (!entities_file.is_open()) {
       throw runtime_error("Cannot open " + entities_file_path);
    }
-
+   
    while (getline(entities_file, entity, '\t')) {
       temp_set.insert(entity);
       getline(entities_file, line_leftover);
    }
-   entities.assign(temp_set.begin(), temp_set.end());
-   sort(entities.begin(), entities.end());
-   return entities;
+   index_to_entities.assign(temp_set.begin(), temp_set.end());
+   sort(index_to_entities.begin(), index_to_entities.end());
+
+   return index_to_entities;
+}
+
+map<string, int> getEntitiesToIndex(const vector<string>& index_to_entities) {
+   map<string, int> entities_to_index;
+   for (int I = 0; I < index_to_entities.size(); I++) {
+      entities_to_index.emplace(index_to_entities[I], I);
+   }
+   return entities_to_index;
+}
+
+Entities_bimap loadEntities(const string& entities_file_path) {
+    auto index_to_entities = getIndexToEntities(entities_file_path);
+    auto entities_to_index = getEntitiesToIndex(index_to_entities);
+   return {index_to_entities, entities_to_index};
 }
 
 map<string, string> loadPathwayNames(const string& path_protein_search_file) {
@@ -36,14 +51,6 @@ map<string, string> loadPathwayNames(const string& path_protein_search_file) {
       result[pathway] = pathway_name;
    }
    return result;
-}
-
-map<string, int> fillMap(const vector<string>& index_to_entities) {
-   map<string, int> entities_to_index;
-   for (int I = 0; I < index_to_entities.size(); I++) {
-      entities_to_index.emplace(index_to_entities[I], I);
-   }
-   return entities_to_index;
 }
 
 map<string, bitset<NUM_GENES>> loadPathwaysGeneMembers(const string& file_path, const map<string, int>& entities_to_index) {
