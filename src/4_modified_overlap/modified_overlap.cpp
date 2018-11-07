@@ -21,9 +21,9 @@ bitset<NUM_PROTEOFORMS> getSetOfModifiedProteoforms(const vector<string>& proteo
 
 void reportPathwayPairsWithKeyPTMOverlap(const string& path_file_proteoform_search, const string& report_file_path) {
    const auto [index_to_proteoforms, proteoforms_to_index] = loadEntities(path_file_proteoform_search);
+   const auto pathways_to_names = loadPathwayNames(path_file_proteoform_search);
    const map<string, bitset<NUM_PROTEOFORMS>> pathways_to_proteoforms = loadPathwaysProteoformMembers(path_file_proteoform_search, proteoforms_to_index);
    const bitset<NUM_PROTEOFORMS> modified_proteoforms = getSetOfModifiedProteoforms(index_to_proteoforms);
-   vector<typename map<string, bitset<NUM_PROTEOFORMS>>::const_iterator> modifiedPathways;
 
    // Compare all the pairs of selected pathways and select pairs that overlap only in a percentage of modified proteins
    set<pair<string, string>> examples = findOverlappingProteoformSets(pathways_to_proteoforms,
@@ -33,21 +33,22 @@ void reportPathwayPairsWithKeyPTMOverlap(const string& path_file_proteoform_sear
                                                                       MIN_MODIFIED_ALL_MEMBERS_RATIO,
                                                                       MIN_MODIFIED_OVERLAP_MEMBERS_RATIO);
 
+   // pathways_to_names, report_file_path, examples,
    cout << "Reporting pathway pairs with only modified overlap...\n";
    ofstream report(report_file_path);
 
-   report << "PATHWAY_1\tPATHWAY_2\t";
+   report << "PATHWAY_1\tPATHWAY_2\tPATHWAY_1_NAME\tPATHWAY_2_NAME\t";
    report << "PATHWAY_1_PROTEOFORM_SIZE\tPATHWAY_2_PROTEOFORM_SIZE\tOVERLAP_SIZE\t";
    report << "OVERLAP_PROTEOFORMS\n";
    for (const auto& example : examples) {
       bitset<NUM_PROTEOFORMS> overlap_proteoforms = pathways_to_proteoforms.at(example.first) & pathways_to_proteoforms.at(example.second);
 
-      report << example.first << " " << example.second << "\t";
+      report << example.first << "\t" << example.second << "\t" << pathways_to_names.at(example.first) << "\t" << pathways_to_names.at(example.second) << "\t";
       report << pathways_to_proteoforms.at(example.first).count() << "\t" << pathways_to_proteoforms.at(example.first).count() << "\t";
       report << overlap_proteoforms.count() << "\t";
       printProteoformMembers(report, overlap_proteoforms, index_to_proteoforms);
 
-      report << "\n";
+      report << "\n"; 
    }
 
    // TODO: Review the types of modifications that appear in the overlaps

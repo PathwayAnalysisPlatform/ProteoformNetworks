@@ -11,7 +11,7 @@ vector<string> getIndexToEntities(const string& entities_file_path) {
    if (!entities_file.is_open()) {
       throw runtime_error("Cannot open " + entities_file_path);
    }
-   
+
    while (getline(entities_file, entity, '\t')) {
       temp_set.insert(entity);
       getline(entities_file, line_leftover);
@@ -31,23 +31,33 @@ map<string, int> getEntitiesToIndex(const vector<string>& index_to_entities) {
 }
 
 Entities_bimap loadEntities(const string& entities_file_path) {
-    auto index_to_entities = getIndexToEntities(entities_file_path);
-    auto entities_to_index = getEntitiesToIndex(index_to_entities);
+   auto index_to_entities = getIndexToEntities(entities_file_path);
+   auto entities_to_index = getEntitiesToIndex(index_to_entities);
    return {index_to_entities, entities_to_index};
 }
 
-map<string, string> loadPathwayNames(const string& path_protein_search_file) {
+map<string, string> loadPathwayNames(const string& path_search_file) {
    map<string, string> result;
-   ifstream file_search(path_protein_search_file);
+   ifstream file_search(path_search_file);
    string field, pathway, pathway_name;
+   int field_cont = 0;
+   int pathway_stid_column = 0;
 
-   getline(file_search, field);                 // Skip csv header line
-   while (getline(file_search, field, '\t')) {  // Read UNIPROT
-      getline(file_search, field, '\t');        // Read REACTION_STID
-      getline(file_search, field, '\t');        // Read REACTION_DISPLAY_NAME
-      getline(file_search, pathway, '\t');      // Read PATHWAY_STID
-      getline(file_search, pathway_name);       // Read PATHWAY_DISPLAY_NAME
+   while (getline(file_search, field, '\t')) {
+      if (field == "PATHWAY_STID") {
+         pathway_stid_column = field_cont;
+         break;
+      }
+      field_cont++;
+   }
+   getline(file_search, field);  // Skip header line leftoever
 
+   while (getline(file_search, field, '\t')) {                        // While there are records in the file
+      for (int column = 1; column < pathway_stid_column; column++) {  // Skip fields before the pathway_stid
+         getline(file_search, field, '\t');
+      }
+      getline(file_search, pathway, '\t');  // Read PATHWAY_STID
+      getline(file_search, pathway_name);   // Read PATHWAY_DISPLAY_NAME
       result[pathway] = pathway_name;
    }
    return result;
@@ -225,16 +235,17 @@ template <size_t total_num_entities>
 void printMembers(ofstream& output, const bitset<total_num_entities>& entity_set, const vector<string>& index_to_entities) {
    int printed = 0;
    int total = entity_set.count();
+   output << "[";
    for (int I = 0; I < total_num_entities; I++) {
       if (entity_set.test(I)) {
-         output << index_to_entities[I];
+         output << "\"" << index_to_entities[I] << "\"";
          printed++;
          if (printed != total) {
-            output << ";";
+            output << ",";
          }
       }
    }
-   output << "\t";
+   output << "]";
 }
 
 void printGeneMembers(ofstream& output, const bitset<NUM_GENES>& gene_set, const vector<string>& index_to_entities) {
@@ -245,4 +256,27 @@ void printProteinMembers(ofstream& output, const bitset<NUM_PROTEINS>& protein_s
 }
 void printProteoformMembers(ofstream& output, const bitset<NUM_PROTEOFORMS>& proteoform_set, const vector<string>& index_to_entities) {
    printMembers(output, proteoform_set, index_to_entities);
+}
+
+template <size_t total_num_entities>
+set<string> getEntityStrings(const bitset<total_num_entities>& entity_set, const vector<string>& index_to_entities) {
+   set<string> result;
+   for (int I = 0; I < total_num_entities; I++) {
+      if (entity_set.test(I)) {
+         result.insert(index_to_entities[I]);
+      }
+   }
+   return result;
+}
+
+set<string> getGeneStrings(const bitset<NUM_GENES>& gene_set, const vector<string>& index_to_genes) {
+    return getEntityStrings(gene_set, index_to_genes);
+}
+
+set<string> getProteinStrings(const bitset<NUM_PROTEINS>& protein_set, const vector<string>& index_to_proteins) {
+    return getEntityStrings(protein_set, index_to_proteins);
+}
+
+set<string> getProteoformStrings(const bitset<NUM_PROTEOFORMS>& proteoform_set, const vector<string>& index_to_proteoforms) {
+    return getEntityStrings(proteoform_set, index_to_proteoforms);
 }

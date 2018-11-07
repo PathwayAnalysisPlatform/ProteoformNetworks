@@ -60,4 +60,8 @@ void printGeneMembers(std::ofstream& output, const std::bitset<NUM_GENES>& gene_
 void printProteinMembers(std::ofstream& output, const std::bitset<NUM_PROTEINS>& protein_set, const std::vector<std::string>& index_to_entities);
 void printProteoformMembers(std::ofstream& output, const std::bitset<NUM_PROTEOFORMS>& proteoform_set, const std::vector<std::string>& index_to_entities);
 
+std::set<std::string> getGeneStrings(const std::bitset<NUM_GENES>& gene_set, const std::vector<std::string>& index_to_genes);
+std::set<std::string> getProteinStrings(const std::bitset<NUM_PROTEINS>& protein_set, const std::vector<std::string>& index_to_proteins);
+std::set<std::string> getProteoformStrings(const std::bitset<NUM_PROTEOFORMS>& proteoform_set, const std::vector<std::string>& index_to_proteoforms);
+
 #endif /* OVERLAP_H_ */

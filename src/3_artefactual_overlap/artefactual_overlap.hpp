@@ -3,6 +3,10 @@
 
 #include "../overlap.hpp"
 
+#include <regex>
+
+const std::regex RGX_ACCESSION_DELIMITER{"[;-]"};
+
 void doArtefactualOverlapAnalysis(const std::string& path_file_gene_search,
                                   const std::string& path_file_protein_search,
                                   const std::string& path_file_proteoform_search,
