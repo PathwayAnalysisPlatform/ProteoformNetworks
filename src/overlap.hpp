@@ -23,8 +23,8 @@ const int MIN_PATHWAY_SIZE = 1;
 const int MAX_PATHWAY_SIZE = 20;
 
 struct Entities_bimap {
-    std::vector<std::string> index_to_entities;
-    std::map<std::string, int> entities_to_index;
+   std::vector<std::string> index_to_entities;
+   std::map<std::string, int> entities_to_index;
 };
 
 Entities_bimap loadEntities(const std::string& entities_file_path);
@@ -37,24 +37,23 @@ std::map<std::string, std::bitset<NUM_GENES>> loadPathwaysGeneMembers(const std:
 std::map<std::string, std::bitset<NUM_PROTEINS>> loadPathwaysProteinMembers(const std::string& file_path, const std::map<std::string, int>& entities_to_index);
 std::map<std::string, std::bitset<NUM_PROTEOFORMS>> loadPathwaysProteoformMembers(const std::string& file_path, const std::map<std::string, int>& entities_to_index);
 
-std::set<std::pair<std::string, std::string>> findOverlappingGeneSets(const std::map<std::string, std::bitset<NUM_GENES>>& sets_to_members,
-                                                                      const int& min_overlap, const int& max_overlap,
-                                                                      const int& min_set_size, const int& max_set_size);
-std::set<std::pair<std::string, std::string>> findOverlappingProteinSets(const std::map<std::string, std::bitset<NUM_PROTEINS>>& sets_to_members,
-                                                                         const int& min_overlap, const int& max_overlap,
-                                                                         const int& min_set_size, const int& max_set_size);
-std::set<std::pair<std::string, std::string>> findOverlappingProteoformSets(const std::map<std::string, std::bitset<NUM_PROTEOFORMS>>& sets_to_members,
-                                                                            const int& min_overlap, const int& max_overlap,
-                                                                            const int& min_set_size, const int& max_set_size);
+std::map<std::pair<std::string, std::string>, std::bitset<NUM_GENES>> findOverlappingGeneSets(const std::map<std::string, std::bitset<NUM_GENES>>& sets_to_members,
+                                                                                              const int& min_overlap, const int& max_overlap,
+                                                                                              const int& min_set_size, const int& max_set_size);
+std::map<std::pair<std::string, std::string>, std::bitset<NUM_PROTEINS>> findOverlappingProteinSets(const std::map<std::string, std::bitset<NUM_PROTEINS>>& sets_to_members,
+                                                                                                    const int& min_overlap, const int& max_overlap,
+                                                                                                    const int& min_set_size, const int& max_set_size);
 
-std::set<std::pair<std::string, std::string>> findOverlappingProteoformSets(const std::map<std::string, std::bitset<NUM_PROTEOFORMS>>& sets_to_members);
-
-std::set<std::pair<std::string, std::string>> findOverlappingProteoformSets(const std::map<std::string, std::bitset<NUM_PROTEOFORMS>>& sets_to_members,
-                                                                            const int& min_overlap, const int& max_overlap,
-                                                                            const int& min_set_size, const int& max_set_size,
-                                                                            const std::bitset<NUM_PROTEOFORMS>& modified_proteoforms,
-                                                                            const float& min_all_modified_ratio,
-                                                                            const float& min_overlap_modified_ratio);
+std::map<std::pair<std::string, std::string>, std::bitset<NUM_PROTEOFORMS>> findOverlappingProteoformSets(const std::map<std::string, std::bitset<NUM_PROTEOFORMS>>& sets_to_members);
+std::map<std::pair<std::string, std::string>, std::bitset<NUM_PROTEOFORMS>> findOverlappingProteoformSets(const std::map<std::string, std::bitset<NUM_PROTEOFORMS>>& sets_to_members,
+                                                                                                          const int& min_overlap, const int& max_overlap,
+                                                                                                          const int& min_set_size, const int& max_set_size);
+std::map<std::pair<std::string, std::string>, std::bitset<NUM_PROTEOFORMS>> findOverlappingProteoformSets(const std::map<std::string, std::bitset<NUM_PROTEOFORMS>>& sets_to_members,
+                                                                                                          const int& min_overlap, const int& max_overlap,
+                                                                                                          const int& min_set_size, const int& max_set_size,
+                                                                                                          const std::bitset<NUM_PROTEOFORMS>& modified_proteoforms,
+                                                                                                          const float& min_all_modified_ratio,
+                                                                                                          const float& min_overlap_modified_ratio);
 
 void printGeneMembers(std::ofstream& output, const std::bitset<NUM_GENES>& gene_set, const std::vector<std::string>& index_to_entities);
 void printProteinMembers(std::ofstream& output, const std::bitset<NUM_PROTEINS>& protein_set, const std::vector<std::string>& index_to_entities);

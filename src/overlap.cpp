@@ -136,10 +136,12 @@ map<string, bitset<NUM_PROTEOFORMS>> loadPathwaysProteoformMembers(const string&
 
 // Version with set size and overlap size limits
 template <size_t total_num_entities>
-set<pair<string, string>> findOverlappingPairs(const map<string, bitset<total_num_entities>>& sets_to_members,
-                                               const int& min_overlap, const int& max_overlap,
-                                               const int& min_set_size, const int& max_set_size) {
+map<pair<string, string>, bitset<total_num_entities>> findOverlappingPairs(const map<string, bitset<total_num_entities>>& sets_to_members,
+                                                                           const int& min_overlap, const int& max_overlap,
+                                                                           const int& min_set_size, const int& max_set_size) {
+   map<pair<string, string>, bitset<total_num_entities>> result;
    vector<typename map<string, bitset<total_num_entities>>::const_iterator> nav;
+
    for (auto it = sets_to_members.begin(); it != sets_to_members.end(); it++) {
       int set_size = it->second.count();
       if (min_set_size <= set_size && set_size <= max_set_size) {
@@ -149,12 +151,12 @@ set<pair<string, string>> findOverlappingPairs(const map<string, bitset<total_nu
 
    cerr << "elementos: " << nav.size() << ", parejas: " << (nav.size() * nav.size() - nav.size()) / 2 << "\n";
    auto t0 = clock();
-   set<pair<string, string>> result;
+
    for (auto vit1 = nav.begin(); vit1 != nav.end(); vit1++) {
       for (auto vit2 = next(vit1); vit2 != nav.end(); vit2++) {
          bitset<total_num_entities> overlap = (*vit1)->second & (*vit2)->second;
          if (min_overlap <= overlap.count() && overlap.count() <= max_overlap) {
-            result.emplace((*vit1)->first, (*vit2)->first);
+            result.emplace(make_pair((*vit1)->first, (*vit2)->first), overlap);
          }
       }
    }
@@ -163,48 +165,47 @@ set<pair<string, string>> findOverlappingPairs(const map<string, bitset<total_nu
    return result;
 }
 
-set<pair<string, string>> findOverlappingGeneSets(const map<string, bitset<NUM_GENES>>& sets_to_members,
-                                                  const int& min_overlap, const int& max_overlap,
-                                                  const int& min_set_size, const int& max_set_size) {
+map<pair<string, string>, bitset<NUM_GENES>> findOverlappingGeneSets(const map<string, bitset<NUM_GENES>>& sets_to_members,
+                                                                     const int& min_overlap, const int& max_overlap,
+                                                                     const int& min_set_size, const int& max_set_size) {
+   return findOverlappingPairs(sets_to_members, min_overlap, max_overlap, min_set_size, max_set_size);
+}
+
+map<pair<string, string>, bitset<NUM_PROTEINS>> findOverlappingProteinSets(const map<string, bitset<NUM_PROTEINS>>& sets_to_members,
+                                                                           const int& min_overlap, const int& max_overlap,
+                                                                           const int& min_set_size, const int& max_set_size) {
    return findOverlappingPairs(sets_to_members,
                                min_overlap, max_overlap,
                                min_set_size, max_set_size);
 }
 
-set<pair<string, string>> findOverlappingProteinSets(const map<string, bitset<NUM_PROTEINS>>& sets_to_members,
-                                                     const int& min_overlap, const int& max_overlap,
-                                                     const int& min_set_size, const int& max_set_size) {
-   return findOverlappingPairs(sets_to_members,
-                               min_overlap, max_overlap,
-                               min_set_size, max_set_size);
-}
-
-set<pair<string, string>> findOverlappingProteoformSets(const map<string, bitset<NUM_PROTEOFORMS>>& sets_to_members,
-                                                        const int& min_overlap, const int& max_overlap,
-                                                        const int& min_set_size, const int& max_set_size) {
+map<pair<string, string>, bitset<NUM_PROTEOFORMS>> findOverlappingProteoformSets(const map<string, bitset<NUM_PROTEOFORMS>>& sets_to_members,
+                                                                                 const int& min_overlap, const int& max_overlap,
+                                                                                 const int& min_set_size, const int& max_set_size) {
    return findOverlappingPairs(sets_to_members,
                                min_overlap, max_overlap,
                                min_set_size, max_set_size);
 }
 
 //Version without set size limits or overlap size limits
-set<pair<string, string>> findOverlappingProteoformSets(const map<string, bitset<NUM_PROTEOFORMS>>& sets_to_members) {
+map<pair<string, string>, bitset<NUM_PROTEOFORMS>> findOverlappingProteoformSets(const map<string, bitset<NUM_PROTEOFORMS>>& sets_to_members) {
    return findOverlappingPairs(sets_to_members,
                                1, NUM_PROTEOFORMS,
                                1, NUM_PROTEOFORMS);
 }
 
 // This version includes modified ratio of the proteoform members of the set, and another ratio for the overlapping proteoforms.
-set<pair<string, string>> findOverlappingProteoformSets(const map<string, bitset<NUM_PROTEOFORMS>>& sets_to_members,
-                                                        const int& min_overlap, const int& max_overlap,
-                                                        const int& min_set_size, const int& max_set_size,
-                                                        const bitset<NUM_PROTEOFORMS>& modified_proteoforms,
-                                                        const float& min_all_modified_ratio,
-                                                        const float& min_overlap_modified_ratio) {
+map<pair<string, string>, bitset<NUM_PROTEOFORMS>> findOverlappingProteoformSets(const map<string, bitset<NUM_PROTEOFORMS>>& sets_to_members,
+                                                                                 const int& min_overlap, const int& max_overlap,
+                                                                                 const int& min_set_size, const int& max_set_size,
+                                                                                 const bitset<NUM_PROTEOFORMS>& modified_proteoforms,
+                                                                                 const float& min_all_modified_ratio,
+                                                                                 const float& min_overlap_modified_ratio) {
    vector<typename map<string, bitset<NUM_PROTEOFORMS>>::const_iterator> nav;
    for (auto it = sets_to_members.begin(); it != sets_to_members.end(); it++) {
       int set_size = it->second.count();
       if (min_set_size <= set_size && set_size <= max_set_size) {
+        //  cerr << "MIN_SET_SIZE: " << min_set_size << " SET_SIZE: " << set_size << " MAX_SET_SIZE: " << max_set_size << "\n";
          float percentage = static_cast<float>((modified_proteoforms & it->second).count()) / static_cast<float>(set_size);
          if (percentage >= min_all_modified_ratio) {
             nav.push_back(it);
@@ -212,22 +213,23 @@ set<pair<string, string>> findOverlappingProteoformSets(const map<string, bitset
       }
    }
 
+   map<pair<string, string>, bitset<NUM_PROTEOFORMS>> result;
    cerr << "elementos: " << nav.size() << ", parejas: " << (nav.size() * nav.size() - nav.size()) / 2 << "\n";
    auto t0 = clock();
-   set<pair<string, string>> result;
    for (auto vit1 = nav.begin(); vit1 != nav.end(); vit1++) {
       for (auto vit2 = next(vit1); vit2 != nav.end(); vit2++) {
          bitset<NUM_PROTEOFORMS> overlap = (*vit1)->second & (*vit2)->second;
          if (min_overlap <= overlap.count() && overlap.count() <= max_overlap) {
             float percentage = static_cast<float>((modified_proteoforms & overlap).count()) / static_cast<float>(overlap.count());
             if (percentage >= min_overlap_modified_ratio) {
-               result.emplace((*vit1)->first, (*vit2)->first);
+               result.emplace(make_pair((*vit1)->first, (*vit2)->first), overlap);
             }
          }
       }
    }
    auto t1 = clock();
    cerr << "tardamos " << double(t1 - t0) / CLOCKS_PER_SEC << "\n";
+
    return result;
 }
 
@@ -270,13 +272,13 @@ set<string> getEntityStrings(const bitset<total_num_entities>& entity_set, const
 }
 
 set<string> getGeneStrings(const bitset<NUM_GENES>& gene_set, const vector<string>& index_to_genes) {
-    return getEntityStrings(gene_set, index_to_genes);
+   return getEntityStrings(gene_set, index_to_genes);
 }
 
 set<string> getProteinStrings(const bitset<NUM_PROTEINS>& protein_set, const vector<string>& index_to_proteins) {
-    return getEntityStrings(protein_set, index_to_proteins);
+   return getEntityStrings(protein_set, index_to_proteins);
 }
 
 set<string> getProteoformStrings(const bitset<NUM_PROTEOFORMS>& proteoform_set, const vector<string>& index_to_proteoforms) {
-    return getEntityStrings(proteoform_set, index_to_proteoforms);
+   return getEntityStrings(proteoform_set, index_to_proteoforms);
 }

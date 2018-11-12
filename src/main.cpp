@@ -15,20 +15,20 @@ const std::string path_file_report_artefactual_overlap_analysis = "reports/3_art
 const std::string path_file_report_modified_overlap_analysis = "reports/4_modified_overlap_analysis.txt";
 const std::string path_file_proteins_in_modified_overlap = "reports/4_modified_overlap/proteins.txt";
 const std::string path_file_proteoforms_in_modified_overlap = "reports/4_modified_overlap/proteoforms.txt";
-const std::string path_file_modifications_in_modified_overlap = "reports/4_modified_overlap/modifications.txt";
+const std::string path_file_modifications_in_modified_overlap = "reports/4_modifications.txt";
 
 int main() try {
    doDegreeReductionAnalysis();
    doPercolationAnalysis();
-   doArtefactualOverlapAnalysis(path_file_gene_search,
-                                path_file_protein_search,
-                                path_file_proteoform_search,
-                                path_file_report_artefactual_overlap_analysis);
-   doModifiedOverlapAnalysis(path_file_proteoform_search,
-                             path_file_report_modified_overlap_analysis,
-                             path_file_proteins_in_modified_overlap,
-                             path_file_proteoforms_in_modified_overlap,
-                             path_file_modifications_in_modified_overlap);
+   artefactual_overlap::doAnalysis(path_file_gene_search,
+                                   path_file_protein_search,
+                                   path_file_proteoform_search,
+                                   path_file_report_artefactual_overlap_analysis);
+   modified_overlap::doAnalysis(path_file_proteoform_search,
+                                path_file_report_modified_overlap_analysis,
+                                path_file_proteins_in_modified_overlap,
+                                path_file_proteoforms_in_modified_overlap,
+                                path_file_modifications_in_modified_overlap);
 } catch (const std::exception& ex) {
    std::cout << ex.what() << "\n";
 }
