@@ -43,3 +43,8 @@ ipch
 *.csv
 *.txt
 resources/PhenGenI/diseaseModules/
+
+#R
+.Rhistory
+.RData
+.Rproj.user

@@ -11,6 +11,9 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <regex>
+
+const std::regex RGX_ACCESSION_DELIMITER{"[;-]"};
 
 const size_t NUM_GENES = 23970;
 const size_t NUM_PROTEINS = 10778;
@@ -25,6 +28,12 @@ const int MAX_PATHWAY_SIZE = 20;
 struct Entities_bimap {
    std::vector<std::string> index_to_entities;
    std::map<std::string, int> entities_to_index;
+};
+
+struct Frequencies {
+   std::map<std::string, int> modifications;
+   std::map<std::string, int> proteins;
+   std::map<std::string, int> proteoforms;
 };
 
 Entities_bimap loadEntities(const std::string& entities_file_path);
@@ -62,5 +71,7 @@ void printProteoformMembers(std::ofstream& output, const std::bitset<NUM_PROTEOF
 std::set<std::string> getGeneStrings(const std::bitset<NUM_GENES>& gene_set, const std::vector<std::string>& index_to_genes);
 std::set<std::string> getProteinStrings(const std::bitset<NUM_PROTEINS>& protein_set, const std::vector<std::string>& index_to_proteins);
 std::set<std::string> getProteoformStrings(const std::bitset<NUM_PROTEOFORMS>& proteoform_set, const std::vector<std::string>& index_to_proteoforms);
+
+std::string getAccession(std::string proteoform);
 
 #endif /* OVERLAP_H_ */

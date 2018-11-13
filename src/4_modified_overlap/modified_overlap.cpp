@@ -72,25 +72,77 @@ set<string> getModifications(string proteoform) {
    return modifications;
 }
 
-map<string, int> getModificationsFrequencies(const map<pair<string, string>, bitset<NUM_PROTEOFORMS>>& proteoform_overlap_pairs, const vector<string>& index_to_proteoforms) {
-   map<string, int> mod_to_freq;
+void writeFrequencies(const string& modifications_file_path,
+                      const string& proteins_file_path,
+                      const string& proteoforms_file_path,
+                      const map<string, int>& mod_to_freq,
+                      const map<string, int>& proteins_to_freq,
+                      const map<string, int>& proteoforms_to_freq) {
+   ofstream modifications_file(modifications_file_path);
+   ofstream proteins_file(proteins_file_path);
+   ofstream proteoforms_file(proteoforms_file_path);
+
+   modifications_file << "MODIFICATION\tFREQUENCY\n";
+   for (const auto& modification : mod_to_freq) {
+      modifications_file << modification.first << "\t" << modification.second << "\n";
+   }
+   cerr << "Finished writing modification frequencies.\n";
+   proteins_file << "PROTEIN\tFREQUENCY\n";
+   for (const auto& protein : proteins_to_freq) {
+      proteins_file << protein.first << "\t" << protein.second << "\n";
+   }
+   cerr << "Finished writing protein frequencies.\n";
+   proteoforms_file << "PROTEOFORM\tFREQUENCY\n";
+   for (const auto& proteoform : proteoforms_to_freq) {
+      proteoforms_file << proteoform.first << "\t" << proteoform.second << "\n";
+   }
+   cerr << "Finished writing proteoform frequencies.\n";
+}
+
+Frequencies getFrequencies(const map<pair<string, string>, bitset<NUM_PROTEOFORMS>>& proteoform_overlap_pairs, const vector<string>& index_to_proteoforms) {
+   Frequencies frequencies;
    for (const auto& overlap_pair : proteoform_overlap_pairs) {
       // For each overlap set
       for (int I = 0; I < overlap_pair.second.size(); I++) {
          if (overlap_pair.second.test(I)) {
+            string accession = getAccession(index_to_proteoforms[I]);
+            if (frequencies.proteins.find(accession) == frequencies.proteins.end()) {
+               frequencies.proteins.emplace(accession, 0);
+            }
+            frequencies.proteins[accession]++;
+
+            if (frequencies.proteoforms.find(index_to_proteoforms[I]) == frequencies.proteoforms.end()) {
+               frequencies.proteoforms.emplace(index_to_proteoforms[I], 0);
+            }
+            frequencies.proteoforms[index_to_proteoforms[I]]++;
+
             for (const auto& modification : getModifications(index_to_proteoforms[I])) {
-               if (mod_to_freq.find(modification) == mod_to_freq.end()) {
-                  mod_to_freq[modification] = 0;
+               if (frequencies.modifications.find(modification) == frequencies.modifications.end()) {
+                  frequencies.modifications[modification] = 0;
                }
-               mod_to_freq[modification]++;
+               frequencies.modifications[modification]++;
             }
          }
       }
    }
-   return mod_to_freq;
+   return frequencies;
 }
 
-void reportPathwayPairs(const string& path_file_proteoform_search, const string& report_file_path, const string& modification_file_path) {
+void plotFrequencies(string report_file_path,
+                     string modifications_file_path,
+                     string proteins_file_path,
+                     string proteoforms_file_path) {
+   string figures_path = "figures";
+   string command = "Rscript src/4_modified_overlap/modified_overlap.R " + report_file_path.replace(0, 7, figures_path) + " " + modifications_file_path.replace(0, 7, figures_path) + " " + proteins_file_path.replace(0, 7, figures_path) + " " + proteoforms_file_path.replace(0, 7, figures_path);
+   cerr << "Plotting modified overlap frequencies: " << command << endl;
+   system(command.c_str());
+}
+
+void reportPathwayPairs(const string& path_file_proteoform_search,
+                        const string& report_file_path,
+                        const string& modifications_file_path,
+                        const string& proteins_file_path,
+                        const string& proteoforms_file_path) {
    const auto [index_to_proteoforms, proteoforms_to_index] = loadEntities(path_file_proteoform_search);
    const map<string, string> pathways_to_names = loadPathwayNames(path_file_proteoform_search);
    const map<string, bitset<NUM_PROTEOFORMS>> pathways_to_proteoforms = loadPathwaysProteoformMembers(path_file_proteoform_search, proteoforms_to_index);
@@ -109,12 +161,9 @@ void reportPathwayPairs(const string& path_file_proteoform_search, const string&
    ofstream report(report_file_path);
    writePathwayReport(report, examples, pathways_to_names, pathways_to_proteoforms, index_to_proteoforms);
 
-   const auto mod_to_freq = getModificationsFrequencies(examples, index_to_proteoforms);
-   ofstream modification_file(modification_file_path);
-   modification_file << "MODIFICATION\tFREQUENCY\n";
-   for (const auto& modification : mod_to_freq) {
-       modification_file << modification.first << "\t" << modification.second << "\n";
-   }
+   const auto [mod_to_freq, proteins_to_freq, proteoforms_to_freq] = getFrequencies(examples, index_to_proteoforms);
+   writeFrequencies(modifications_file_path, proteins_file_path, proteoforms_file_path, mod_to_freq, proteins_to_freq, proteoforms_to_freq);
+   plotFrequencies(report_file_path, modifications_file_path, proteins_file_path, proteoforms_file_path);
 }
 
 void reportPhenotypePairs() {
@@ -128,7 +177,7 @@ void doAnalysis(const string& path_file_proteoform_search,
    cout << "Searching for modified overlap examples...\n";
 
    // Part 1: Find examples of pathways that overlap only in modified proteins
-   reportPathwayPairs(path_file_proteoform_search, path_file_report, path_file_modifications);
+   reportPathwayPairs(path_file_proteoform_search, path_file_report, path_file_modifications, path_file_proteins, path_file_proteoforms);
 
    // Part 2: Find examples of disease modules that overlap only in modified proteins
    reportPhenotypePairs();

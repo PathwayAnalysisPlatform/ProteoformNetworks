@@ -13,8 +13,8 @@ const std::string path_file_report_degree_reduction_analysis = "reports/1_degree
 const std::string path_file_report_percolation_analysis = "reports/2_percolation_analysis.txt";
 const std::string path_file_report_artefactual_overlap_analysis = "reports/3_artefactual_overlap_analysis.txt";
 const std::string path_file_report_modified_overlap_analysis = "reports/4_modified_overlap_analysis.txt";
-const std::string path_file_proteins_in_modified_overlap = "reports/4_modified_overlap/proteins.txt";
-const std::string path_file_proteoforms_in_modified_overlap = "reports/4_modified_overlap/proteoforms.txt";
+const std::string path_file_proteins_in_modified_overlap = "reports/4_proteins.txt";
+const std::string path_file_proteoforms_in_modified_overlap = "reports/4_proteoforms.txt";
 const std::string path_file_modifications_in_modified_overlap = "reports/4_modifications.txt";
 
 int main() try {
@@ -29,6 +29,7 @@ int main() try {
                                 path_file_proteins_in_modified_overlap,
                                 path_file_proteoforms_in_modified_overlap,
                                 path_file_modifications_in_modified_overlap);
+                                system("pause");
 } catch (const std::exception& ex) {
    std::cout << ex.what() << "\n";
 }

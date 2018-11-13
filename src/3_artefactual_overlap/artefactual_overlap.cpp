@@ -38,14 +38,6 @@ set<pair<string, string>> findPathwayPairs(const map<pair<string, string>, bitse
    return result;
 }
 
-string getAccession(string proteoform) {
-   smatch match_end_of_accession;
-   if (!regex_search(proteoform, match_end_of_accession, RGX_ACCESSION_DELIMITER)) {
-      return proteoform;
-   }
-   return proteoform.substr(0, match_end_of_accession.position(0));
-}
-
 bitset<NUM_PROTEOFORMS> getProteoformsWithAccessions(const set<string>& accessions,
                                                      const bitset<NUM_PROTEOFORMS>& proteoform_set,
                                                      const vector<string>& index_to_proteoforms) {

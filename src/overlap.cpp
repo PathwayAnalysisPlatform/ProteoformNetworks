@@ -282,3 +282,12 @@ set<string> getProteinStrings(const bitset<NUM_PROTEINS>& protein_set, const vec
 set<string> getProteoformStrings(const bitset<NUM_PROTEOFORMS>& proteoform_set, const vector<string>& index_to_proteoforms) {
    return getEntityStrings(proteoform_set, index_to_proteoforms);
 }
+
+
+string getAccession(string proteoform) {
+   smatch match_end_of_accession;
+   if (!regex_search(proteoform, match_end_of_accession, RGX_ACCESSION_DELIMITER)) {
+      return proteoform;
+   }
+   return proteoform.substr(0, match_end_of_accession.position(0));
+}
