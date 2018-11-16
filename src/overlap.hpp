@@ -3,15 +3,16 @@
 
 #include <algorithm>
 #include <bitset>
+#include <charconv>
 #include <ctime>
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <regex>
 #include <set>
 #include <string>
 #include <unordered_set>
 #include <vector>
-#include <regex>
 
 const std::regex RGX_ACCESSION_DELIMITER{"[;-]"};
 
@@ -19,11 +20,19 @@ const size_t NUM_GENES = 23970;
 const size_t NUM_PROTEINS = 10778;
 const size_t NUM_PROTEOFORMS = 13911;
 
+const size_t MAX_NUM_PHEGEN_TRAITS = 1174;
+const size_t MAX_NUM_PHEGEN_GENES = 17128;
+const size_t NUM_PHEGEN_TRAITS = 846;
+const size_t NUM_PHEGEN_GENES = 8153;
+const size_t NUM_PHEGEN_PROTEINS = 20408;
+
 const int MIN_OVERLAP_SIZE = 1;
 const int MAX_OVERLAP_SIZE = 10;
 
 const int MIN_PATHWAY_SIZE = 1;
 const int MAX_PATHWAY_SIZE = 20;
+
+const long double GENOME_WIDE_SIGNIFICANCE = 5e-8;
 
 struct Entities_bimap {
    std::vector<std::string> index_to_entities;
@@ -34,6 +43,23 @@ struct Frequencies {
    std::map<std::string, int> modifications;
    std::map<std::string, int> proteins;
    std::map<std::string, int> proteoforms;
+};
+
+struct index_to_entitites_phegen_result {
+   std::vector<std::string> index_to_genes;
+   std::vector<std::string> index_to_traits;
+};
+
+struct load_entitites_phegen_result {
+   std::vector<std::string> index_to_genes;
+   std::vector<std::string> index_to_traits;
+   std::map<std::string, int> genes_to_index;
+   std::map<std::string, int> traits_to_index;
+};
+
+struct load_trait_gene_sets_result {
+   std::map<std::string, std::bitset<NUM_PHEGEN_TRAITS>> genes_to_sets;
+   std::map<std::string, std::bitset<NUM_PHEGEN_GENES>> sets_to_genes;
 };
 
 Entities_bimap loadEntities(const std::string& entities_file_path);
@@ -73,5 +99,22 @@ std::set<std::string> getProteinStrings(const std::bitset<NUM_PROTEINS>& protein
 std::set<std::string> getProteoformStrings(const std::bitset<NUM_PROTEOFORMS>& proteoform_set, const std::vector<std::string>& index_to_proteoforms);
 
 std::string getAccession(std::string proteoform);
+
+load_entitites_phegen_result loadEntitiesPheGen(const std::string& path_file_PheGenI_full, const double& max_p_value);
+
+load_trait_gene_sets_result loadTraitGeneSets(const std::string& path_file_phegen,
+                                              const double& max_p_value,
+                                              const std::vector<std::string>& index_to_genes,
+                                              const std::vector<std::string>& index_to_traits,
+                                              const std::map<std::string, int>& genes_to_index,
+                                              const std::map<std::string, int>& traits_to_index);
+
+std::multimap<std::string, std::string> loadMapping(const std::string& path_file_mapping);
+
+template <size_t total_num_proteins>
+std::map<std::string, std::bitset<total_num_proteins>> convertGeneSetsToProteinSets(const std::map<std::string, std::bitset<NUM_PHEGEN_GENES>>& traits_to_genes,
+                                                                                    const std::multimap<std::string, std::string>& proteins_to_genes);
+
+std::vector<std::string> convert(const std::unordered_set<std::string>& a_set);
 
 #endif /* OVERLAP_H_ */

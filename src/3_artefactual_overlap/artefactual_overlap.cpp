@@ -130,6 +130,40 @@ void writePhenotypeReport(ofstream& output,
                       index_to_genes, index_to_proteins, index_to_proteoforms);
 }
 
+template <size_t total_num_entities>
+void writeSetReport(const string& path_file_report,
+                    const map<string, bitset<total_num_entities>>& sets_to_entities,
+                    const vector<string>& index_to_entities) {
+   ofstream file_report(path_file_report);
+   cout << "Writing report: " << path_file_report << "\n";
+   if (!file_report.is_open()) {
+      throw runtime_error("Cannot write to " + path_file_report);
+   }
+
+   for (const auto& set_to_entities : sets_to_entities) {
+      file_report << set_to_entities.first << "\t";
+      for (int I = 0; I < total_num_entities; I++) {
+         if (set_to_entities.second.test(I)) {
+            file_report << index_to_entities.at(I) << "\t";
+         }
+      }
+      file_report << "\n";
+   }
+}
+
+void writeEntitiesReport(const string& path_file_report, const vector<string>& entities) {
+   ofstream file_report(path_file_report);
+
+   cerr << "Writing report: " << path_file_report << "\n";
+   if (!file_report.is_open()) {
+      throw runtime_error("Cannot write to " + path_file_report);
+   }
+
+   for (const auto& entity : entities) {
+      file_report << entity << "\n";
+   }
+}
+
 void reportPathwayPairs(const string& path_file_gene_search,
                         const string& path_file_protein_search,
                         const string& path_file_proteoform_search,
@@ -142,6 +176,10 @@ void reportPathwayPairs(const string& path_file_gene_search,
    map<string, bitset<NUM_GENES>> pathways_to_genes = loadPathwaysGeneMembers(path_file_gene_search, genes_to_index);
    map<string, bitset<NUM_PROTEINS>> pathways_to_proteins = loadPathwaysProteinMembers(path_file_protein_search, proteins_to_index);
    map<string, bitset<NUM_PROTEOFORMS>> pathways_to_proteoforms = loadPathwaysProteoformMembers(path_file_proteoform_search, proteoforms_to_index);
+
+   // writeSetReport("reports/reactome_pathway_gene_sets.txt", pathways_to_genes, index_to_genes);
+
+   cout << "Finished loading PheGen gene data.\n";
 
    cout << "Calculating gene sets overlap..." << endl;
    const auto overlapping_gene_set_pairs = findOverlappingGeneSets(pathways_to_genes, MIN_OVERLAP_SIZE, MAX_OVERLAP_SIZE, MIN_PATHWAY_SIZE, MAX_PATHWAY_SIZE);
@@ -161,23 +199,51 @@ void reportPathwayPairs(const string& path_file_gene_search,
                       index_to_genes, index_to_proteins, index_to_proteoforms);
 }
 
-void reportPhenotypePairs() {
-   // TODO: Report pairs of disease modules
+void reportPhenotypePairs(const std::string& path_file_gene_search,
+                          const std::string& path_file_protein_search,
+                          const std::string& path_file_proteoform_search,
+                          const std::string& path_file_PheGenI_full,
+                          const std::string& path_file_mapping_proteins_genes,
+                          const std::string& path_file_report_trait) {
+   cout << "Loading PheGen data\n";
+   const auto [index_to_genes, index_to_traits, genes_to_index, traits_to_index] = loadEntitiesPheGen(path_file_PheGenI_full, GENOME_WIDE_SIGNIFICANCE);
+   const auto [genes_to_traits, traits_to_genes] = loadTraitGeneSets(path_file_PheGenI_full, GENOME_WIDE_SIGNIFICANCE, index_to_genes, index_to_traits, genes_to_index, traits_to_index);
+   cout << "Finished loading PheGen gene data.\n";
+   const auto proteins_to_genes = loadMapping(path_file_mapping_proteins_genes);
+   cout << "Finished loading protein to gene mapping.\n";
+
+   // set<string> temp_phegen_protein_set;
+   // for (const auto& entry : proteins_to_genes) {
+   //    temp_phegen_protein_set.insert(entry.first);
+   // }
+   // cerr << "NUM_PHEGEN_PROTEINS: " << temp_phegen_protein_set.size() << endl;
+
+   // const map<string, bitset<NUM_PROTEINS>> traits_to_proteins = convertGeneSetsToProteinSets(traits_to_genes, proteins_to_genes);
+   // TODO: Load mapping from gene to protein
+   // TODO: Convert to trait proteoform sets
 }
 
 // Find pairs of modules/pathways that overlap on gene or protein network, but not in proteoform network
-void doAnalysis(const string& path_file_gene_search,
-                const string& path_file_protein_search,
-                const string& path_file_proteoform_search,
-                const string& report_file_path) {
+void doAnalysis(const std::string& path_file_gene_search,
+                const std::string& path_file_protein_search,
+                const std::string& path_file_proteoform_search,
+                const std::string& path_file_PheGenI_full,
+                const std::string& path_file_mapping_proteins_to_genes,
+                const std::string& path_file_report_pathway,
+                const std::string& path_file_report_trait) {
    cout << "Searching for artefactual overlap examples..." << endl;
 
-   reportPathwayPairs(path_file_gene_search,
-                      path_file_protein_search,
-                      path_file_proteoform_search,
-                      report_file_path);
+   // reportPathwayPairs(path_file_gene_search,
+   //                    path_file_protein_search,
+   //                    path_file_proteoform_search,
+   //                    path_file_report_pathway);
 
-   reportPhenotypePairs();
+   reportPhenotypePairs(path_file_gene_search,
+                        path_file_protein_search,
+                        path_file_proteoform_search,
+                        path_file_PheGenI_full,
+                        path_file_mapping_proteins_to_genes,
+                        path_file_report_trait);
 }
 
 }  // namespace artefactual_overlap

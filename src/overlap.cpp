@@ -16,8 +16,7 @@ vector<string> getIndexToEntities(const string& entities_file_path) {
       temp_set.insert(entity);
       getline(entities_file, line_leftover);
    }
-   index_to_entities.assign(temp_set.begin(), temp_set.end());
-   sort(index_to_entities.begin(), index_to_entities.end());
+   index_to_entities = convert(temp_set);
 
    return index_to_entities;
 }
@@ -205,7 +204,7 @@ map<pair<string, string>, bitset<NUM_PROTEOFORMS>> findOverlappingProteoformSets
    for (auto it = sets_to_members.begin(); it != sets_to_members.end(); it++) {
       int set_size = it->second.count();
       if (min_set_size <= set_size && set_size <= max_set_size) {
-        //  cerr << "MIN_SET_SIZE: " << min_set_size << " SET_SIZE: " << set_size << " MAX_SET_SIZE: " << max_set_size << "\n";
+         //  cerr << "MIN_SET_SIZE: " << min_set_size << " SET_SIZE: " << set_size << " MAX_SET_SIZE: " << max_set_size << "\n";
          float percentage = static_cast<float>((modified_proteoforms & it->second).count()) / static_cast<float>(set_size);
          if (percentage >= min_all_modified_ratio) {
             nav.push_back(it);
@@ -283,11 +282,158 @@ set<string> getProteoformStrings(const bitset<NUM_PROTEOFORMS>& proteoform_set, 
    return getEntityStrings(proteoform_set, index_to_proteoforms);
 }
 
-
 string getAccession(string proteoform) {
    smatch match_end_of_accession;
    if (!regex_search(proteoform, match_end_of_accession, RGX_ACCESSION_DELIMITER)) {
       return proteoform;
    }
    return proteoform.substr(0, match_end_of_accession.position(0));
+}
+
+vector<string> convert(const unordered_set<string>& a_set) {
+   vector<string> result;
+   result.assign(a_set.begin(), a_set.end());
+   sort(result.begin(), result.end());
+   return result;
+}
+
+// entities_column argument starts counting at 0
+index_to_entitites_phegen_result getIndexToEntititesPheGen(const string& path_file_PheGenI_full, const double& max_p_value) {
+   ifstream file_phegen(path_file_PheGenI_full);
+   string line, field, trait, gene, gene2;
+   string p_value_str;
+   long double p_value;
+   unordered_set<string> temp_gene_set, temp_trait_set;
+   vector<string> index_to_genes, index_to_traits;
+
+   if (!file_phegen.is_open()) {
+      throw runtime_error("Cannot open " + path_file_PheGenI_full);
+   }
+
+   getline(file_phegen, line);                  // Read header line
+   while (getline(file_phegen, field, '\t')) {  // Read #
+      getline(file_phegen, trait, '\t');        // Read Trait
+      getline(file_phegen, field, '\t');        // Read SNP rs
+      getline(file_phegen, field, '\t');        // Read Context
+      getline(file_phegen, gene, '\t');         //	Gene
+      getline(file_phegen, field, '\t');        //	Gene ID
+      getline(file_phegen, gene2, '\t');        //	Gene 2
+      getline(file_phegen, field, '\t');        //	Gene ID 2
+      getline(file_phegen, field, '\t');        // Read Chromosome
+      getline(file_phegen, field, '\t');        // Read Location
+      getline(file_phegen, p_value_str, '\t');  // Read P-Value
+      getline(file_phegen, line);               // Skip header line leftoever: Source,	PubMed,	Analysis ID,	Study ID,	Study Name
+
+      try {
+         p_value = stold(p_value_str);
+         if (p_value <= GENOME_WIDE_SIGNIFICANCE) {
+            temp_trait_set.insert(trait);
+            temp_gene_set.insert(gene);
+            temp_gene_set.insert(gene2);
+         }
+      } catch (const std::exception& ex) {
+         cerr << "Error converting: **" << p_value_str << "**\n";
+      }
+   }
+
+   //Create the final data structures
+   index_to_genes = convert(temp_gene_set);
+   index_to_traits = convert(temp_trait_set);
+
+   return {index_to_genes, index_to_traits};
+}
+
+load_entitites_phegen_result loadEntitiesPheGen(const string& path_file_PheGenI_full, const double& max_p_value) {
+   const auto [index_to_genes, index_to_traits] = getIndexToEntititesPheGen(path_file_PheGenI_full, max_p_value);
+   const auto genes_to_index = getEntitiesToIndex(index_to_genes);
+   const auto traits_to_index = getEntitiesToIndex(index_to_traits);
+   return {index_to_genes, index_to_traits, genes_to_index, traits_to_index};
+}
+
+load_trait_gene_sets_result loadTraitGeneSets(const string& path_file_phegen,
+                                              const double& max_p_value,
+                                              const vector<string>& index_to_genes,
+                                              const vector<string>& index_to_traits,
+                                              const map<string, int>& genes_to_index,
+                                              const map<string, int>& traits_to_index) {
+   ifstream file_phegen(path_file_phegen);
+   string line, field, trait, gene, gene2;
+   string p_value_str;
+   long double p_value;
+   map<string, bitset<NUM_PHEGEN_GENES>> sets_to_genes;
+   map<string, bitset<NUM_PHEGEN_TRAITS>> genes_to_sets;
+
+   if (!file_phegen.is_open()) {
+      throw runtime_error("Cannot open " + path_file_phegen);
+   }
+
+   getline(file_phegen, line);                  // Read header line
+   while (getline(file_phegen, field, '\t')) {  // Read #
+      getline(file_phegen, trait, '\t');        // Read Trait
+      getline(file_phegen, field, '\t');        // Read SNP rs
+      getline(file_phegen, field, '\t');        // Read Context
+      getline(file_phegen, gene, '\t');         //	Gene
+      getline(file_phegen, field, '\t');        //	Gene ID
+      getline(file_phegen, gene2, '\t');        //	Gene 2
+      getline(file_phegen, field, '\t');        //	Gene ID 2
+      getline(file_phegen, field, '\t');        // Read Chromosome
+      getline(file_phegen, field, '\t');        // Read Location
+      getline(file_phegen, p_value_str, '\t');  // Read P-Value
+      getline(file_phegen, line);               // Skip header line leftoever: Source,	PubMed,	Analysis ID,	Study ID,	Study Name
+
+      try {
+         p_value = stold(p_value_str);
+         // cerr << "Converted correctly: " << p_value_str << "\n";
+         if (p_value <= GENOME_WIDE_SIGNIFICANCE) {
+            sets_to_genes[trait].set(genes_to_index.at(gene));
+            sets_to_genes[trait].set(genes_to_index.at(gene2));
+            genes_to_sets[gene].set(traits_to_index.at(trait));
+            genes_to_sets[gene2].set(traits_to_index.at(trait));
+         }
+      } catch (const std::exception& ex) {
+         cerr << "Error converting: **" << p_value_str << "**\n";
+      }
+   }
+
+   return {genes_to_sets, sets_to_genes};
+}
+
+// Loads mapping from one column of strings to a second column of strings. If there are multiple values on the second column for one value on the left, then
+//they are separated by spaces. Columns are separated by tabs.
+multimap<string, string> loadMapping(const string& path_file_mapping) {
+   multimap<string, string> fromTo;
+   ifstream file_mapping(path_file_mapping);
+   string from_str;
+   string to_str;
+
+   if (!file_mapping.is_open()) {
+      throw runtime_error(path_file_mapping);
+   }
+
+   getline(file_mapping, from_str);  // Discard the header line.
+
+   while (getline(file_mapping, from_str, '\t')) {
+      char c;
+      string to_str;
+
+      while (file_mapping.get(c)) {
+         if (c == ' ') {
+            fromTo.emplace(from_str, to_str);
+            to_str = "";
+         } else if (c == '\n') {
+            fromTo.emplace(from_str, to_str);
+            break;
+         } else {
+            to_str = to_str.append(1, c);
+         }
+      }
+   }
+   return fromTo;
+}
+
+template <size_t total_num_proteins>
+map<string, bitset<total_num_proteins>> convertGeneSetsToProteinSets(const map<string, bitset<NUM_PHEGEN_GENES>>& traits_to_genes, const multimap<string, string>& proteins_to_genes) {
+   map<string, bitset<total_num_proteins>> traits_to_proteins;
+
+   return traits_to_proteins;
 }

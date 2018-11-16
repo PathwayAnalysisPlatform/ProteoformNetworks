@@ -108,3 +108,8 @@ ORDER BY isoform, ptms
 ## Examples of modified overlap
 
 Follow the same steps of the artefactual overlap.
+
+# Disease modules
+
+* Download the data of all GWAS from https://www.ncbi.nlm.nih.gov/gap/phegeni and store it at resources/PheGenI/
+
