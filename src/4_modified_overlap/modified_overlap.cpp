@@ -21,8 +21,10 @@ bitset<NUM_PROTEOFORMS> getSetOfModifiedProteoforms(const vector<string>& proteo
    return modified_proteoforms;
 }
 
-void writeReportRecords(ofstream& output, const map<pair<string, string>, bitset<NUM_PROTEOFORMS>>& examples,
-                        const map<string, string>& pathways_to_names, const map<string, bitset<NUM_PROTEOFORMS>>& pathways_to_proteoforms,
+void writeReportRecords(ofstream& output,
+                        const map<pair<string, string>, bitset<NUM_PROTEOFORMS>>& examples,
+                        const unordered_map<string, string>& pathways_to_names,
+                        const unordered_map<string, bitset<NUM_PROTEOFORMS>>& pathways_to_proteoforms,
                         const vector<string> index_to_proteoforms) {
    for (const auto& example : examples) {
       output << example.first.first << "\t" << example.first.second << "\t" << pathways_to_names.at(example.first.first) << "\t"
@@ -34,8 +36,10 @@ void writeReportRecords(ofstream& output, const map<pair<string, string>, bitset
    }
 }
 
-void writePathwayReport(ofstream& output, const map<pair<string, string>, bitset<NUM_PROTEOFORMS>>& examples,
-                        const map<string, string>& pathways_to_names, const map<string, bitset<NUM_PROTEOFORMS>>& pathways_to_proteoforms,
+void writePathwayReport(ofstream& output,
+                        const map<pair<string, string>, bitset<NUM_PROTEOFORMS>>& examples,
+                        const unordered_map<string, string>& pathways_to_names,
+                        const unordered_map<string, bitset<NUM_PROTEOFORMS>>& pathways_to_proteoforms,
                         const vector<string> index_to_proteoforms) {
    output << "PATHWAY_1\tPATHWAY_2\tPATHWAY_1_NAME\tPATHWAY_2_NAME\t";
    output << "PATHWAY_1_PROTEOFORM_SIZE\tPATHWAY_2_PROTEOFORM_SIZE\tOVERLAP_SIZE\t";
@@ -43,8 +47,10 @@ void writePathwayReport(ofstream& output, const map<pair<string, string>, bitset
    writeReportRecords(output, examples, pathways_to_names, pathways_to_proteoforms, index_to_proteoforms);
 }
 
-void writePhenotypeReport(ofstream& output, const map<pair<string, string>, bitset<NUM_PROTEOFORMS>>& examples,
-                          const map<string, string>& pathways_to_names, const map<string, bitset<NUM_PROTEOFORMS>>& pathways_to_proteoforms,
+void writePhenotypeReport(ofstream& output,
+                          const map<pair<string, string>, bitset<NUM_PROTEOFORMS>>& examples,
+                          const unordered_map<string, string>& pathways_to_names,
+                          const unordered_map<string, bitset<NUM_PROTEOFORMS>>& pathways_to_proteoforms,
                           const vector<string> index_to_proteoforms) {
    output << "PHENOTYPE_1\tPHENOTYPE_1_2\tPHENOTYPE_1_NAME\tPHENOTYPE_2_NAME\t";
    output << "PHENOTYPE_1_PROTEOFORM_SIZE\tPHENOTYPE_2_PROTEOFORM_SIZE\tOVERLAP_SIZE\t";
@@ -130,16 +136,15 @@ void plotFrequencies(string report_file_path, string modifications_file_path, st
 void reportPathwayPairs(const string& path_file_proteoform_search, const string& report_file_path, const string& modifications_file_path,
                         const string& proteins_file_path, const string& proteoforms_file_path) {
    const auto [index_to_proteoforms, proteoforms_to_index] = loadEntities(path_file_proteoform_search);
-   const map<string, string> pathways_to_names = loadPathwayNames(path_file_proteoform_search);
-   const map<string, bitset<NUM_PROTEOFORMS>> pathways_to_proteoforms =
-       loadPathwaysProteoformMembers(path_file_proteoform_search, proteoforms_to_index);
+   const auto pathways_to_names = loadPathwayNames(path_file_proteoform_search);
+   const auto pathways_to_proteoforms = loadProteoformSets(path_file_proteoform_search, proteoforms_to_index, true);
    const bitset<NUM_PROTEOFORMS> modified_proteoforms = getSetOfModifiedProteoforms(index_to_proteoforms);
 
    cout << "Reporting pathway pairs with only modified overlap...\n";
 
    // Compare all the pairs of selected pathways and select pairs that overlap only in a percentage of modified proteins
    const auto& examples =
-       findOverlappingProteoformSets(pathways_to_proteoforms, MIN_OVERLAP_SIZE, MAX_OVERLAP_SIZE, MIN_PATHWAY_SIZE, MAX_PATHWAY_SIZE,
+       findOverlappingProteoformSets(pathways_to_proteoforms, MIN_OVERLAP_SIZE, MAX_OVERLAP_SIZE, MIN_SET_SIZE, MAX_SET_SIZE,
                                      modified_proteoforms, MIN_MODIFIED_ALL_MEMBERS_RATIO, MIN_MODIFIED_OVERLAP_MEMBERS_RATIO);
 
    ofstream report(report_file_path);

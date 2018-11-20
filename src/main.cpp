@@ -42,17 +42,17 @@ int main() try {
                                    path_file_report_artefactual_overlap_pathway,
                                    path_file_report_artefactual_overlap_trait);
 
-   // modified_overlap::doAnalysis(path_file_proteoform_search,
-   //                              path_file_PheGenI_full,
-   //                              path_file_mapping_proteins_to_genes,
-   //                              path_file_report_modified_overlap_pathway,
-   //                              path_file_modified_overlap_pathway_proteins,
-   //                              path_file_modified_overlap_pathway_proteoforms,
-   //                              path_file_modified_overlap_pathway_modifications,
-   //                              path_file_report_modified_overlap_trait,
-   //                              path_file_modified_overlap_trait_proteins,
-   //                              path_file_modified_overlap_trait_proteoforms,
-   //                              path_file_modified_overlap_trait_modifications);
+    modified_overlap::doAnalysis(path_file_proteoform_search,
+                                 path_file_PheGenI_full,
+                                 path_file_mapping_proteins_to_genes,
+                                 path_file_report_modified_overlap_pathway,
+                                 path_file_modified_overlap_pathway_proteins,
+                                 path_file_modified_overlap_pathway_proteoforms,
+                                 path_file_modified_overlap_pathway_modifications,
+                                 path_file_report_modified_overlap_trait,
+                                 path_file_modified_overlap_trait_proteins,
+                                 path_file_modified_overlap_trait_proteoforms,
+                                 path_file_modified_overlap_trait_modifications);
    system("pause");
 } catch (const std::exception& ex) {
    std::cout << ex.what() << "\n";
