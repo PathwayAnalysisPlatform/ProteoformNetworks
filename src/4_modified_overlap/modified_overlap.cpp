@@ -84,11 +84,13 @@ void writeFrequencies(const string& modifications_file_path, const string& prote
       modifications_file << modification.first << "\t" << modification.second << "\n";
    }
    cerr << "Finished writing modification frequencies.\n";
+
    proteins_file << "PROTEIN\tFREQUENCY\n";
    for (const auto& protein : proteins_to_freq) {
       proteins_file << protein.first << "\t" << protein.second << "\n";
    }
    cerr << "Finished writing protein frequencies.\n";
+
    proteoforms_file << "PROTEOFORM\tFREQUENCY\n";
    for (const auto& proteoform : proteoforms_to_freq) {
       proteoforms_file << proteoform.first << "\t" << proteoform.second << "\n";
@@ -133,8 +135,11 @@ void plotFrequencies(string report_file_path, string modifications_file_path, st
    system(command.c_str());
 }
 
-void reportPathwayPairs(const string& path_file_proteoform_search, const string& report_file_path, const string& modifications_file_path,
-                        const string& proteins_file_path, const string& proteoforms_file_path) {
+void reportPathwayPairs(const string& path_file_proteoform_search,
+                        const string& report_file_path,
+                        const string& modifications_file_path,
+                        const string& proteins_file_path,
+                        const string& proteoforms_file_path) {
    const auto [index_to_proteoforms, proteoforms_to_index] = loadEntities(path_file_proteoform_search);
    const auto pathways_to_names = loadPathwayNames(path_file_proteoform_search);
    const auto pathways_to_proteoforms = loadProteoformSets(path_file_proteoform_search, proteoforms_to_index, true);
@@ -185,9 +190,9 @@ void doAnalysis(const std::string& path_file_proteoform_search,
    // Part 1: Find examples of pathways that overlap only in modified proteins
    reportPathwayPairs(path_file_proteoform_search,
                       path_file_report_pathway,
+                      path_file_modified_overlap_pathway_modifications,
                       path_file_modified_overlap_pathway_proteins,
-                      path_file_modified_overlap_pathway_proteoforms,
-                      path_file_modified_overlap_pathway_modifications);
+                      path_file_modified_overlap_pathway_proteoforms);
 
    // Part 2: Find examples of disease modules that overlap only in modified proteins
    reportPhenotypePairs(path_file_proteoform_search,
