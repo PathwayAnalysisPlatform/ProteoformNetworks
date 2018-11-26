@@ -180,11 +180,65 @@ std::map<std::pair<std::string, std::string>, std::bitset<total_num_entities>> f
    return result;
 }
 
-std::map<std::pair<std::string, std::string>, std::bitset<NUM_PROTEOFORMS>> findOverlappingProteoformSets(const std::unordered_map<std::string, std::bitset<NUM_PROTEOFORMS>>& sets_to_members,
-                                                                                                          const int& min_overlap, const int& max_overlap,
-                                                                                                          const int& min_set_size, const int& max_set_size,
-                                                                                                          const std::bitset<NUM_PROTEOFORMS>& modified_proteoforms,
-                                                                                                          const float& min_all_modified_ratio,
-                                                                                                          const float& min_overlap_modified_ratio);
+// This version includes modified ratio of the proteoform members of the set, and another ratio for the overlapping proteoforms.
+template <size_t S>
+std::map<std::pair<std::string, std::string>, std::bitset<S>> findOverlappingProteoformSets(const std::unordered_map<std::string, std::bitset<S>>& sets_to_members,
+                                                                                            const int& min_overlap, const int& max_overlap,
+                                                                                            const int& min_set_size, const int& max_set_size,
+                                                                                            const std::bitset<S>& modified_proteoforms,
+                                                                                            const float& min_all_modified_ratio,
+                                                                                            const float& min_overlap_modified_ratio) {
+   std::vector<typename std::unordered_map<std::string, std::bitset<S>>::const_iterator> nav;
+   for (auto it = sets_to_members.begin(); it != sets_to_members.end(); it++) {
+      int set_size = it->second.count();
+      if (min_set_size <= set_size && set_size <= max_set_size) {
+         //  cerr << "MIN_SET_SIZE: " << min_set_size << " SET_SIZE: " << set_size << " MAX_SET_SIZE: " << max_set_size << "\n";
+         float percentage = static_cast<float>((modified_proteoforms & it->second).count()) / static_cast<float>(set_size);
+         if (percentage >= min_all_modified_ratio) {
+            nav.push_back(it);
+         }
+      }
+   }
+
+   std::map<std::pair<std::string, std::string>, std::bitset<S>> result;
+   std::cerr << "elementos: " << nav.size() << ", parejas: " << (nav.size() * nav.size() - nav.size()) / 2 << "\n";
+   auto t0 = clock();
+   for (auto vit1 = nav.begin(); vit1 != nav.end(); vit1++) {
+      for (auto vit2 = next(vit1); vit2 != nav.end(); vit2++) {
+         std::bitset<S> overlap = (*vit1)->second & (*vit2)->second;
+         if (min_overlap <= overlap.count() && overlap.count() <= max_overlap) {
+            float percentage = static_cast<float>((modified_proteoforms & overlap).count()) / static_cast<float>(overlap.count());
+            if (percentage >= min_overlap_modified_ratio) {
+               result.emplace(make_pair((*vit1)->first, (*vit2)->first), overlap);
+            }
+         }
+      }
+   }
+   auto t1 = clock();
+   std::cerr << "tardamos " << double(t1 - t0) / CLOCKS_PER_SEC << "\n";
+
+   return result;
+}
+
+std::unordered_map<std::string, std::string> createTraitNames(const std::unordered_map<std::string, std::bitset<NUM_PHEGEN_GENES>>& traits_to_genes);
+
+struct reactome_networks {
+   std::unordered_multimap<std::string, std::string> adjacency_list_proteins;
+   std::unordered_multimap<std::string, std::string> adjacency_list_proteoforms;
+};
+
+reactome_networks loadReactomeNetworks(const std::string& path_file_gene_search,
+                                       const std::string& path_file_protein_search,
+                                       const std::string& path_file_proteoform_search);
+
+std::unordered_multimap<std::string, std::string> loadProteinsAdjacencyList(const std::string& search_file_path);
+
+std::unordered_multimap<std::string, std::string> loadProteoformsAdjacencyList(const std::string& search_file_path);
+
+Entities_bimap deductProteinsFromGenes(const std::string& path_file_mapping_proteins_genes,
+                                       const std::unordered_map<std::string, int>& genes_to_index,
+                                       const std::unordered_multimap<std::string, std::string>& genes_to_proteins);
+
+Entities_bimap deductProteoformsFromProteins(const std::unordered_multimap<std::string, std::string>& proteins_to_proteoforms, const std::unordered_map<std::string, int>& proteins_to_index);
 
 #endif /* OVERLAP_H_ */

@@ -165,48 +165,6 @@ void writeEntitiesReport(const string& path_file_report, const vector<string>& e
    }
 }
 
-Entities_bimap deductProteinsFromGenes(const string& path_file_mapping_proteins_genes,
-                                       const unordered_map<string, int>& genes_to_index,
-                                       const unordered_multimap<string, string>& genes_to_proteins) {
-   unordered_set<string> temp_protein_set;
-
-   for (const auto& gene_entry : genes_to_index) {
-      auto ret = genes_to_proteins.equal_range(gene_entry.first);
-      for (auto it = ret.first; it != ret.second; ++it) {
-         temp_protein_set.insert(it->second);
-      }
-   }
-
-   vector<string> index_to_proteins = convert(temp_protein_set);
-   unordered_map<string, int> proteins_to_index = getEntitiesToIndex(index_to_proteins);
-
-   cerr << "PHEGEN proteins: " << index_to_proteins.size() << " = " << proteins_to_index.size() << "\n";
-
-   return {index_to_proteins, proteins_to_index};
-}
-
-Entities_bimap deductProteoformsFromProteins(const unordered_multimap<string, string>& proteins_to_proteoforms, const unordered_map<string, int>& proteins_to_index) {
-   unordered_set<string> temp_proteoform_set;
-
-   for (const auto& entry : proteins_to_index) {
-      auto ret = proteins_to_proteoforms.equal_range(entry.first);
-      if (ret.first != ret.second) {
-         for (auto it = ret.first; it != ret.second; ++it) {
-            temp_proteoform_set.insert(it->second);
-         }
-      } else {
-         temp_proteoform_set.insert(entry.first + ";");
-      }
-   }
-
-   vector<string> index_to_proteoforms = convert(temp_proteoform_set);
-   unordered_map<string, int> proteoforms_to_index = getEntitiesToIndex(index_to_proteoforms);
-
-   cerr << "PHEGEN proteoforms: " << index_to_proteoforms.size() << " = " << proteoforms_to_index.size() << "\n";
-
-   return {index_to_proteoforms, proteoforms_to_index};
-}
-
 map<string, bitset<NUM_GENES>> loadReactionsGeneMembers(const string& file_path, const map<string, int>& entities_to_index) {
    map<string, bitset<NUM_GENES>> result;
    ifstream file_search(file_path);
@@ -235,52 +193,6 @@ unordered_multimap<string, string> loadGenesAdjacencyList(const string& search_f
    unordered_multimap<string, string> adjacenty_list;
    const auto [index_to_entities, entities_to_index] = loadEntities(search_file_path);
    const auto reactions_to_entities = loadGeneSets(search_file_path, entities_to_index, false);
-
-   for (const auto& reaction_entry : reactions_to_entities) {
-      vector<string> members;
-      for (int I = 0; I < reaction_entry.second.size(); I++) {
-         if (reaction_entry.second.test(I)) {
-            members.push_back(index_to_entities[I]);
-         }
-      }
-
-      for (const auto& one_member : members) {
-         for (const auto& other_member : members) {
-            adjacenty_list.emplace(one_member, other_member);
-         }
-      }
-   }
-
-   return adjacenty_list;
-}
-
-unordered_multimap<string, string> loadProteinsAdjacencyList(const string& search_file_path) {
-   unordered_multimap<string, string> adjacenty_list;
-   const auto [index_to_entities, entities_to_index] = loadEntities(search_file_path);
-   const auto reactions_to_entities = loadProteinSets(search_file_path, entities_to_index, false);
-
-   for (const auto& reaction_entry : reactions_to_entities) {
-      vector<string> members;
-      for (int I = 0; I < reaction_entry.second.size(); I++) {
-         if (reaction_entry.second.test(I)) {
-            members.push_back(index_to_entities[I]);
-         }
-      }
-
-      for (const auto& one_member : members) {
-         for (const auto& other_member : members) {
-            adjacenty_list.emplace(one_member, other_member);
-         }
-      }
-   }
-
-   return adjacenty_list;
-}
-
-unordered_multimap<string, string> loadProteoformsAdjacencyList(const string& search_file_path) {
-   unordered_multimap<string, string> adjacenty_list;
-   const auto [index_to_entities, entities_to_index] = loadEntities(search_file_path);
-   const auto reactions_to_entities = loadProteoformSets(search_file_path, entities_to_index, false);
 
    for (const auto& reaction_entry : reactions_to_entities) {
       vector<string> members;
@@ -373,19 +285,13 @@ void reportPhenotypePairs(const std::string& path_file_gene_search,
 
    // Calculate adjacency lists for genes, proteins and proteoforms according to Reactome
    // An entity is neighbour of another gene if the participate in the same Reaction
-   cout << "Loading Reactome network.\n";
-   const unordered_multimap<string, string> adjacency_list_genes = loadGenesAdjacencyList(path_file_gene_search);
-   const unordered_multimap<string, string> adjacency_list_proteins = loadProteinsAdjacencyList(path_file_protein_search);
-   const unordered_multimap<string, string> adjacency_list_proteoforms = loadProteoformsAdjacencyList(path_file_proteoform_search);
+
+   const auto [adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_gene_search, path_file_protein_search, path_file_proteoform_search);
+
    const auto [genes_to_traits, traits_to_genes] = loadTraitGeneSets(path_file_PheGenI_full, GENOME_WIDE_SIGNIFICANCE, index_to_genes, index_to_traits, genes_to_index, traits_to_index, reactome_genes_to_index);
-   cerr << "Loaded gene sets\n";
+   const auto sets_to_names = createTraitNames(traits_to_genes);
    const unordered_map<string, bitset<NUM_PHEGEN_PROTEINS>> traits_to_proteins = convertGeneSets(traits_to_genes, index_to_genes, genes_to_proteins, proteins_to_index, adjacency_list_proteins);
-   printMembers(cout, traits_to_genes.at("Abdominal Fat"), index_to_genes);
-   cout << endl;
-   printMembers(cout, traits_to_proteins.at("Abdominal Fat"), index_to_proteins);
-   cout << endl;
    const unordered_map<string, bitset<NUM_PHEGEN_PROTEOFORMS>> traits_to_proteoforms = convertProteinSets(traits_to_proteins, index_to_proteins, proteins_to_proteoforms, proteoforms_to_index, adjacency_list_proteoforms);
-   cout << "Finished calculating sets.\n";
 
    const auto overlapping_gene_set_pairs = findOverlappingPairs(traits_to_genes, MIN_OVERLAP_SIZE, MAX_OVERLAP_SIZE, MIN_SET_SIZE, MAX_SET_SIZE);
    cout << "Calculating protein sets overlap..." << endl;
@@ -409,10 +315,6 @@ void reportPhenotypePairs(const std::string& path_file_gene_search,
    cout << "Writing report...\n";
    ofstream report(path_file_report_trait);
 
-   unordered_map<string, string> sets_to_names;
-   for (const auto& trait_entry : traits_to_genes) {
-      sets_to_names.emplace(trait_entry.first, trait_entry.first);
-   }
    writePhenotypeReport(report, examples, sets_to_names, traits_to_genes, traits_to_proteins, traits_to_proteoforms,
                         index_to_genes, index_to_proteins, index_to_proteoforms);
 }
