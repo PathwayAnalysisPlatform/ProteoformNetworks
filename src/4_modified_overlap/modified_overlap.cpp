@@ -31,7 +31,7 @@ void writeReportRecords(ofstream& output,
              << pathways_to_names.at(example.first.second) << "\t";
       output << pathways_to_proteoforms.at(example.first.first).count() << "\t" << pathways_to_proteoforms.at(example.first.second).count() << "\t";
       output << example.second.count() << "\t";
-      printProteoformMembers(output, example.second, index_to_proteoforms);
+      printMembers(output, example.second, index_to_proteoforms);
       output << "\n";
    }
 }

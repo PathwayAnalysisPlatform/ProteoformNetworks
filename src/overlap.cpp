@@ -115,135 +115,9 @@ unordered_map<string, bitset<NUM_PROTEOFORMS>> loadProteoformSets(const string& 
    return result;
 }
 
-// Version with set size and overlap size limits
 template <size_t total_num_entities>
-map<pair<string, string>, bitset<total_num_entities>> findOverlappingPairs(const unordered_map<string, bitset<total_num_entities>>& sets_to_members,
-                                                                           const int& min_overlap, const int& max_overlap,
-                                                                           const int& min_set_size, const int& max_set_size) {
-   map<pair<string, string>, bitset<total_num_entities>> result;
-   vector<typename unordered_map<string, bitset<total_num_entities>>::const_iterator> nav;
-
-   for (auto it = sets_to_members.begin(); it != sets_to_members.end(); it++) {
-      int set_size = it->second.count();
-      if (min_set_size <= set_size && set_size <= max_set_size) {
-         nav.push_back(it);
-      }
-   }
-
-   cerr << "elementos: " << nav.size() << ", parejas: " << (nav.size() * nav.size() - nav.size()) / 2 << "\n";
-   auto t0 = clock();
-
-   for (auto vit1 = nav.begin(); vit1 != nav.end(); vit1++) {
-      for (auto vit2 = next(vit1); vit2 != nav.end(); vit2++) {
-         bitset<total_num_entities> overlap = (*vit1)->second & (*vit2)->second;
-         if (min_overlap <= overlap.count() && overlap.count() <= max_overlap) {
-            result.emplace(make_pair((*vit1)->first, (*vit2)->first), overlap);
-         }
-      }
-   }
-   auto t1 = clock();
-   cerr << "tardamos " << double(t1 - t0) / CLOCKS_PER_SEC << "\n";
-   return result;
-}
-
-map<pair<string, string>, bitset<NUM_GENES>> findOverlappingGeneSets(const unordered_map<string, bitset<NUM_GENES>>& sets_to_members,
-                                                                     const int& min_overlap, const int& max_overlap,
-                                                                     const int& min_set_size, const int& max_set_size) {
-   return findOverlappingPairs(sets_to_members, min_overlap, max_overlap, min_set_size, max_set_size);
-}
-
-map<pair<string, string>, bitset<NUM_PROTEINS>> findOverlappingProteinSets(const unordered_map<string, bitset<NUM_PROTEINS>>& sets_to_members,
-                                                                           const int& min_overlap, const int& max_overlap,
-                                                                           const int& min_set_size, const int& max_set_size) {
-   return findOverlappingPairs(sets_to_members,
-                               min_overlap, max_overlap,
-                               min_set_size, max_set_size);
-}
-
-map<pair<string, string>, bitset<NUM_PROTEOFORMS>> findOverlappingProteoformSets(const unordered_map<string, bitset<NUM_PROTEOFORMS>>& sets_to_members,
-                                                                                 const int& min_overlap, const int& max_overlap,
-                                                                                 const int& min_set_size, const int& max_set_size) {
-   return findOverlappingPairs(sets_to_members,
-                               min_overlap, max_overlap,
-                               min_set_size, max_set_size);
-}
-
-//Version without set size limits or overlap size limits
-map<pair<string, string>, bitset<NUM_PROTEOFORMS>> findOverlappingProteoformSets(const unordered_map<string, bitset<NUM_PROTEOFORMS>>& sets_to_members) {
-   return findOverlappingPairs(sets_to_members,
-                               1, NUM_PROTEOFORMS,
-                               1, NUM_PROTEOFORMS);
-}
-
-// This version includes modified ratio of the proteoform members of the set, and another ratio for the overlapping proteoforms.
-map<pair<string, string>, bitset<NUM_PROTEOFORMS>> findOverlappingProteoformSets(const unordered_map<string, bitset<NUM_PROTEOFORMS>>& sets_to_members,
-                                                                                 const int& min_overlap, const int& max_overlap,
-                                                                                 const int& min_set_size, const int& max_set_size,
-                                                                                 const bitset<NUM_PROTEOFORMS>& modified_proteoforms,
-                                                                                 const float& min_all_modified_ratio,
-                                                                                 const float& min_overlap_modified_ratio) {
-   vector<typename unordered_map<string, bitset<NUM_PROTEOFORMS>>::const_iterator> nav;
-   for (auto it = sets_to_members.begin(); it != sets_to_members.end(); it++) {
-      int set_size = it->second.count();
-      if (min_set_size <= set_size && set_size <= max_set_size) {
-         //  cerr << "MIN_SET_SIZE: " << min_set_size << " SET_SIZE: " << set_size << " MAX_SET_SIZE: " << max_set_size << "\n";
-         float percentage = static_cast<float>((modified_proteoforms & it->second).count()) / static_cast<float>(set_size);
-         if (percentage >= min_all_modified_ratio) {
-            nav.push_back(it);
-         }
-      }
-   }
-
-   map<pair<string, string>, bitset<NUM_PROTEOFORMS>> result;
-   cerr << "elementos: " << nav.size() << ", parejas: " << (nav.size() * nav.size() - nav.size()) / 2 << "\n";
-   auto t0 = clock();
-   for (auto vit1 = nav.begin(); vit1 != nav.end(); vit1++) {
-      for (auto vit2 = next(vit1); vit2 != nav.end(); vit2++) {
-         bitset<NUM_PROTEOFORMS> overlap = (*vit1)->second & (*vit2)->second;
-         if (min_overlap <= overlap.count() && overlap.count() <= max_overlap) {
-            float percentage = static_cast<float>((modified_proteoforms & overlap).count()) / static_cast<float>(overlap.count());
-            if (percentage >= min_overlap_modified_ratio) {
-               result.emplace(make_pair((*vit1)->first, (*vit2)->first), overlap);
-            }
-         }
-      }
-   }
-   auto t1 = clock();
-   cerr << "tardamos " << double(t1 - t0) / CLOCKS_PER_SEC << "\n";
-
-   return result;
-}
-
-template <size_t total_num_entities>
-void printMembers(ofstream& output, const bitset<total_num_entities>& entity_set, const vector<string>& index_to_entities) {
-   int printed = 0;
-   int total = entity_set.count();
-   output << "[";
-   for (int I = 0; I < total_num_entities; I++) {
-      if (entity_set.test(I)) {
-         output << "\"" << index_to_entities[I] << "\"";
-         printed++;
-         if (printed != total) {
-            output << ",";
-         }
-      }
-   }
-   output << "]";
-}
-
-void printGeneMembers(ofstream& output, const bitset<NUM_GENES>& gene_set, const vector<string>& index_to_entities) {
-   printMembers(output, gene_set, index_to_entities);
-}
-void printProteinMembers(ofstream& output, const bitset<NUM_PROTEINS>& protein_set, const vector<string>& index_to_entities) {
-   printMembers(output, protein_set, index_to_entities);
-}
-void printProteoformMembers(ofstream& output, const bitset<NUM_PROTEOFORMS>& proteoform_set, const vector<string>& index_to_entities) {
-   printMembers(output, proteoform_set, index_to_entities);
-}
-
-template <size_t total_num_entities>
-set<string> getEntityStrings(const bitset<total_num_entities>& entity_set, const vector<string>& index_to_entities) {
-   set<string> result;
+unordered_set<string> getEntityStrings(const bitset<total_num_entities>& entity_set, const vector<string>& index_to_entities) {
+   unordered_set<string> result;
    for (int I = 0; I < total_num_entities; I++) {
       if (entity_set.test(I)) {
          result.insert(index_to_entities[I]);
@@ -252,15 +126,27 @@ set<string> getEntityStrings(const bitset<total_num_entities>& entity_set, const
    return result;
 }
 
-set<string> getGeneStrings(const bitset<NUM_GENES>& gene_set, const vector<string>& index_to_genes) {
+unordered_set<string> getGeneStrings(const bitset<NUM_GENES>& gene_set, const vector<string>& index_to_genes) {
    return getEntityStrings(gene_set, index_to_genes);
 }
 
-set<string> getProteinStrings(const bitset<NUM_PROTEINS>& protein_set, const vector<string>& index_to_proteins) {
+unordered_set<string> getProteinStrings(const bitset<NUM_PROTEINS>& protein_set, const vector<string>& index_to_proteins) {
    return getEntityStrings(protein_set, index_to_proteins);
 }
 
-set<string> getProteoformStrings(const bitset<NUM_PROTEOFORMS>& proteoform_set, const vector<string>& index_to_proteoforms) {
+unordered_set<string> getProteoformStrings(const bitset<NUM_PROTEOFORMS>& proteoform_set, const vector<string>& index_to_proteoforms) {
+   return getEntityStrings(proteoform_set, index_to_proteoforms);
+}
+
+unordered_set<string> getGeneStrings(const bitset<NUM_PHEGEN_GENES>& gene_set, const vector<string>& index_to_genes) {
+   return getEntityStrings(gene_set, index_to_genes);
+}
+
+unordered_set<string> getProteinStrings(const bitset<NUM_PHEGEN_PROTEINS>& protein_set, const vector<string>& index_to_proteins) {
+   return getEntityStrings(protein_set, index_to_proteins);
+}
+
+unordered_set<string> getProteoformStrings(const bitset<NUM_PHEGEN_PROTEOFORMS>& proteoform_set, const vector<string>& index_to_proteoforms) {
    return getEntityStrings(proteoform_set, index_to_proteoforms);
 }
 
@@ -280,7 +166,9 @@ vector<string> convert(const unordered_set<string>& a_set) {
 }
 
 // entities_column argument starts counting at 0
-index_to_entitites_phegen_result getIndexToEntititesPheGen(const string& path_file_PheGenI_full, const double& max_p_value) {
+index_to_entitites_phegen_result getIndexToEntititesPheGen(const string& path_file_PheGenI_full,
+                                                           const double& max_p_value,
+                                                           const unordered_map<string, int>& reactome_genes_to_index) {
    ifstream file_phegen(path_file_PheGenI_full);
    string line, field, trait, gene, gene2;
    string p_value_str;
@@ -310,8 +198,10 @@ index_to_entitites_phegen_result getIndexToEntititesPheGen(const string& path_fi
          p_value = stold(p_value_str);
          if (p_value <= GENOME_WIDE_SIGNIFICANCE) {
             temp_trait_set.insert(trait);
-            temp_gene_set.insert(gene);
-            temp_gene_set.insert(gene2);
+            if (reactome_genes_to_index.find(gene) != reactome_genes_to_index.end())
+               temp_gene_set.insert(gene);
+            if (reactome_genes_to_index.find(gene2) != reactome_genes_to_index.end())
+               temp_gene_set.insert(gene2);
          }
       } catch (const std::exception& ex) {
          cerr << "Error converting: **" << p_value_str << "**\n";
@@ -325,8 +215,10 @@ index_to_entitites_phegen_result getIndexToEntititesPheGen(const string& path_fi
    return {index_to_genes, index_to_traits};
 }
 
-load_entitites_phegen_result loadEntitiesPheGen(const string& path_file_PheGenI_full, const double& max_p_value) {
-   const auto [index_to_genes, index_to_traits] = getIndexToEntititesPheGen(path_file_PheGenI_full, max_p_value);
+load_genes_phegen_result loadGenesPheGen(const string& path_file_PheGenI_full,
+                                         const double& max_p_value,
+                                         const unordered_map<string, int>& reactome_genes_to_index) {
+   const auto [index_to_genes, index_to_traits] = getIndexToEntititesPheGen(path_file_PheGenI_full, max_p_value, reactome_genes_to_index);
    const auto genes_to_index = getEntitiesToIndex(index_to_genes);
    const auto traits_to_index = getEntitiesToIndex(index_to_traits);
 
@@ -341,7 +233,8 @@ load_trait_gene_sets_result loadTraitGeneSets(const string& path_file_phegen,
                                               const vector<string>& index_to_genes,
                                               const vector<string>& index_to_traits,
                                               const unordered_map<string, int>& genes_to_index,
-                                              const unordered_map<string, int>& traits_to_index) {
+                                              const unordered_map<string, int>& traits_to_index,
+                                              const unordered_map<string, int>& reactome_genes_to_index) {
    ifstream file_phegen(path_file_phegen);
    string line, field, trait, gene, gene2;
    string p_value_str;
@@ -371,10 +264,14 @@ load_trait_gene_sets_result loadTraitGeneSets(const string& path_file_phegen,
          p_value = stold(p_value_str);
          // cerr << "Converted correctly: " << p_value_str << "\n";
          if (p_value <= GENOME_WIDE_SIGNIFICANCE) {
-            sets_to_genes[trait].set(genes_to_index.at(gene));
-            sets_to_genes[trait].set(genes_to_index.at(gene2));
-            genes_to_sets[gene].set(traits_to_index.at(trait));
-            genes_to_sets[gene2].set(traits_to_index.at(trait));
+            if (reactome_genes_to_index.find(gene) != reactome_genes_to_index.end()) {
+               sets_to_genes[trait].set(genes_to_index.at(gene));
+               genes_to_sets[gene].set(traits_to_index.at(trait));
+            }
+            if (reactome_genes_to_index.find(gene2) != reactome_genes_to_index.end()) {
+               sets_to_genes[trait].set(genes_to_index.at(gene2));
+               genes_to_sets[gene2].set(traits_to_index.at(trait));
+            }
          }
       } catch (const std::exception& ex) {
          cerr << "Error converting: **" << p_value_str << "**\n";
@@ -390,7 +287,7 @@ load_mapping_result loadMapping(const string& path_file_mapping) {
    unordered_multimap<string, string> ones_to_others;
    unordered_multimap<string, string> others_to_ones;
    ifstream file_mapping(path_file_mapping);
-   string to_str, from_str;
+   string to_str, from_str, leftover;
 
    if (!file_mapping.is_open()) {
       throw runtime_error(path_file_mapping);
@@ -401,85 +298,112 @@ load_mapping_result loadMapping(const string& path_file_mapping) {
       char c;
 
       while (file_mapping.get(c)) {
-         if (c == ' ') {
+         if (c == ' ' || c == '\t' || c == '\n') {
             ones_to_others.emplace(from_str, to_str);
             others_to_ones.emplace(to_str, from_str);
             to_str = "";
-         } else if (c == '\n') {
-            ones_to_others.emplace(from_str, to_str);
-            others_to_ones.emplace(to_str, from_str);
-            to_str = "";
-            break;
+            if (c == '\t') {
+               getline(file_mapping, leftover);
+            }
+            if (c != ' ') {
+               break;
+            }
          } else {
             to_str = to_str.append(1, c);
          }
       }
    }
-   cerr << "Mapping loaded.\n";
+
+   cerr << "Mapping loaded: " << ones_to_others.size() << " = " << others_to_ones.size() << "\n";
    return {ones_to_others, others_to_ones};
 }
 
-unordered_map<string, bitset<NUM_PHEGEN_PROTEINS>> convertGeneSetsToProteinSets(const unordered_map<string, bitset<NUM_PHEGEN_GENES>>& traits_to_genes,
-                                                                                const vector<string>& index_to_genes,
-                                                                                const unordered_multimap<string, string>& mapping_genes_to_proteins,
-                                                                                const unordered_map<string, int>& proteins_to_index,
-                                                                                const unordered_multimap<string, string>& adjacency_list_proteins) {
-   unordered_map<string, bitset<NUM_PHEGEN_PROTEINS>> traits_to_proteins;
-   for (const auto& trait_to_genes : traits_to_genes) {  // For each trait entry
+template <size_t total_num_original_entities, size_t total_num_result_entities>
+unordered_map<string, bitset<total_num_result_entities>> convertSets(const unordered_map<string, bitset<total_num_original_entities>>& traits_to_original_entities,
+                                                                     const vector<string>& index_to_original_entities,
+                                                                     const unordered_multimap<string, string>& mapping,
+                                                                     const unordered_map<string, int>& result_entities_to_index,
+                                                                     const unordered_multimap<string, string>& adjacency_list_result_entities) {
+   unordered_map<string, bitset<total_num_result_entities>> traits_to_result_entities;
+   for (const auto& trait_entry : traits_to_original_entities) {  // For each trait entry
       unordered_set<string> candidates;
-      for (int I = 0; I < NUM_PHEGEN_GENES; I++) {  // For each gene in this trait
-         if (trait_to_genes.second.test(I)) {
-            auto range = mapping_genes_to_proteins.equal_range(index_to_genes[I]);  // For each mapping protein
+      for (int I = 0; I < total_num_original_entities; I++) {  // For each member in this trait
+         if (trait_entry.second.test(I)) {
+            auto range = mapping.equal_range(index_to_original_entities[I]);  // For each mapping entity
             for (auto it = range.first; it != range.second; it++) {
                candidates.insert(it->second);
             }
          }
       }
 
-      // Keep only those connected to any of the other gene set members in the reference protein network
+      // Keep only those connected to any of the other gene set members in the reference network
       for (const auto& candidate : candidates) {
-         auto range = adjacency_list_proteins.equal_range(candidate);
+         auto range = adjacency_list_result_entities.equal_range(candidate);
          for (auto it = range.first; it != range.second; ++it) {
             if (candidates.find(it->second) != candidates.end()) {
-               traits_to_proteins[trait_to_genes.first].set(proteins_to_index.at(candidate));  // Set in stone that the candidate is in the new set
+               traits_to_result_entities[trait_entry.first].set(result_entities_to_index.at(candidate));  // Set in stone that the candidate is in the new set
                break;
             }
          }
       }
    }
 
-   return traits_to_proteins;
+   return traits_to_result_entities;
 }
 
-template <size_t total_num_result_entities, size_t total_num_prev_entities>
-unordered_map<string, bitset<total_num_result_entities>> convertProteinSetsToProteoformSets(const map<string, bitset<total_num_prev_entities>>& traits_to_prev_entities,
-                                                                                            const vector<string>& index_to_prev_entities,
-                                                                                            const multimap<string, string>& mapping,
-                                                                                            const map<string, int>& proteins_to_index,
-                                                                                            const multimap<string, string>& adjacency_list_proteins) {
-   unordered_map<string, bitset<total_num_result_entities>> traits_to_entities;
-   for (const auto& trait_to_genes : traits_to_prev_entities) {  // For each trait entry
-      unordered_set<string> candidates;
-      for (int I = 0; I < NUM_PHEGEN_PROTEINS; I++) {  // For each member in this trait
-         if (trait_to_genes.second.test(I)) {
-            auto range = mapping.equal_range(index_to_prev_entities[I]);  // For each mapping entity
-            for (auto it = range.first; it != range.second; it++) {
-               candidates.insert(it->second);
-            }
-         }
-      }
+unordered_map<string, bitset<NUM_PHEGEN_PROTEINS>> convertGeneSets(const unordered_map<string, bitset<NUM_PHEGEN_GENES>>& traits_to_genes,
+                                                                   const vector<string>& index_to_genes,
+                                                                   const unordered_multimap<string, string>& mapping_genes_to_proteins,
+                                                                   const unordered_map<string, int>& proteins_to_index,
+                                                                   const unordered_multimap<string, string>& adjacency_list_proteins) {
+   cout << "Converting gene to protein sets.\n";
+   return convertSets<NUM_PHEGEN_GENES, NUM_PHEGEN_PROTEINS>(traits_to_genes, index_to_genes, mapping_genes_to_proteins, proteins_to_index, adjacency_list_proteins);
+}
 
-      // Keep only those connected to any of the other gene set members in the reference protein network
-      for (const auto& candidate : candidates) {
-         auto range = adjacency_list_proteins.equal_range(candidate);
-         for (auto it = range.first; it != range.second; ++it) {
-            if (candidates.find(it->second) != candidates.end()) {
-               traits_to_entities[trait_to_genes.first].set(proteins_to_index.at(candidate));  // Set in stone that the candidate is in the new set
-               break;
-            }
+unordered_map<string, bitset<NUM_PHEGEN_PROTEOFORMS>> convertProteinSets(const unordered_map<string, bitset<NUM_PHEGEN_PROTEINS>>& traits_to_proteins,
+                                                                         const vector<string>& index_to_proteins,
+                                                                         const unordered_multimap<string, string>& mapping_proteins_to_proteoforms,
+                                                                         const unordered_map<string, int>& proteoforms_to_index,
+                                                                         const unordered_multimap<string, string>& adjacency_list_proteoforms) {
+   cout << "Converting protein to proteoform sets.\n";
+   return convertSets<NUM_PHEGEN_PROTEINS, NUM_PHEGEN_PROTEOFORMS>(traits_to_proteins, index_to_proteins, mapping_proteins_to_proteoforms, proteoforms_to_index, adjacency_list_proteoforms);
+}
+
+// This version includes modified ratio of the proteoform members of the set, and another ratio for the overlapping proteoforms.
+std::map<std::pair<std::string, std::string>, std::bitset<NUM_PROTEOFORMS>> findOverlappingProteoformSets(const std::unordered_map<std::string, std::bitset<NUM_PROTEOFORMS>>& sets_to_members,
+                                                                                                          const int& min_overlap, const int& max_overlap,
+                                                                                                          const int& min_set_size, const int& max_set_size,
+                                                                                                          const std::bitset<NUM_PROTEOFORMS>& modified_proteoforms,
+                                                                                                          const float& min_all_modified_ratio,
+                                                                                                          const float& min_overlap_modified_ratio) {
+   std::vector<typename std::unordered_map<std::string, std::bitset<NUM_PROTEOFORMS>>::const_iterator> nav;
+   for (auto it = sets_to_members.begin(); it != sets_to_members.end(); it++) {
+      int set_size = it->second.count();
+      if (min_set_size <= set_size && set_size <= max_set_size) {
+         //  cerr << "MIN_SET_SIZE: " << min_set_size << " SET_SIZE: " << set_size << " MAX_SET_SIZE: " << max_set_size << "\n";
+         float percentage = static_cast<float>((modified_proteoforms & it->second).count()) / static_cast<float>(set_size);
+         if (percentage >= min_all_modified_ratio) {
+            nav.push_back(it);
          }
       }
    }
 
-   return traits_to_entities;
+   std::map<std::pair<std::string, std::string>, std::bitset<NUM_PROTEOFORMS>> result;
+   cerr << "elementos: " << nav.size() << ", parejas: " << (nav.size() * nav.size() - nav.size()) / 2 << "\n";
+   auto t0 = clock();
+   for (auto vit1 = nav.begin(); vit1 != nav.end(); vit1++) {
+      for (auto vit2 = next(vit1); vit2 != nav.end(); vit2++) {
+         std::bitset<NUM_PROTEOFORMS> overlap = (*vit1)->second & (*vit2)->second;
+         if (min_overlap <= overlap.count() && overlap.count() <= max_overlap) {
+            float percentage = static_cast<float>((modified_proteoforms & overlap).count()) / static_cast<float>(overlap.count());
+            if (percentage >= min_overlap_modified_ratio) {
+               result.emplace(make_pair((*vit1)->first, (*vit2)->first), overlap);
+            }
+         }
+      }
+   }
+   auto t1 = clock();
+   cerr << "tardamos " << double(t1 - t0) / CLOCKS_PER_SEC << "\n";
+
+   return result;
 }
