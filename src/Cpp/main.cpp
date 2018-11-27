@@ -30,9 +30,11 @@ const std::string path_file_modified_overlap_trait_modifications = "reports/modi
 
 int main() try {
    doDegreeReductionAnalysis();
-
-   doPercolationAnalysis();
-
+   std::cout << "\n\n-----------------------------------------------------\n\n";
+   percolation::doAnalysis(path_file_gene_search,
+                           path_file_protein_search,
+                           path_file_proteoform_search);
+   std::cout << "\n\n-----------------------------------------------------\n\n";
    artefactual_overlap::doAnalysis(path_file_gene_search,
                                    path_file_protein_search,
                                    path_file_proteoform_search,
