@@ -4,24 +4,6 @@ using namespace std;
 
 namespace modified_overlap {
 
-bool isModified(const string& proteoform) {
-   smatch modification;
-   return regex_search(proteoform, modification, RGX_MODIFICATION);
-}
-
-template <size_t S>
-bitset<S> getSetOfModifiedProteoforms(const vector<string>& proteoforms) {
-   bitset<S> modified_proteoforms;
-
-   for (int I = 0; I < proteoforms.size(); I++) {
-      if (isModified(proteoforms[I])) {
-         modified_proteoforms.set(I);
-      }
-   }
-
-   return modified_proteoforms;
-}
-
 template <size_t total_proteoforms>
 void writeReportRecords(ofstream& output,
                         const map<pair<string, string>, bitset<total_proteoforms>>& examples,
@@ -60,26 +42,13 @@ void writePhenotypeReport(ofstream& output,
    writeReportRecords(output, examples, pathways_to_names, pathways_to_proteoforms, index_to_proteoforms);
 }
 
-set<string> getModifications(string proteoform) {
-   set<string> modifications;
-   sregex_iterator it(proteoform.begin(), proteoform.end(), RGX_MODIFICATION);
-   sregex_iterator end;
-   while (it != end) {
-      if (it->str().find(';') || it->str().find(',')) {
-         modifications.insert(it->str().substr(1));
-      } else {
-         modifications.insert((*it)[0]);
-      }
-      it++;
-   }
-   return modifications;
-}
 
-void writeFrequencies(const string& modifications_file_path, const string& proteins_file_path, const string& proteoforms_file_path,
+
+void writeFrequencies(std::string_view modifications_file_path, std::string_view proteins_file_path, std::string_view proteoforms_file_path,
                       const map<string, int>& mod_to_freq, const map<string, int>& proteins_to_freq, const map<string, int>& proteoforms_to_freq) {
-   ofstream modifications_file(modifications_file_path);
-   ofstream proteins_file(proteins_file_path);
-   ofstream proteoforms_file(proteoforms_file_path);
+   ofstream modifications_file(modifications_file_path.data());
+   ofstream proteins_file(proteins_file_path.data());
+   ofstream proteoforms_file(proteoforms_file_path.data());
 
    modifications_file << "MODIFICATION\tFREQUENCY\n";
    for (const auto& modification : mod_to_freq) {
@@ -108,7 +77,7 @@ Frequencies getFrequencies(const map<pair<string, string>, bitset<total_proteofo
       // For each overlap set
       for (int I = 0; I < overlap_pair.second.size(); I++) {
          if (overlap_pair.second.test(I)) {
-            string accession = getAccession(index_to_proteoforms[I]);
+            string accession = proteoform::getAccession(index_to_proteoforms[I]);
             if (frequencies.proteins.find(accession) == frequencies.proteins.end()) {
                frequencies.proteins.emplace(accession, 0);
             }
@@ -119,7 +88,7 @@ Frequencies getFrequencies(const map<pair<string, string>, bitset<total_proteofo
             }
             frequencies.proteoforms[index_to_proteoforms[I]]++;
 
-            for (const auto& modification : getModifications(index_to_proteoforms[I])) {
+            for (const auto& modification : proteoform::getModifications(index_to_proteoforms[I])) {
                if (frequencies.modifications.find(modification) == frequencies.modifications.end()) {
                   frequencies.modifications[modification] = 0;
                }
@@ -131,22 +100,22 @@ Frequencies getFrequencies(const map<pair<string, string>, bitset<total_proteofo
    return frequencies;
 }
 
-void plotFrequencies(string report_file_path, string modifications_file_path, string proteins_file_path, string proteoforms_file_path) {
+void plotFrequencies(const std::string& report_file_path, const std::string& modifications_file_path, const std::string& proteins_file_path, const std::string& proteoforms_file_path) {
    string command = "Rscript src/4_modified_overlap/modified_overlap.R " + report_file_path + " " +
                     modifications_file_path + " " + proteins_file_path + " " + proteoforms_file_path;
    cerr << "Plotting modified overlap frequencies: " << command << endl;
    system(command.c_str());
 }
 
-void reportPathwayPairs(const string& path_file_proteoform_search,
-                        const string& report_file_path,
-                        const string& modifications_file_path,
-                        const string& proteins_file_path,
-                        const string& proteoforms_file_path) {
-   const auto [index_to_proteoforms, proteoforms_to_index] = loadEntities(path_file_proteoform_search);
+void reportPathwayPairs(std::string_view path_file_proteoform_search,
+                        std::string_view report_file_path,
+                        std::string_view modifications_file_path,
+                        std::string_view proteins_file_path,
+                        std::string_view proteoforms_file_path) {
+   const auto [index_to_proteoforms, proteoforms_to_index] = pathway::readEntities(path_file_proteoform_search);
    const auto pathways_to_names = loadPathwayNames(path_file_proteoform_search);
    const auto pathways_to_proteoforms = loadProteoformSets(path_file_proteoform_search, proteoforms_to_index, true);
-   const bitset<NUM_PROTEOFORMS> modified_proteoforms = getSetOfModifiedProteoforms<NUM_PROTEOFORMS>(index_to_proteoforms);
+   const bitset<NUM_PROTEOFORMS> modified_proteoforms = proteoform::getSetOfModifiedProteoforms<NUM_PROTEOFORMS>(index_to_proteoforms);
 
    cout << "Reporting pathway pairs with only modified overlap...\n";
 
@@ -154,35 +123,35 @@ void reportPathwayPairs(const string& path_file_proteoform_search,
    const auto& examples = findOverlappingProteoformSets(pathways_to_proteoforms, MIN_OVERLAP_SIZE, MAX_OVERLAP_SIZE, MIN_SET_SIZE, MAX_SET_SIZE,
                                                         modified_proteoforms, MIN_MODIFIED_ALL_MEMBERS_RATIO, MIN_MODIFIED_OVERLAP_MEMBERS_RATIO);
 
-   ofstream report(report_file_path);
+   ofstream report(report_file_path.data());
    writePathwayReport(report, examples, pathways_to_names, pathways_to_proteoforms, index_to_proteoforms);
 
    const auto [mod_to_freq, proteins_to_freq, proteoforms_to_freq] = getFrequencies(examples, index_to_proteoforms);
    writeFrequencies(modifications_file_path, proteins_file_path, proteoforms_file_path, mod_to_freq, proteins_to_freq, proteoforms_to_freq);
-   plotFrequencies(report_file_path, modifications_file_path, proteins_file_path, proteoforms_file_path);
+   plotFrequencies(report_file_path.data(), modifications_file_path.data(), proteins_file_path.data(), proteoforms_file_path.data());
 }
 
-void reportPhenotypePairs(const string& path_file_gene_search,
-                          const string& path_file_protein_search,
-                          const string& path_file_proteoform_search,
-                          const string& path_file_PheGenI_full,
-                          const string& path_file_mapping_proteins_genes,
-                          const string& report_file_path,
-                          const string& modifications_file_path,
-                          const string& proteins_file_path,
-                          const string& proteoforms_file_path) {
+void reportPhenotypePairs(std::string_view path_file_gene_search,
+                          std::string_view path_file_protein_search,
+                          std::string_view path_file_proteoform_search,
+                          std::string_view path_file_PheGenI_full,
+                          std::string_view path_file_mapping_proteins_genes,
+                          std::string_view report_file_path,
+                          std::string_view modifications_file_path,
+                          std::string_view proteins_file_path,
+                          std::string_view proteoforms_file_path) {
    // Load data: trait gene sets, trait proteoform sets
    cout << "Loading PheGen data\n";
-   const auto [reactome_index_to_genes, reactome_genes_to_index] = loadEntities(path_file_gene_search);
+   const auto [reactome_index_to_genes, reactome_genes_to_index] = pathway::readEntities(path_file_gene_search);
    const auto [index_to_genes, index_to_traits, genes_to_index, traits_to_index] = loadGenesPheGen(path_file_PheGenI_full, GENOME_WIDE_SIGNIFICANCE, reactome_genes_to_index);
-   const auto [proteins_to_genes, genes_to_proteins] = loadMapping(path_file_mapping_proteins_genes);
-   const auto [proteoforms_to_proteins, proteins_to_proteoforms] = loadMapping(path_file_proteoform_search);
+   const auto [proteins_to_genes, genes_to_proteins] = loadMapping(path_file_mapping_proteins_genes.data());
+   const auto [proteoforms_to_proteins, proteins_to_proteoforms] = loadMapping(path_file_proteoform_search.data());
    const auto [index_to_proteins, proteins_to_index] = deductProteinsFromGenes(path_file_mapping_proteins_genes, genes_to_index, genes_to_proteins);
    const auto [index_to_proteoforms, proteoforms_to_index] = deductProteoformsFromProteins(proteins_to_proteoforms, proteins_to_index);
-   const bitset<NUM_PHEGEN_PROTEOFORMS> modified_proteoforms = getSetOfModifiedProteoforms<NUM_PHEGEN_PROTEOFORMS>(index_to_proteoforms);
+   const bitset<NUM_PHEGEN_PROTEOFORMS> modified_proteoforms = proteoform::getSetOfModifiedProteoforms<NUM_PHEGEN_PROTEOFORMS>(index_to_proteoforms);
 
    const auto [adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_gene_search, path_file_protein_search, path_file_proteoform_search);
-   const auto [genes_to_traits, traits_to_genes] = loadTraitGeneSets(path_file_PheGenI_full, GENOME_WIDE_SIGNIFICANCE, index_to_genes, index_to_traits, genes_to_index, traits_to_index, reactome_genes_to_index);
+   const auto [genes_to_traits, traits_to_genes] = loadTraitGeneSets(path_file_PheGenI_full.data(), GENOME_WIDE_SIGNIFICANCE, index_to_genes, index_to_traits, genes_to_index, traits_to_index, reactome_genes_to_index);
    const auto sets_to_names = createTraitNames(traits_to_genes);
    const unordered_map<string, bitset<NUM_PHEGEN_PROTEINS>> traits_to_proteins = convertGeneSets(traits_to_genes, index_to_genes, genes_to_proteins, proteins_to_index, adjacency_list_proteins);
    const unordered_map<string, bitset<NUM_PHEGEN_PROTEOFORMS>> traits_to_proteoforms = convertProteinSets(traits_to_proteins, index_to_proteins, proteins_to_proteoforms, proteoforms_to_index, adjacency_list_proteoforms);
@@ -194,28 +163,28 @@ void reportPhenotypePairs(const string& path_file_gene_search,
                                                         modified_proteoforms, MIN_MODIFIED_ALL_MEMBERS_RATIO, MIN_MODIFIED_OVERLAP_MEMBERS_RATIO);
 
    // Write report
-   ofstream report(report_file_path);
+   ofstream report(report_file_path.data());
    writePhenotypeReport(report, examples, sets_to_names, traits_to_proteoforms, index_to_proteoforms);
 
    // Analyse modifications
    const auto [mod_to_freq, proteins_to_freq, proteoforms_to_freq] = getFrequencies(examples, index_to_proteoforms);
    writeFrequencies(modifications_file_path, proteins_file_path, proteoforms_file_path, mod_to_freq, proteins_to_freq, proteoforms_to_freq);
-   plotFrequencies(report_file_path, modifications_file_path, proteins_file_path, proteoforms_file_path);
+   plotFrequencies(report_file_path.data(), modifications_file_path.data(), proteins_file_path.data(), proteoforms_file_path.data());
 }
 
-void doAnalysis(const std::string& path_file_gene_search,
-                const std::string& path_file_protein_search,
-                const std::string& path_file_proteoform_search,
-                const std::string& path_file_PheGenI_full,
-                const std::string& path_file_mapping_proteins_to_genes,
-                const std::string& path_file_report_pathway,
-                const std::string& path_file_modified_overlap_pathway_proteins,
-                const std::string& path_file_modified_overlap_pathway_proteoforms,
-                const std::string& path_file_modified_overlap_pathway_modifications,
-                const std::string& path_file_report_trait,
-                const std::string& path_file_modified_overlap_trait_modifications,
-                const std::string& path_file_modified_overlap_trait_proteins,
-                const std::string& path_file_modified_overlap_trait_proteoforms) {
+void doAnalysis(std::string_view path_file_gene_search,
+                std::string_view path_file_protein_search,
+                std::string_view path_file_proteoform_search,
+                std::string_view path_file_PheGenI_full,
+                std::string_view path_file_mapping_proteins_to_genes,
+                std::string_view path_file_report_pathway,
+                std::string_view path_file_modified_overlap_pathway_proteins,
+                std::string_view path_file_modified_overlap_pathway_proteoforms,
+                std::string_view path_file_modified_overlap_pathway_modifications,
+                std::string_view path_file_report_trait,
+                std::string_view path_file_modified_overlap_trait_modifications,
+                std::string_view path_file_modified_overlap_trait_proteins,
+                std::string_view path_file_modified_overlap_trait_proteoforms) {
    cout << "Searching for modified overlap examples...\n";
 
    // Part 1: Find examples of pathways that overlap only in modified proteins

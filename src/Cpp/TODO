@@ -1,0 +1,26 @@
+# Manuscript
+
+[ ] Finish text
+    [ ] Show example of hit reduction
+    [ ] Example of hub size reduction
+
+# Supplementary text
+
+[ ] Explain sources of data
+[ ] Explain how interaction network is constructed
+[ ] Explain how the percolation curve was calculated
+    [ ] Read the paper again and select
+[ ] Explain replication steps for all the types
+
+# Documentation
+
+[ ] Repository pages
+
+# Implementation / examples
+[ ] Implement code to find hub reduction examples
+[ ] Implement code to find proteins that map to fewer pathways
+[ ] Implement object oriented version of the program
+
+# Optional
+
+[ ] Calculate the clustering coefficient of the trait modules and compare if it reduces using the proteoform network.

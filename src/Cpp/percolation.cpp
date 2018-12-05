@@ -4,12 +4,13 @@ using namespace std;
 
 namespace percolation {
 
-void doAnalysis(const string& path_file_gene_search,
-                const string& path_file_protein_search,
-                const string& path_file_proteoform_search) {
+void doAnalysis(std::string_view path_file_gene_search,
+                std::string_view path_file_protein_search,
+                std::string_view  path_file_proteoform_search) {
    const auto [adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_gene_search, path_file_protein_search, path_file_proteoform_search);
+  
+   // The objective is to analyse
 
-    
 
    // TODO: Sample to create approximated link and node percolation curve for pp, pm and mm
    // TODO: Plot and save files of percolation curve.

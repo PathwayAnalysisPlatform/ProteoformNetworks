@@ -15,7 +15,7 @@
 #include <unordered_set>
 #include <vector>
 
-const std::regex RGX_ACCESSION_DELIMITER{"[;-]"};
+#include "lib/pathway/entity.h"
 
 const size_t NUM_GENES = 23970;
 const size_t NUM_PROTEINS = 10778;
@@ -35,11 +35,6 @@ const int MIN_SET_SIZE = 1;
 const int MAX_SET_SIZE = 200;
 
 const long double GENOME_WIDE_SIGNIFICANCE = 5e-8;
-
-struct Entities_bimap {
-   std::vector<std::string> index_to_entities;
-   std::unordered_map<std::string, int> entities_to_index;
-};
 
 struct Frequencies {
    std::map<std::string, int> modifications;
@@ -69,19 +64,17 @@ struct load_mapping_result {
    std::unordered_multimap<std::string, std::string> others_to_ones;
 };
 
-Entities_bimap loadEntities(const std::string& entities_file_path);
-
-std::unordered_map<std::string, std::string> loadPathwayNames(const std::string& path_protein_search_file);
+std::unordered_map<std::string, std::string> loadPathwayNames(std::string_view path_protein_search_file);
 
 std::map<std::string, int> fillMap(const std::vector<std::string>& index_to_entities);
 
-std::unordered_map<std::string, std::bitset<NUM_GENES>> loadGeneSets(const std::string& file_path,
+std::unordered_map<std::string, std::bitset<NUM_GENES>> loadGeneSets(std::string_view file_path,
                                                                      const std::unordered_map<std::string, int>& entities_to_index,
                                                                      bool pathways);
-std::unordered_map<std::string, std::bitset<NUM_PROTEINS>> loadProteinSets(const std::string& file_path,
+std::unordered_map<std::string, std::bitset<NUM_PROTEINS>> loadProteinSets(std::string_view file_path,
                                                                            const std::unordered_map<std::string, int>& entities_to_index,
                                                                            bool pathways);
-std::unordered_map<std::string, std::bitset<NUM_PROTEOFORMS>> loadProteoformSets(const std::string& file_path,
+std::unordered_map<std::string, std::bitset<NUM_PROTEOFORMS>> loadProteoformSets(std::string_view file_path,
                                                                                  const std::unordered_map<std::string, int>& entities_to_index,
                                                                                  bool pathways);
 
@@ -99,9 +92,7 @@ std::unordered_set<std::string> getProteinStrings(const std::bitset<NUM_PHEGEN_P
 std::unordered_set<std::string> getProteoformStrings(const std::bitset<NUM_PHEGEN_PROTEOFORMS>& proteoform_set,
                                                      const std::vector<std::string>& index_to_proteoforms);
 
-std::string getAccession(std::string proteoform);
-
-load_genes_phegen_result loadGenesPheGen(const std::string& path_file_PheGenI_full,
+load_genes_phegen_result loadGenesPheGen(std::string_view path_file_PheGenI_full,
                                          const double& max_p_value,
                                          const std::unordered_map<std::string, int>& reactome_entities_to_index);
 
@@ -126,10 +117,6 @@ std::unordered_map<std::string, std::bitset<NUM_PHEGEN_PROTEOFORMS>> convertProt
                                                                                         const std::unordered_multimap<std::string, std::string>& mapping_proteins_to_proteoforms,
                                                                                         const std::unordered_map<std::string, int>& proteoforms_to_index,
                                                                                         const std::unordered_multimap<std::string, std::string>& adjacency_list_proteoforms);
-
-std::vector<std::string> convert(const std::unordered_set<std::string>& a_set);
-
-std::unordered_map<std::string, int> getEntitiesToIndex(const std::vector<std::string>& index_to_entities);
 
 template <size_t total_num_entities>
 void printMembers(std::ostream& output, const std::bitset<total_num_entities>& entity_set, const std::vector<std::string>& index_to_entities) {
@@ -227,18 +214,18 @@ struct reactome_networks {
    std::unordered_multimap<std::string, std::string> adjacency_list_proteoforms;
 };
 
-reactome_networks loadReactomeNetworks(const std::string& path_file_gene_search,
-                                       const std::string& path_file_protein_search,
-                                       const std::string& path_file_proteoform_search);
+reactome_networks loadReactomeNetworks(std::string_view path_file_gene_search,
+                                       std::string_view path_file_protein_search,
+                                       std::string_view path_file_proteoform_search);
 
-std::unordered_multimap<std::string, std::string> loadProteinsAdjacencyList(const std::string& search_file_path);
+std::unordered_multimap<std::string, std::string> loadProteinsAdjacencyList(std::string_view search_file_path);
 
-std::unordered_multimap<std::string, std::string> loadProteoformsAdjacencyList(const std::string& search_file_path);
+std::unordered_multimap<std::string, std::string> loadProteoformsAdjacencyList(std::string_view search_file_path);
 
-Entities_bimap deductProteinsFromGenes(const std::string& path_file_mapping_proteins_genes,
+pathway::entities_bimap deductProteinsFromGenes(std::string_view path_file_mapping_proteins_genes,
                                        const std::unordered_map<std::string, int>& genes_to_index,
                                        const std::unordered_multimap<std::string, std::string>& genes_to_proteins);
 
-Entities_bimap deductProteoformsFromProteins(const std::unordered_multimap<std::string, std::string>& proteins_to_proteoforms, const std::unordered_map<std::string, int>& proteins_to_index);
+pathway::entities_bimap deductProteoformsFromProteins(const std::unordered_multimap<std::string, std::string>& proteins_to_proteoforms, const std::unordered_map<std::string, int>& proteins_to_index);
 
 #endif /* OVERLAP_H_ */

@@ -6,6 +6,7 @@
 !.vscode/launch.json
 !.vscode/extensions.json
 Debug/
+.project
 
 # Visual studio
 *.sln
@@ -34,6 +35,9 @@ ipch
 *.exe
 *.out
 *.app
+
+## Not used Libraries
+src/Cpp/lib/
 
 # Java
 *.jar

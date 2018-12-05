@@ -38,7 +38,7 @@ bitset<size_proteoforms> getProteoformsWithAccessions(const unordered_set<string
    bitset<size_proteoforms> result;
    for (int I = 0; I < proteoform_set.size(); I++) {
       if (proteoform_set.test(I)) {
-         if (accessions.find(getAccession(index_to_proteoforms.at(I))) != accessions.end()) {
+         if (accessions.find(proteoform::getAccession(index_to_proteoforms.at(I))) != accessions.end()) {
             result.set(I);
          }
       }
@@ -132,13 +132,13 @@ void writePhenotypeReport(ofstream& output,
 }
 
 template <size_t total_num_entities>
-void writeSetReport(const string& path_file_report,
+void writeSetReport(std::string_view path_file_report,
                     const map<string, bitset<total_num_entities>>& sets_to_entities,
                     const vector<string>& index_to_entities) {
    ofstream file_report(path_file_report);
    cout << "Writing report: " << path_file_report << "\n";
    if (!file_report.is_open()) {
-      throw runtime_error("Cannot write to " + path_file_report);
+      throw runtime_error(path_file_report.data());
    }
 
    for (const auto& set_to_entities : sets_to_entities) {
@@ -152,12 +152,12 @@ void writeSetReport(const string& path_file_report,
    }
 }
 
-void writeEntitiesReport(const string& path_file_report, const vector<string>& entities) {
-   ofstream file_report(path_file_report);
+void writeEntitiesReport(std::string_view path_file_report, const vector<string>& entities) {
+   ofstream file_report(path_file_report.data());
 
    cerr << "Writing report: " << path_file_report << "\n";
    if (!file_report.is_open()) {
-      throw runtime_error("Cannot write to " + path_file_report);
+      throw runtime_error(path_file_report.data());
    }
 
    for (const auto& entity : entities) {
@@ -165,9 +165,9 @@ void writeEntitiesReport(const string& path_file_report, const vector<string>& e
    }
 }
 
-map<string, bitset<NUM_GENES>> loadReactionsGeneMembers(const string& file_path, const map<string, int>& entities_to_index) {
+map<string, bitset<NUM_GENES>> loadReactionsGeneMembers(std::string_view file_path, const map<string, int>& entities_to_index) {
    map<string, bitset<NUM_GENES>> result;
-   ifstream file_search(file_path);
+   ifstream file_search(file_path.data());
    string field, gene, pathway;
    bitset<NUM_GENES> empty_set;
 
@@ -189,9 +189,9 @@ map<string, bitset<NUM_GENES>> loadReactionsGeneMembers(const string& file_path,
    return result;
 }
 
-unordered_multimap<string, string> loadGenesAdjacencyList(const string& search_file_path) {
+unordered_multimap<string, string> loadGenesAdjacencyList(std::string_view search_file_path) {
    unordered_multimap<string, string> adjacenty_list;
-   const auto [index_to_entities, entities_to_index] = loadEntities(search_file_path);
+   const auto [index_to_entities, entities_to_index] = pathway::readEntities(search_file_path);
    const auto reactions_to_entities = loadGeneSets(search_file_path, entities_to_index, false);
 
    for (const auto& reaction_entry : reactions_to_entities) {
@@ -212,13 +212,13 @@ unordered_multimap<string, string> loadGenesAdjacencyList(const string& search_f
    return adjacenty_list;
 }
 
-void reportPathwayPairs(const string& path_file_gene_search,
-                        const string& path_file_protein_search,
-                        const string& path_file_proteoform_search,
-                        const string& report_file_path) {
-   const auto [index_to_genes, genes_to_index] = loadEntities(path_file_gene_search);
-   const auto [index_to_proteins, proteins_to_index] = loadEntities(path_file_protein_search);
-   const auto [index_to_proteoforms, proteoforms_to_index] = loadEntities(path_file_proteoform_search);
+void reportPathwayPairs(std::string_view path_file_gene_search,
+                        std::string_view path_file_protein_search,
+                        std::string_view path_file_proteoform_search,
+                        std::string_view report_file_path) {
+   const auto [index_to_genes, genes_to_index] = pathway::readEntities(path_file_gene_search);
+   const auto [index_to_proteins, proteins_to_index] = pathway::readEntities(path_file_protein_search);
+   const auto [index_to_proteoforms, proteoforms_to_index] = pathway::readEntities(path_file_proteoform_search);
    const auto pathways_to_names = loadPathwayNames(path_file_proteoform_search);
 
    unordered_map<string, bitset<NUM_GENES>> pathways_to_genes = loadGeneSets(path_file_gene_search, genes_to_index, true);
@@ -245,18 +245,18 @@ void reportPathwayPairs(const string& path_file_gene_search,
                                                      overlapping_protein_set_pairs,
                                                      non_overlapping_proteoform_set_pairs);
 
-   ofstream report(report_file_path);
+   ofstream report(report_file_path.data());
    writePathwayReport(report, examples, pathways_to_names,
                       pathways_to_genes, pathways_to_proteins, pathways_to_proteoforms,
                       index_to_genes, index_to_proteins, index_to_proteoforms);
 }
 
-void reportPhenotypePairs(const std::string& path_file_gene_search,
-                          const std::string& path_file_protein_search,
-                          const std::string& path_file_proteoform_search,
-                          const std::string& path_file_PheGenI_full,
-                          const std::string& path_file_mapping_proteins_genes,
-                          const std::string& path_file_report_trait) {
+void reportPhenotypePairs(std::string_view path_file_gene_search,
+                          std::string_view path_file_protein_search,
+                          std::string_view path_file_proteoform_search,
+                          std::string_view path_file_PheGenI_full,
+                          std::string_view path_file_mapping_proteins_genes,
+                          std::string_view path_file_report_trait) {
    // Load reference network
 
    // Load phegen sets
@@ -276,10 +276,10 @@ void reportPhenotypePairs(const std::string& path_file_gene_search,
    // phegen set: bitset<MAX_ENTITIES> members, index_to_entities, string set_name
 
    cout << "Loading PheGen data\n";
-   const auto [reactome_index_to_genes, reactome_genes_to_index] = loadEntities(path_file_gene_search);
+   const auto [reactome_index_to_genes, reactome_genes_to_index] = pathway::readEntities(path_file_gene_search);
    const auto [index_to_genes, index_to_traits, genes_to_index, traits_to_index] = loadGenesPheGen(path_file_PheGenI_full, GENOME_WIDE_SIGNIFICANCE, reactome_genes_to_index);
-   const auto [proteins_to_genes, genes_to_proteins] = loadMapping(path_file_mapping_proteins_genes);
-   const auto [proteoforms_to_proteins, proteins_to_proteoforms] = loadMapping(path_file_proteoform_search);
+   const auto [proteins_to_genes, genes_to_proteins] = loadMapping(path_file_mapping_proteins_genes.data());
+   const auto [proteoforms_to_proteins, proteins_to_proteoforms] = loadMapping(path_file_proteoform_search.data());
    const auto [index_to_proteins, proteins_to_index] = deductProteinsFromGenes(path_file_mapping_proteins_genes, genes_to_index, genes_to_proteins);
    const auto [index_to_proteoforms, proteoforms_to_index] = deductProteoformsFromProteins(proteins_to_proteoforms, proteins_to_index);
 
@@ -288,7 +288,7 @@ void reportPhenotypePairs(const std::string& path_file_gene_search,
 
    const auto [adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_gene_search, path_file_protein_search, path_file_proteoform_search);
 
-   const auto [genes_to_traits, traits_to_genes] = loadTraitGeneSets(path_file_PheGenI_full, GENOME_WIDE_SIGNIFICANCE, index_to_genes, index_to_traits, genes_to_index, traits_to_index, reactome_genes_to_index);
+   const auto [genes_to_traits, traits_to_genes] = loadTraitGeneSets(path_file_PheGenI_full.data(), GENOME_WIDE_SIGNIFICANCE, index_to_genes, index_to_traits, genes_to_index, traits_to_index, reactome_genes_to_index);
    const auto sets_to_names = createTraitNames(traits_to_genes);
    const unordered_map<string, bitset<NUM_PHEGEN_PROTEINS>> traits_to_proteins = convertGeneSets(traits_to_genes, index_to_genes, genes_to_proteins, proteins_to_index, adjacency_list_proteins);
    const unordered_map<string, bitset<NUM_PHEGEN_PROTEOFORMS>> traits_to_proteoforms = convertProteinSets(traits_to_proteins, index_to_proteins, proteins_to_proteoforms, proteoforms_to_index, adjacency_list_proteoforms);
@@ -313,20 +313,20 @@ void reportPhenotypePairs(const std::string& path_file_gene_search,
                                                      non_overlapping_proteoform_set_pairs);
 
    cout << "Writing report...\n";
-   ofstream report(path_file_report_trait);
+   ofstream report(path_file_report_trait.data());
 
    writePhenotypeReport(report, examples, sets_to_names, traits_to_genes, traits_to_proteins, traits_to_proteoforms,
                         index_to_genes, index_to_proteins, index_to_proteoforms);
 }
 
 // Find pairs of modules/pathways that overlap on gene or protein network, but not in proteoform network
-void doAnalysis(const std::string& path_file_gene_search,
-                const std::string& path_file_protein_search,
-                const std::string& path_file_proteoform_search,
-                const std::string& path_file_PheGenI_full,
-                const std::string& path_file_mapping_proteins_to_genes,
-                const std::string& path_file_report_pathway,
-                const std::string& path_file_report_trait) {
+void doAnalysis(std::string_view path_file_gene_search,
+                std::string_view path_file_protein_search,
+                std::string_view path_file_proteoform_search,
+                std::string_view path_file_PheGenI_full,
+                std::string_view path_file_mapping_proteins_to_genes,
+                std::string_view path_file_report_pathway,
+                std::string_view path_file_report_trait) {
    cout << "Searching for artefactual overlap examples..." << endl;
 
    reportPathwayPairs(path_file_gene_search,
