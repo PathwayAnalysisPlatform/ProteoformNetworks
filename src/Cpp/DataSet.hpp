@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "entity.hpp"
 
@@ -26,7 +27,18 @@ class dataset {
    std::string getName() const;
    void setName(std::string_view value);
 
-   std::unordered_map<std::string, std::string> getPathwayNames() const;
+   const std::unordered_map<std::string, std::string>& getPathwayNames() const;
+
+   const entities_bimap& getGenes() const;
+   const entities_bimap& getProteins() const;
+   const entities_bimap& getProteoforms() const;
+
+   const std::unordered_map<std::string, std::unordered_set<std::string>>& getGenesToReactions() const;
+   const std::unordered_map<std::string, std::unordered_set<std::string>>& getGenesToPathways() const;
+   const std::unordered_map<std::string, std::unordered_set<std::string>>& getProteinsToReactions() const;
+   const std::unordered_map<std::string, std::unordered_set<std::string>>& getProteinsToPathways() const;
+   const std::unordered_map<std::string, std::unordered_set<std::string>>& getProteoformsToReactions() const;
+   const std::unordered_map<std::string, std::unordered_set<std::string>>& getProteoformsToPathways() const;
 
   private:
    std::string name;
@@ -37,19 +49,19 @@ class dataset {
    entities_bimap proteoforms;
 
    std::unordered_map<std::string, std::bitset<NUM_GENES>> pathways_to_genes;
-   std::unordered_multimap<std::string, std::string> genes_to_pathways;
+   std::unordered_map<std::string, std::unordered_set<std::string>> genes_to_pathways;
    std::unordered_map<std::string, std::bitset<NUM_GENES>> reactions_to_genes;
-   std::unordered_multimap<std::string, std::string> genes_to_reactions;
+   std::unordered_map<std::string, std::unordered_set<std::string>> genes_to_reactions;
 
    std::unordered_map<std::string, std::bitset<NUM_GENES>> pathways_to_proteins;
-   std::unordered_multimap<std::string, std::string> proteins_to_pathways;
+   std::unordered_map<std::string, std::unordered_set<std::string>> proteins_to_pathways;
    std::unordered_map<std::string, std::bitset<NUM_GENES>> reactions_to_proteins;
-   std::unordered_multimap<std::string, std::string> proteins_to_reactions;
+   std::unordered_map<std::string, std::unordered_set<std::string>> proteins_to_reactions;
 
    std::unordered_map<std::string, std::bitset<NUM_GENES>> pathways_to_proteoforms;
-   std::unordered_multimap<std::string, std::string> proteoforms_to_pathways;
+   std::unordered_map<std::string, std::unordered_set<std::string>> proteoforms_to_pathways;
    std::unordered_map<std::string, std::bitset<NUM_GENES>> reactions_to_proteoforms;
-   std::unordered_multimap<std::string, std::string> proteoforms_to_reactions;
+   std::unordered_map<std::string, std::unordered_set<std::string>> proteoforms_to_reactions;
 
    std::unordered_multimap<std::string, std::string> gene_network;
    std::unordered_multimap<std::string, std::string> protein_network;

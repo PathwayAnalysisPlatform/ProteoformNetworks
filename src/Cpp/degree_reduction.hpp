@@ -7,7 +7,7 @@
 
 namespace degree_reduction {
 
-void doAnalysis(pathway::dataset pathwayDataSet, std::string_view report_file_path);
+void doAnalysis(pathway::dataset dataset_reactome, std::string_view report_file_path);
 
 }
 
