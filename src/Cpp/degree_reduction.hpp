@@ -3,7 +3,7 @@
 
 #include <string>
 #include <string_view>
-#include "lib/pathway/dataset.hpp"
+#include "dataset.hpp"
 
 namespace degree_reduction {
 

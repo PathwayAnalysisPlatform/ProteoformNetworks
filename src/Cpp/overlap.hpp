@@ -15,7 +15,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "lib/pathway/entity.h"
+#include "entity.hpp"
 
 const size_t NUM_GENES = 23970;
 const size_t NUM_PROTEINS = 10778;

@@ -1,16 +1,14 @@
 #include "artefactual_overlap.hpp"
+#include "dataset.hpp"
 #include "degree_reduction.hpp"
-#include "lib/pathway/dataset.hpp"
 #include "modified_overlap.hpp"
 #include "percolation.hpp"
 
 // ************* Input files
 
 // 1) Degree reduction
-const std::string path_file_num_pathways_per_protein = "resources/reactome/num_pathways_per_protein.csv";
-const std::string path_file_num_pathways_per_proteoform = "resources/reactome/num_pathways_per_proteoform.csv";
 const std::string path_file_gene_mapping = "resources/reactome/gene_mapping.csv";              // Includes the mapping from genes to proteins and genes to reactions and pathways.
-const std::string path_file_protein_mapping = "resources/reactome/protein_mapping.csv";        // Includes the mapping from proteins to reactions and pathways.
+const std::string path_file_protein_mapping = "resources/reactome/protein_mapping.csv";        // Includes the mapping from proteins to reactions and pathways, and names of reactions and pathways.
 const std::string path_file_proteoform_mapping = "resources/reactome/proteoform_mapping.csv";  // Includes the mapping from proteoforms to reactions and pathways.
 
 // 2) Percolation
@@ -45,32 +43,32 @@ int main() try {
    pathway::dataset pathwayDataSet(path_file_gene_mapping, path_file_protein_mapping, path_file_proteoform_mapping);
 
    degree_reduction::doAnalysis(pathwayDataSet, path_file_report_degree_reduction_analysis);
-   std::cout << "\n\n-----------------------------------------------------\n\n";
+   // std::cout << "\n\n-----------------------------------------------------\n\n";
    // percolation::doAnalysis(path_file_gene_search,
    //                         path_file_protein_search,
    //                         path_file_proteoform_search);
-   std::cout << "\n\n-----------------------------------------------------\n\n";
-   artefactual_overlap::doAnalysis(path_file_gene_search,
-                                   path_file_protein_search,
-                                   path_file_proteoform_search,
-                                   path_file_PheGenI_full,
-                                   path_file_mapping_proteins_to_genes,
-                                   path_file_report_artefactual_overlap_pathway,
-                                   path_file_report_artefactual_overlap_trait);
-   std::cout << "\n\n-----------------------------------------------------\n\n";
-   modified_overlap::doAnalysis(path_file_gene_search,
-                                path_file_protein_search,
-                                path_file_proteoform_search,
-                                path_file_PheGenI_full,
-                                path_file_mapping_proteins_to_genes,
-                                path_file_report_modified_overlap_pathway,
-                                path_file_modified_overlap_pathway_proteins,
-                                path_file_modified_overlap_pathway_proteoforms,
-                                path_file_modified_overlap_pathway_modifications,
-                                path_file_report_modified_overlap_trait,
-                                path_file_modified_overlap_trait_proteins,
-                                path_file_modified_overlap_trait_proteoforms,
-                                path_file_modified_overlap_trait_modifications);
+   // std::cout << "\n\n-----------------------------------------------------\n\n";
+   // artefactual_overlap::doAnalysis(path_file_gene_search,
+   //                                 path_file_protein_search,
+   //                                 path_file_proteoform_search,
+   //                                 path_file_PheGenI_full,
+   //                                 path_file_mapping_proteins_to_genes,
+   //                                 path_file_report_artefactual_overlap_pathway,
+   //                                 path_file_report_artefactual_overlap_trait);
+   // std::cout << "\n\n-----------------------------------------------------\n\n";
+   // modified_overlap::doAnalysis(path_file_gene_search,
+   //                              path_file_protein_search,
+   //                              path_file_proteoform_search,
+   //                              path_file_PheGenI_full,
+   //                              path_file_mapping_proteins_to_genes,
+   //                              path_file_report_modified_overlap_pathway,
+   //                              path_file_modified_overlap_pathway_proteins,
+   //                              path_file_modified_overlap_pathway_proteoforms,
+   //                              path_file_modified_overlap_pathway_modifications,
+   //                              path_file_report_modified_overlap_trait,
+   //                              path_file_modified_overlap_trait_proteins,
+   //                              path_file_modified_overlap_trait_proteoforms,
+   //                              path_file_modified_overlap_trait_modifications);
    system("pause");
 } catch (const std::exception& ex) {
    std::cout << ex.what() << "\n";

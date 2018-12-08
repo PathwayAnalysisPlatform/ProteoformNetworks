@@ -1,4 +1,4 @@
-#include "entity.h"
+#include "entity.hpp"
 
 namespace pathway {
 
@@ -17,27 +17,36 @@ std::unordered_map<std::string, int> createEntitiesToIndex(const std::vector<std
    return entities_to_index;
 }
 
-std::vector<std::string> createIndexToEntities(const std::string& entities_file_path) {
-   std::ifstream entities_file(entities_file_path.data());
-   std::string entity, line_leftover;
+std::vector<std::string> createIndexToEntities(const std::string& path_file_mapping) {
+   std::ifstream map_file(path_file_mapping.data());
+   std::string entity, leftover;
    std::unordered_set<std::string> temp_set;
    std::vector<std::string> index_to_entities;
 
-   if (!entities_file.is_open()) {
-      throw std::runtime_error("Could not open file " + entities_file_path);
+   if (!map_file.is_open()) {
+      throw std::runtime_error("Could not open file " + path_file_mapping);
    }
 
-   while (getline(entities_file, entity, '\t')) {
+   getline(map_file, leftover);  // Skip header line
+   while (map_file.peek() != EOF) {
+      if (map_file.peek() == '[' || map_file.peek() == '\"') {
+         if (map_file.peek() == '\"')  // Read initial "
+            map_file.get();
+         map_file.get();  // Read initial " or [
+         getline(map_file, entity, ']');
+      } else {
+         getline(map_file, entity, ',');  // Read entity
+      }
+      getline(map_file, leftover);  // Read rest of line
       temp_set.insert(entity);
-      getline(entities_file, line_leftover);
    }
    index_to_entities = convert(temp_set);
 
    return index_to_entities;
 }
 
-entities_bimap readEntities(std::string_view entities_file_path) {
-   auto index_to_entities = createIndexToEntities(entities_file_path.data());
+entities_bimap readEntities(std::string_view path_file_mapping) {
+   auto index_to_entities = createIndexToEntities(path_file_mapping.data());
    auto entities_to_index = createEntitiesToIndex(index_to_entities);
    return {index_to_entities, entities_to_index};
 }

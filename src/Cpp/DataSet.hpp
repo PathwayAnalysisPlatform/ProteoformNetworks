@@ -3,11 +3,12 @@
 
 #include <bitset>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 
-#include "entity.h"
+#include "entity.hpp"
 
 namespace pathway {
 
@@ -22,11 +23,10 @@ class dataset {
            std::string_view path_file_protein_mapping,
            std::string_view path_file_proteoform_mapping);
 
-   void setGeneSets(std::string_view path_file_mapping);
-   void setProteinSets(std::string_view path_file_mapping);
-   void setProteoformSets(std::string_view path_file_mapping);
-   void setPathwayNames(std::string_view path_file_mapping);
-   void calculateInteractionNetworks();
+   std::string getName() const;
+   void setName(std::string_view value);
+
+   std::unordered_map<std::string, std::string> getPathwayNames() const;
 
   private:
    std::string name;
@@ -36,13 +36,30 @@ class dataset {
    entities_bimap proteins;
    entities_bimap proteoforms;
 
-   std::unordered_map<std::string, std::bitset<NUM_GENES>> gene_mapping;
-   std::unordered_map<std::string, std::bitset<NUM_PROTEINS>> protein_mapping;
-   std::unordered_map<std::string, std::bitset<NUM_PROTEOFORMS>> proteoform_mapping;
+   std::unordered_map<std::string, std::bitset<NUM_GENES>> pathways_to_genes;
+   std::unordered_multimap<std::string, std::string> genes_to_pathways;
+   std::unordered_map<std::string, std::bitset<NUM_GENES>> reactions_to_genes;
+   std::unordered_multimap<std::string, std::string> genes_to_reactions;
+
+   std::unordered_map<std::string, std::bitset<NUM_GENES>> pathways_to_proteins;
+   std::unordered_multimap<std::string, std::string> proteins_to_pathways;
+   std::unordered_map<std::string, std::bitset<NUM_GENES>> reactions_to_proteins;
+   std::unordered_multimap<std::string, std::string> proteins_to_reactions;
+
+   std::unordered_map<std::string, std::bitset<NUM_GENES>> pathways_to_proteoforms;
+   std::unordered_multimap<std::string, std::string> proteoforms_to_pathways;
+   std::unordered_map<std::string, std::bitset<NUM_GENES>> reactions_to_proteoforms;
+   std::unordered_multimap<std::string, std::string> proteoforms_to_reactions;
 
    std::unordered_multimap<std::string, std::string> gene_network;
    std::unordered_multimap<std::string, std::string> protein_network;
    std::unordered_multimap<std::string, std::string> proteoform_network;
+
+   void setPathwayNames(std::string_view path_file_mapping);
+   void setGeneMapping(std::string_view path_file_mapping);
+   void setProteinMapping(std::string_view path_file_mapping);
+   void setProteoformMapping(std::string_view path_file_mapping);
+   void calculateInteractionNetworks();
 };
 
 }  // namespace pathway

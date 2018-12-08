@@ -5,7 +5,7 @@
 #include <regex>
 
 #include "overlap.hpp"
-#include "lib/proteoform/proteoform.h"
+#include "proteoform.hpp"
 
 const float MIN_MODIFIED_ALL_MEMBERS_RATIO = 0.1;
 const float MIN_MODIFIED_OVERLAP_MEMBERS_RATIO = 0.9;

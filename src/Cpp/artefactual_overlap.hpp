@@ -4,7 +4,7 @@
 #include <string_view>
 
 #include "overlap.hpp"
-#include "lib/proteoform/proteoform.h"
+#include "proteoform.hpp"
 
 namespace artefactual_overlap {
 void doAnalysis(std::string_view path_file_gene_search,
