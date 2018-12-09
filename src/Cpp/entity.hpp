@@ -2,14 +2,18 @@
 #define PATHWAY_ENTITY_H
 
 #include <algorithm>
+#include <fstream>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <string_view>
-#include <fstream>
 #include "proteoform.hpp"
 
 namespace pathway {
+
+enum entities { GENES,
+                PROTEINS,
+                PROTEOFORMS};
 
 struct entities_bimap {
    std::vector<std::string> index_to_entities;
