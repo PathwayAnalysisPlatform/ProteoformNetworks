@@ -30,4 +30,18 @@ std::set<std::string> getModifications(std::string proteoform) {
    return modifications;
 }
 
+std::string readProteoformFromNeo4jCsv(std::ifstream& fs) {
+   std::string proteoform;
+   if (fs.peek() == '\"')  // Read initial "
+      fs.get();
+   fs.get();  // Read initial " or [
+   getline(fs, proteoform, ']');
+
+   // Remove the extra ',' in the proteoform representation comming directly from Neo4j queries
+   std::size_t index = proteoform.find_first_of(',');
+   if (index != std::string::npos)
+      proteoform.erase(index, 1);
+   return proteoform;
 }
+
+}  // namespace proteoform

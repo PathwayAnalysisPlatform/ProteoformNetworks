@@ -5,6 +5,7 @@
 #include <regex>
 #include <set>
 #include <bitset>
+#include <fstream>
 
 namespace proteoform {
 
@@ -34,6 +35,8 @@ std::bitset<S> getSetOfModifiedProteoforms(const std::vector<std::string>& prote
 }
 
 std::set<std::string> getModifications(std::string proteoform);
+
+std::string readProteoformFromNeo4jCsv(std::ifstream& fs);
 
 } // namespace proteoform
 

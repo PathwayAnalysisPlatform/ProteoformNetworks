@@ -27,6 +27,16 @@ const std::unordered_map<std::string, std::string>& dataset::getPathwayNames() c
    return pathways_to_names;
 }
 
+const int dataset::getNumGenes() const {
+   return genes.index_to_entities.size();
+}
+const int dataset::getNumProteins() const {
+   return proteins.index_to_entities.size();
+}
+const int dataset::getNumProteoforms() const {
+   return proteoforms.index_to_entities.size();
+}
+
 const entities_bimap& dataset::getGenes() const {
    return genes;
 }
@@ -55,6 +65,12 @@ const std::unordered_map<std::string, std::unordered_set<std::string>>& dataset:
 const std::unordered_map<std::string, std::unordered_set<std::string>>& dataset::getProteoformsToPathways() const {
    return proteoforms_to_pathways;
 }
+const std::unordered_multimap<std::string, std::string>& dataset::getGenesToProteins() const {
+   return genes_to_proteins;
+}
+const std::unordered_multimap<std::string, std::string>& dataset::getProteinsToProteoforms() const {
+   return proteins_to_proteoforms;
+}
 
 void dataset::setPathwayNames(std::string_view path_file_mapping) {
    std::cerr << "Setting pathway names\n";
@@ -75,10 +91,11 @@ void dataset::setPathwayNames(std::string_view path_file_mapping) {
 
 void dataset::setGeneMapping(std::string_view path_file_mapping) {
    genes = readEntities(path_file_mapping);
-   std::cerr << "Read " << genes.index_to_entities.size() << " genes.\n";
+   std::cerr << "Read " << getNumGenes() << " genes.\n";
 
    std::ifstream map_file(path_file_mapping.data());
    std::string protein, gene, reaction, pathway, leftover;
+   std::set<std::pair<std::string, std::string>> temp_genes_to_proteins;
 
    if (!map_file.is_open()) {
       throw std::runtime_error("Could not open gene mapping file.");
@@ -90,19 +107,34 @@ void dataset::setGeneMapping(std::string_view path_file_mapping) {
       getline(map_file, pathway, ',');     // Read PATHWAY_STID
       getline(map_file, protein);          // Read PROTEIN
 
+      temp_genes_to_proteins.insert(std::make_pair(gene, protein));
+
       pathways_to_genes[pathway].set(genes.entities_to_index.at(gene));
       genes_to_pathways[gene].insert(pathway);
 
       reactions_to_genes[reaction].set(genes.entities_to_index.at(gene));
       genes_to_reactions[gene].insert(reaction);
    }
+
    std::cerr << "Filled " << pathways_to_genes.size() << " pathways for genes.\n";
    std::cerr << "Filled " << reactions_to_genes.size() << " reactions for genes.\n";
+
+   // Finish calculating genes to proteins
+   for (const auto& entry : temp_genes_to_proteins)
+      genes_to_proteins.emplace(entry.first, entry.second);
+
+   std::unordered_set<std::string> temp_genes_mapped_to_proteins;
+   std::unordered_set<std::string> temp_proteins_mapped_from_genes;
+   for (const auto& entry : temp_genes_to_proteins) {
+      temp_genes_mapped_to_proteins.insert(entry.first);
+      temp_proteins_mapped_from_genes.insert(entry.second);
+   }
+   std::cerr << "Mapped " << temp_genes_mapped_to_proteins.size() << " genes to " << temp_proteins_mapped_from_genes.size() << " proteins\n";
 }
 
 void dataset::setProteinMapping(std::string_view path_file_mapping) {
    proteins = readEntities(path_file_mapping.data());
-   std::cerr << "Read " << proteins.index_to_entities.size() << " proteins.\n";
+   std::cerr << "Read " << getNumProteins() << " proteins.\n";
 
    std::ifstream map_file(path_file_mapping.data());
    std::string protein, reaction, pathway, leftover;
@@ -122,14 +154,16 @@ void dataset::setProteinMapping(std::string_view path_file_mapping) {
       reactions_to_proteins[reaction].set(proteins.entities_to_index.at(protein));
       proteins_to_reactions[protein].insert(reaction);
    }
+
    std::cerr << "Filled " << pathways_to_proteins.size() << " pathways for proteins.\n";
    std::cerr << "Filled " << reactions_to_proteins.size() << " reactions for proteins.\n";
 }
 
 void dataset::setProteoformMapping(std::string_view path_file_mapping) {
    proteoforms = readEntities(path_file_mapping);
-   std::cerr << "Read " << proteoforms.index_to_entities.size() << " proteoforms.\n";
+   std::cerr << "Read " << getNumProteoforms() << " proteoforms.\n";
 
+   // Calculate proteoforms to reactions and pathways
    std::ifstream map_file(path_file_mapping.data());
    std::string proteoform, reaction, pathway, leftover;
 
@@ -138,10 +172,7 @@ void dataset::setProteoformMapping(std::string_view path_file_mapping) {
 
    getline(map_file, leftover);  // Skip csv header line
    while (map_file.peek() != EOF) {
-      if (map_file.peek() == '\"')  // Read initial "
-         map_file.get();
-      map_file.get();  // Read initial " or [
-      getline(map_file, proteoform, ']');
+      proteoform = proteoform::readProteoformFromNeo4jCsv(map_file);
       getline(map_file, leftover, ',');  // Read end " if it exist
       getline(map_file, reaction, ',');  // Read REACTION_STID
       getline(map_file, pathway);        // Read PATHWAY_STID
@@ -152,9 +183,23 @@ void dataset::setProteoformMapping(std::string_view path_file_mapping) {
       reactions_to_proteoforms[reaction].set(proteoforms.entities_to_index.at(proteoform));
       proteoforms_to_reactions[proteoform].insert(reaction);
    }
+
    std::cerr << "Filled " << pathways_to_proteoforms.size() << " pathways for proteoforms.\n";
    std::cerr << "Filled " << reactions_to_proteoforms.size() << " reactions for proteoforms.\n";
-}
+
+   // Calculate proteins to proteoforms
+   for (const auto& proteoform : proteoforms.index_to_entities) {
+      proteins_to_proteoforms.emplace(proteoform::getAccession(proteoform), proteoform);
+   }
+   std::unordered_set<std::string> temp_proteins_mapped_to_proteoforms;
+   std::unordered_set<std::string> temp_proteoforms_mapped_from_proteins;
+   for (const auto& entry : proteins_to_proteoforms) {
+      temp_proteins_mapped_to_proteoforms.insert(entry.first);
+      temp_proteoforms_mapped_from_proteins.insert(entry.second);
+   }
+   std::cerr << "Mapped " << temp_proteins_mapped_to_proteoforms.size() << " proteins to proteoforms.\n";
+   std::cerr << "Mapped " << temp_proteoforms_mapped_from_proteins.size() << " proteoforms from proteins.\n";
+}  // namespace pathway
 
 void dataset::calculateInteractionNetworks() {
    throw std::runtime_error("Not implemented exception");

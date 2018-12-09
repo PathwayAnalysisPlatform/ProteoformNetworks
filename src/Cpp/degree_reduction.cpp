@@ -25,8 +25,8 @@ void doAnalysis(pathway::dataset dataset_reactome, string_view report_file_path)
       sum_reactions += dataset_reactome.getGenesToReactions().at(gene).size();
       sum_pathways += dataset_reactome.getGenesToPathways().at(gene).size();
    }
-   avg_reactions_genes = sum_reactions / dataset_reactome.getGenes().index_to_entities.size();
-   avg_pathways_genes = sum_pathways / dataset_reactome.getGenes().index_to_entities.size();
+   avg_reactions_genes = sum_reactions / dataset_reactome.getNumGenes();
+   avg_pathways_genes = sum_pathways / dataset_reactome.getNumGenes();
    std::cerr << "Average reactions per gene: " << avg_reactions_genes << "\n";
    std::cerr << "Average pathways per gene: " << avg_pathways_genes << "\n";
 
@@ -36,8 +36,8 @@ void doAnalysis(pathway::dataset dataset_reactome, string_view report_file_path)
       sum_reactions += dataset_reactome.getProteinsToReactions().at(protein).size();
       sum_pathways += dataset_reactome.getProteinsToPathways().at(protein).size();
    }
-   avg_reactions_proteins = sum_reactions / dataset_reactome.getProteins().index_to_entities.size();
-   avg_pathways_proteins = sum_pathways / dataset_reactome.getProteins().index_to_entities.size();
+   avg_reactions_proteins = sum_reactions / dataset_reactome.getNumProteins();
+   avg_pathways_proteins = sum_pathways / dataset_reactome.getNumProteins();
    std::cerr << "Average reactions per protein: " << avg_reactions_proteins << "\n";
    std::cerr << "Average pathways per protein: " << avg_pathways_proteins << "\n";
 
@@ -50,12 +50,27 @@ void doAnalysis(pathway::dataset dataset_reactome, string_view report_file_path)
       sum_reactions += dataset_reactome.getProteoformsToReactions().at(proteoform).size();
       sum_pathways += dataset_reactome.getProteoformsToPathways().at(proteoform).size();
    }
-   avg_reactions_proteoforms = sum_reactions / dataset_reactome.getProteoforms().index_to_entities.size();
-   avg_pathways_proteoforms = sum_pathways / dataset_reactome.getProteoforms().index_to_entities.size();
+   avg_reactions_proteoforms = sum_reactions / dataset_reactome.getNumProteoforms();
+   avg_pathways_proteoforms = sum_pathways / dataset_reactome.getNumProteoforms();
    std::cerr << "Average reactions per proteoform: " << avg_reactions_proteoforms << "\n";
    std::cerr << "Average pathways per proteoform: " << avg_pathways_proteoforms << "\n";
 
    // Calculate average number of proteoforms for a protein
-}
+   double avg_proteoforms_per_protein;
+   double sum_proteoforms = 0.0;
+   for (const auto& protein : dataset_reactome.getProteins().index_to_entities) {
+      sum_proteoforms += dataset_reactome.getProteinsToProteoforms().count(protein);
+   }
+   avg_proteoforms_per_protein = sum_proteoforms / dataset_reactome.getNumProteins();
+   std::cerr << "Average number of proteoforms per protein accession: " << avg_proteoforms_per_protein << "\n";
+
+   std::cerr << "Example accession with its proteoforms: \n";
+   auto ret = dataset_reactome.getProteinsToProteoforms().equal_range("P31749");
+   std::cerr << "P31749 => \n";
+   for (auto it = ret.first; it != ret.second; it++) {
+      cout << "\t" << it->second << "\n";
+   }
+
+}  // namespace degree_reduction
 
 }  // namespace degree_reduction

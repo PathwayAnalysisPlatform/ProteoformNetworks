@@ -30,10 +30,7 @@ std::vector<std::string> createIndexToEntities(const std::string& path_file_mapp
    getline(map_file, leftover);  // Skip header line
    while (map_file.peek() != EOF) {
       if (map_file.peek() == '[' || map_file.peek() == '\"') {
-         if (map_file.peek() == '\"')  // Read initial "
-            map_file.get();
-         map_file.get();  // Read initial " or [
-         getline(map_file, entity, ']');
+         entity = proteoform::readProteoformFromNeo4jCsv(map_file);
       } else {
          getline(map_file, entity, ',');  // Read entity
       }
