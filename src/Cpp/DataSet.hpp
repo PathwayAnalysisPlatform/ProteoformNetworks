@@ -9,9 +9,10 @@
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
-#include "proteoform.hpp"
+#include <vector>
 
 #include "entity.hpp"
+#include "proteoform.hpp"
 
 namespace pathway {
 
@@ -49,6 +50,10 @@ class dataset {
    const std::unordered_multimap<std::string, std::string>& getGenesToProteins() const;
    const std::unordered_multimap<std::string, std::string>& getProteinsToProteoforms() const;
 
+   const std::unordered_multimap<std::string, std::string>& getGeneNetwork() const;
+   const std::unordered_multimap<std::string, std::string>& getProteinNetwork() const;
+   const std::unordered_multimap<std::string, std::string>& getProteoformNetwork() const;
+
   private:
    std::string name;
    std::unordered_map<std::string, std::string> pathways_to_names;
@@ -84,6 +89,27 @@ class dataset {
    void setProteinMapping(std::string_view path_file_mapping);
    void setProteoformMapping(std::string_view path_file_mapping);
    void calculateInteractionNetworks();
+
+   template <size_t num_entities>
+   void calculateNetwork(const entities_bimap& entities,
+                         const std::unordered_map<std::string, std::bitset<num_entities>>& reactions_to_entities,
+                         std::unordered_multimap<std::string, std::string>& entity_network) {
+
+      for (const auto& reaction_entry : reactions_to_entities) {
+         std::vector<std::string> members;
+         for (int I = 0; I < reaction_entry.second.size(); I++) {
+            if (reaction_entry.second.test(I)) {
+               members.push_back(entities.index_to_entities[I]);
+            }
+         }
+
+         for (const auto& one_member : members) {
+            for (const auto& other_member : members) {
+               entity_network.emplace(one_member, other_member);
+            }
+         }
+      }
+   }
 };
 
 }  // namespace pathway

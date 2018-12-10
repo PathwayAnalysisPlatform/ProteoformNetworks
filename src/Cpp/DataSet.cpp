@@ -12,7 +12,8 @@ dataset::dataset(std::string_view path_file_gene_mapping,
    setProteoformMapping(path_file_proteoform_mapping);
 
    // Create interaction network
-   // calculateInteractionNetworks();
+   std::cerr << "Calculating networks...\n";
+   calculateInteractionNetworks();
 }
 
 std::string dataset::getName() const {
@@ -70,6 +71,15 @@ const std::unordered_multimap<std::string, std::string>& dataset::getGenesToProt
 }
 const std::unordered_multimap<std::string, std::string>& dataset::getProteinsToProteoforms() const {
    return proteins_to_proteoforms;
+}
+const std::unordered_multimap<std::string, std::string>& dataset::getGeneNetwork() const {
+   return gene_network;
+}
+const std::unordered_multimap<std::string, std::string>& dataset::getProteinNetwork() const {
+   return protein_network;
+}
+const std::unordered_multimap<std::string, std::string>& dataset::getProteoformNetwork() const {
+   return proteoform_network;
 }
 
 void dataset::setPathwayNames(std::string_view path_file_mapping) {
@@ -197,12 +207,13 @@ void dataset::setProteoformMapping(std::string_view path_file_mapping) {
       temp_proteins_mapped_to_proteoforms.insert(entry.first);
       temp_proteoforms_mapped_from_proteins.insert(entry.second);
    }
-   std::cerr << "Mapped " << temp_proteins_mapped_to_proteoforms.size() << " proteins to proteoforms.\n";
-   std::cerr << "Mapped " << temp_proteoforms_mapped_from_proteins.size() << " proteoforms from proteins.\n";
+   std::cerr << "Mapped " << temp_proteins_mapped_to_proteoforms.size() << " proteins to " << temp_proteoforms_mapped_from_proteins.size() << " proteoforms.\n";
 }  // namespace pathway
 
 void dataset::calculateInteractionNetworks() {
-   throw std::runtime_error("Not implemented exception");
+   calculateNetwork(genes, reactions_to_genes, gene_network);
+   calculateNetwork(proteins, reactions_to_proteins, protein_network);
+   calculateNetwork(proteoforms, reactions_to_proteoforms, proteoform_network);
 }
 
 }  // namespace pathway

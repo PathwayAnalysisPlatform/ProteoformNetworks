@@ -23,7 +23,14 @@ const std::string path_file_mapping_proteins_to_genes = "resources/UniProt/prote
 // 4) Modified overlap
 
 // ************* Output files
+
+//1) Degree reduction analysis
 const std::string path_file_report_degree_reduction_analysis = "reports/degree_reduction_analysis.txt";
+const std::string path_file_node_degree_genes = "reports/node_degree_genes.txt";
+const std::string path_file_node_degree_proteins = "reports/node_degree_proteins.txt";
+const std::string path_file_node_degree_proteoforms = "reports/node_degree_proteoforms.txt";
+
+// 2) Percolation
 const std::string path_file_report_percolation_analysis = "reports/percolation_analysis.txt";
 
 const std::string path_file_report_artefactual_overlap_pathway = "reports/artefactual_overlap_pathway.txt";
@@ -42,7 +49,10 @@ const std::string path_file_modified_overlap_trait_modifications = "reports/modi
 int main() try {
    pathway::dataset pathwayDataSet(path_file_gene_mapping, path_file_protein_mapping, path_file_proteoform_mapping);
 
-   degree_reduction::doAnalysis(pathwayDataSet, path_file_report_degree_reduction_analysis);
+   degree_reduction::doAnalysis(pathwayDataSet,
+                                path_file_node_degree_genes,
+                                path_file_node_degree_proteins,
+                                path_file_node_degree_proteoforms);
    // std::cout << "\n\n-----------------------------------------------------\n\n";
    // percolation::doAnalysis(path_file_gene_search,
    //                         path_file_protein_search,
