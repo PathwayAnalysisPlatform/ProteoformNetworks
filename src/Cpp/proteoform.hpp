@@ -34,7 +34,7 @@ std::bitset<S> getSetOfModifiedProteoforms(const std::vector<std::string>& prote
    return modified_proteoforms;
 }
 
-std::set<std::string> getModifications(std::string proteoform);
+std::vector<std::string> getModifications(std::string proteoform);
 
 std::string readProteoformFromNeo4jCsv(std::ifstream& fs);
 

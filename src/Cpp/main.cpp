@@ -1,12 +1,12 @@
 #include "artefactual_overlap.hpp"
 #include "dataset.hpp"
-#include "degree_reduction.hpp"
+#include "degree.hpp"
 #include "modified_overlap.hpp"
 #include "percolation.hpp"
 
 // ************* Input files
 
-// 1) Degree reduction
+// 1) Degree analysis
 const std::string path_file_gene_mapping = "resources/reactome/gene_mapping.csv";              // Includes the mapping from genes to proteins and genes to reactions and pathways.
 const std::string path_file_protein_mapping = "resources/reactome/protein_mapping.csv";        // Includes the mapping from proteins to reactions and pathways, and names of reactions and pathways.
 const std::string path_file_proteoform_mapping = "resources/reactome/proteoform_mapping.csv";  // Includes the mapping from proteoforms to reactions and pathways.
@@ -24,11 +24,10 @@ const std::string path_file_mapping_proteins_to_genes = "resources/UniProt/prote
 
 // ************* Output files
 
-//1) Degree reduction analysis
-const std::string path_file_report_degree_reduction_analysis = "reports/degree_reduction_analysis.txt";
-const std::string path_file_node_degree_genes = "reports/node_degree_genes.txt";
-const std::string path_file_node_degree_proteins = "reports/node_degree_proteins.txt";
-const std::string path_file_node_degree_proteoforms = "reports/node_degree_proteoforms.txt";
+//1) Degree analysis
+const std::string path_file_report_degree_analysis = "reports/degree_analysis.txt";
+const std::string path_file_hits = "reports/hits.txt";
+const std::string path_file_degree = "reports/degree.txt";
 
 // 2) Percolation
 const std::string path_file_report_percolation_analysis = "reports/percolation_analysis.txt";
@@ -49,10 +48,10 @@ const std::string path_file_modified_overlap_trait_modifications = "reports/modi
 int main() try {
    pathway::dataset pathwayDataSet(path_file_gene_mapping, path_file_protein_mapping, path_file_proteoform_mapping);
 
-   degree_reduction::doAnalysis(pathwayDataSet,
-                                path_file_node_degree_genes,
-                                path_file_node_degree_proteins,
-                                path_file_node_degree_proteoforms);
+   degree::doAnalysis(pathwayDataSet,
+                      path_file_report_degree_analysis,
+                      path_file_hits,
+                      path_file_degree);
    // std::cout << "\n\n-----------------------------------------------------\n\n";
    // percolation::doAnalysis(path_file_gene_search,
    //                         path_file_protein_search,

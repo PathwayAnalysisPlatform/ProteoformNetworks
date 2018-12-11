@@ -32,13 +32,20 @@ class dataset {
 
    const std::unordered_map<std::string, std::string>& getPathwayNames() const;
 
+   const int getNumReactions() const;
+   const int getNumPathways() const;
+
    const int getNumGenes() const;
    const int getNumProteins() const;
    const int getNumProteoforms() const;
+   const int getNumModifiedProteins() const;
+   const int getNumModifiedProteoforms() const;
 
-   const entities_bimap& getGenes() const;
-   const entities_bimap& getProteins() const;
-   const entities_bimap& getProteoforms() const;
+   const std::vector<std::string>& getGenes() const;
+   const std::vector<std::string>& getProteins() const;
+   const std::vector<std::string>& getProteoforms() const;
+   const std::vector<std::string>& getModifiedProteins() const;
+   const std::vector<std::string>& getModifiedProteoforms() const;
 
    const std::unordered_map<std::string, std::unordered_set<std::string>>& getGenesToReactions() const;
    const std::unordered_map<std::string, std::unordered_set<std::string>>& getGenesToPathways() const;
@@ -61,6 +68,8 @@ class dataset {
    entities_bimap genes;
    entities_bimap proteins;
    entities_bimap proteoforms;
+   std::vector<std::string> modified_proteins;
+   std::vector<std::string> modified_proteoforms;
 
    std::unordered_map<std::string, std::bitset<NUM_GENES>> pathways_to_genes;
    std::unordered_map<std::string, std::unordered_set<std::string>> genes_to_pathways;
@@ -88,13 +97,14 @@ class dataset {
    void setGeneMapping(std::string_view path_file_mapping);
    void setProteinMapping(std::string_view path_file_mapping);
    void setProteoformMapping(std::string_view path_file_mapping);
+   void checkMappingConsistency();
+   void calculateModifiedProteinsAndProteoforms();
    void calculateInteractionNetworks();
 
    template <size_t num_entities>
    void calculateNetwork(const entities_bimap& entities,
                          const std::unordered_map<std::string, std::bitset<num_entities>>& reactions_to_entities,
                          std::unordered_multimap<std::string, std::string>& entity_network) {
-
       for (const auto& reaction_entry : reactions_to_entities) {
          std::vector<std::string> members;
          for (int I = 0; I < reaction_entry.second.size(); I++) {

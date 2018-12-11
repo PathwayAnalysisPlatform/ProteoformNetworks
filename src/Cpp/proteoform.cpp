@@ -15,15 +15,15 @@ bool isModified(const std::string& proteoform) {
    return regex_search(proteoform, modification, RGX_MODIFICATION);
 }
 
-std::set<std::string> getModifications(std::string proteoform) {
-   std::set<std::string> modifications;
+std::vector<std::string> getModifications(std::string proteoform) {
+   std::vector<std::string> modifications;
    std::sregex_iterator it(proteoform.begin(), proteoform.end(), RGX_MODIFICATION);
    std::sregex_iterator end;
    while (it != end) {
       if (it->str().find(';') || it->str().find(',')) {
-         modifications.insert(it->str().substr(1));
+         modifications.push_back(it->str().substr(1));
       } else {
-         modifications.insert((*it)[0]);
+         modifications.push_back((*it)[0]);
       }
       it++;
    }
