@@ -29,56 +29,45 @@ p
 
 # ----------------------------------------------------------------------------
 
-name <- "ptm_annotations_type_and_date"
-data <- get.data(name)
-data$date <- as.Date(data$date, format="%Y")
-data$order <- 1:nrow(data)
+# Jitter plot
 
-# png(get.path.figure(name), width = 800, height = 600)
-p <- ggplot(data, aes(date, order))
-p + geom_jitter(aes(colour = psimod), width = 2000)
-# dev.off()
+plot.ptm.annotations <- function(name, title = "PTM Annotation Evolution"){
+  # Get and process the data
+  data <- get.data(name)
+  data$date <- as.Date(data$date, format="%Y")
+  data$order <- 1:nrow(data)
+  data$psimod <- as.factor(data$psimod)
+  
+  # Make the plot
+  y.ticks <- as.integer(seq(0, data$order[nrow(data)], length = 10))
+  p <- ggplot(data, aes(date, order)) +
+    labs(title = title) +
+    geom_jitter(aes(colour = psimod), width = 500) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    scale_x_discrete(name = "Years", limits = data$date, labels = as.numeric(format(data$date,'%Y'))) +
+    scale_y_discrete(name = "# PTM annotations", limits = y.ticks, labels = y.ticks)
+  png(get.path.figure(name), height = 12, width = 12, units = "cm", res = 600)
+  plot(p)
+  dummy <- dev.off()
+  return(p)
+}
+
+# ----------------------------------------------------------------------------
+# All
+p <- plot.ptm.annotations("ptm_annotations_type_and_date")
 p
 
 # ----------------------------------------------------------------------------
 # Phosphorylated
-name <- "phospho_annotations"
-data <- get.data(name)
-data$date <- as.Date(data$date, format="%Y")
-data$order <- 1:nrow(data)
-data$psimod <- as.factor(data$psimod)
-
-png(get.path.figure(name), width = 800, height = 600)
-p <- ggplot(data, aes(date, order))
-p + geom_jitter(aes(colour = psimod), width = 500)
-dev.off()
+p <- plot.ptm.annotations("phospho_annotations")
 p
 
 # ----------------------------------------------------------------------------
 # Hydroxylated
-name <- "hydro_annotations"
-data <- get.data(name)
-data$date <- as.Date(data$date, format="%Y")
-data$order <- 1:nrow(data)
-data$psimod <- as.factor(data$psimod)
-
-png(get.path.figure(name), width = 800, height = 600)
-p <- ggplot(data, aes(date, order))
-p + geom_jitter(aes(colour = psimod), width = 500)
-dev.off()
+p <- plot.ptm.annotations("hydro_annotations")
 p
 
 # ----------------------------------------------------------------------------
 # Glycosylated
-name <- "glyco_annotations"
-data <- get.data(name)
-data$date <- as.Date(data$date, format="%Y")
-data$order <- 1:nrow(data)
-data$psimod <- as.factor(data$psimod)
-
-png(get.path.figure(name), width = 800, height = 600)
-p <- ggplot(data, aes(date, order))
-p + geom_jitter(aes(colour = psimod), width = 500)
-dev.off()
+p <- plot.ptm.annotations("glyco_annotations")
 p
-
