@@ -16,6 +16,8 @@ void doAnalysis(const pathway::dataset& ds,
                 std::string_view path_file_node_degree_proteins,
                 std::string_view path_file_node_degree_proteoforms,
                 std::string_view path_file_hits,
+                std::string_view path_file_hits_reactions,
+                std::string_view path_file_hits_pathways,
                 std::string_view path_file_degree) {
    std::cout << "Degree analysis...\n";
    reportEntities(ds, path_file_entities,
@@ -23,7 +25,7 @@ void doAnalysis(const pathway::dataset& ds,
                   path_file_proteoforms_per_protein,
                   path_file_modified_proteoforms_per_protein);
 
-   reportHits(ds, path_file_report_degree_analysis, path_file_hits);
+   reportHits(ds, path_file_report_degree_analysis, path_file_hits, path_file_hits_reactions, path_file_hits_pathways);
 
    // Number of nodes and links in each network
    std::cout << "Gene network nodes: " << ds.getNumGenes() << " links: " << (ds.getGeneNetwork().size() / 2) << "\n";
@@ -119,9 +121,7 @@ void reportEntities(const pathway::dataset& ds,
    report_entities << "\n";
    if (measures.avg != static_cast<double>(ds.getNumProteins()) / ds.getNumGenes())
       throw std::runtime_error("The average number of accessions per gene has a problem with the calculation.\n");
-   report_entities << "Average protein accessions per gene: " << measures.avg << "\n";
-   report_entities << "Min: " << measures.min << "\n";
-   report_entities << "Max: " << measures.max << "\n";
+   writeMeasures(report_entities, measures, "proteins", "gene");
    writeFrequencies(path_file_proteins_per_gene, ds.getGenesToProteins());
 
    // Number of proteoforms per protein: average, max, min
@@ -129,22 +129,16 @@ void reportEntities(const pathway::dataset& ds,
    report_entities << "\n";
    if (measures.avg != static_cast<double>(ds.getNumProteoforms()) / ds.getNumProteins())
       throw std::runtime_error("There is a problem in the calculation of proteoforms per accession.\n");
-   report_entities << "Average proteoforms per protein accession: " << measures.avg << "\n";
-   report_entities << "Min: " << measures.min << "\n";
-   report_entities << "Max: " << measures.max << "\n";
+   writeMeasures(report_entities, measures, "proteoforms", "protein");
    writeFrequencies(path_file_proteoforms_per_protein, ds.getProteinsToProteoforms());
 
    measures = calculateMeasuresWithSelectedKeys(ds.getProteinsToProteoforms(), ds.getModifiedProteins());
-   report_entities << "Average proteoforms per protein accession with at least a modification in any of its proteoforms: " << measures.avg << "\n";
-   report_entities << "Min: " << measures.min << "\n";
-   report_entities << "Max: " << measures.max << "\n";
+   writeMeasures(report_entities, measures, "proteoforms", "modified protein");
    writeFrequencies(path_file_modified_proteoforms_per_protein, ds.getProteinsToProteoforms(), ds.getModifiedProteins());
 
    // Number of modifications per proteoform: average, max, min
    measures = calculateModificationsPerProteoform(ds.getProteoforms());
-   report_entities << "Average modifications per proteoform: " << measures.avg << "\n";
-   report_entities << "Min: " << measures.min << "\n";
-   report_entities << "Max: " << measures.max << "\n";
+   writeMeasures(report_entities, measures, "modifications", "proteoform");
 
    // Frequency of modifications
    //TODO
@@ -153,93 +147,23 @@ void reportEntities(const pathway::dataset& ds,
    //TODO
 }
 
-void reportHits(const pathway::dataset& ds, std::string_view path_file_report_degree_analysis, std::string_view path_file_hits) {
-   // Number of reactions and pathways per gene: average, max, min
-   auto avg_hits = calculateHits(pathway::entities::GENES, ds);
-   std::cout << "Average reactions per gene: " << avg_hits.reactions << "\n";
-   std::cout << "Average pathways per gene: " << avg_hits.pathways << "\n";
+void reportHits(const pathway::dataset& ds,
+                std::string_view path_file_hits,
+                std::string_view path_file_hits_reactions,
+                std::string_view path_file_hits_pathways) {
+   std::ofstream report_hits(path_file_hits.data());
+   std::ofstream report_hits_reactions(path_file_hits_reactions.data());
+   std::ofstream report_hits_pathways(path_file_hits_pathways.data());
 
-   // Number of reactions and pathways per protein: average, max, min
-   avg_hits = calculateHits(pathway::entities::PROTEINS, ds);
-   std::cout << "Average reactions per protein: " << avg_hits.reactions << "\n";
-   std::cout << "Average pathways per protein: " << avg_hits.pathways << "\n";
+   writeMeasures(report_hits, ds.getGenesToReactions(), "reactions", "gene");
+   writeFrequencies(path_file)
+   writeMeasures(report_hits, ds.getGenesToPathways(), "pathways", "gene");
+   writeMeasures(report_hits, ds.getProteinsToReactions(), "reactions", "protein");
+   writeMeasures(report_hits, ds.getProteoformsToReactions(), "reactions", "proteoform");
+   writeMeasures(report_hits, ds.getProteoformsToPathways(), "pathways", "proteoform");
 
-   std::cerr << "Reactions for P31749: " << ds.getProteinsToReactions().at("P31749").size() << "\n";
-   std::cerr << "Pathways for P31749: " << ds.getProteinsToPathways().at("P31749").size() << "\n";
-
-   // Number of reactions and pathways per proteoform: average, max, min
-   avg_hits = calculateHits(pathway::entities::PROTEOFORMS, ds);
-   std::cout << "Average reactions per proteoform: " << avg_hits.reactions << "\n";
-   std::cout << "Average pathways per proteoform: " << avg_hits.pathways << "\n";
-}
-
-const hits_result calculateHits(pathway::entities entity_type, const pathway::dataset& ds) {
-   const std::vector<std::string>* entities;
-   const std::unordered_map<std::string, std::unordered_set<std::string>>* entities_to_reactions;
-   const std::unordered_map<std::string, std::unordered_set<std::string>>* entities_to_pathways;
-
-   switch (entity_type) {
-      case pathway::entities::GENES:
-         entities = &(ds.getGenes());
-         entities_to_reactions = &(ds.getGenesToReactions());
-         entities_to_pathways = &(ds.getGenesToPathways());
-         break;
-      case pathway::entities::PROTEINS:
-         entities = &(ds.getProteins());
-         entities_to_reactions = &(ds.getProteinsToReactions());
-         entities_to_pathways = &(ds.getProteinsToPathways());
-         break;
-      case pathway::entities::PROTEOFORMS:
-         entities = &(ds.getProteoforms());
-         entities_to_reactions = &(ds.getProteoformsToReactions());
-         entities_to_pathways = &(ds.getProteoformsToPathways());
-         break;
-   }
-
-   double sum_reactions = 0.0;
-   double sum_pathways = 0.0;
-   for (const auto& entity : (*entities)) {
-      sum_reactions += (*entities_to_reactions).at(entity).size();
-      sum_pathways += (*entities_to_pathways).at(entity).size();
-   }
-   return {sum_reactions / (*entities).size(), sum_pathways / (*entities).size()};
-}
-
-const measures_result calculateMeasures(const std::unordered_multimap<std::string, std::string>& mapping) {
-   double min = mapping.count(mapping.begin()->first);
-   double max = mapping.count(mapping.begin()->first);
-   double avg = 0.0;
-   double sum = 0.0;
-   for (const auto& entry : mapping) {
-      double freq = mapping.count(entry.first);
-      if (freq < min)
-         min = freq;
-      if (freq > max)
-         max = freq;
-      sum += freq;
-   }
-   avg = static_cast<double>(sum) / mapping.size();
-   return {min, max, avg};
-}
-
-// Calculate average numer of proteoforms for proteins with at least two proteoforms with at least one modification
-const measures_result calculateMeasuresWithSelectedKeys(const std::unordered_multimap<std::string, std::string>& mapping,
-                                                        const std::vector<std::string>& keys) {
-   // Calculate averag proteoforms for all them
-   double min = mapping.count(*keys.begin());
-   double max = mapping.count(*keys.begin());
-   double avg = 0.0;
-   double sum = 0.0;
-   for (const auto& value : keys) {
-      double freq = mapping.count(value);
-      if (freq < min)
-         min = freq;
-      if (freq > max)
-         max = freq;
-      sum += mapping.count(value);
-   }
-   avg = sum / keys.size();
-   return {min, max, avg};
+   std::cerr << "Reactions for P31749: " << ds.getProteinsToReactions().count("P31749") << "\n";
+   std::cerr << "Pathways for P31749: " << ds.getProteinsToPathways().count("P31749") << "\n";
 }
 
 const measures_result calculateModificationsPerProteoform(const std::vector<std::string>& proteoforms) {

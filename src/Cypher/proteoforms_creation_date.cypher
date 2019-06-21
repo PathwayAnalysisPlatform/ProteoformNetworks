@@ -16,8 +16,8 @@ WITH DISTINCT pe,
               CASE WHEN isoform IS NOT NULL THEN isoform ELSE protein END as isoform,
               collect(tm_date) as tm_dates,
               collect(type + ":" + CASE WHEN coordinate IS NOT NULL THEN coordinate ELSE "null" END) AS ptms
-WITH DISTINCT (isoform + ptms) as proteoform, 
+WITH DISTINCT pe, (isoform + ptms) as proteoform, 
                 CASE WHEN size(tm_dates) = 0 THEN pe_date ELSE head(min(tm_dates)) END as date  
-WITH DISTINCT proteoform, collect(date) as date
-RETURN DISTINCT proteoform, head(min(date)) as date
+WITH DISTINCT pe, proteoform, collect(date) as date
+RETURN DISTINCT pe, proteoform, head(min(date)) as date
 ORDER BY date DESC

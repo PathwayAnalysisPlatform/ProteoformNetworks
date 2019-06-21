@@ -72,22 +72,22 @@ const std::vector<std::string>& dataset::getModifiedProteoforms() const {
    return modified_proteoforms;
 }
 
-const std::unordered_map<std::string, std::unordered_set<std::string>>& dataset::getGenesToReactions() const {
+const std::unordered_multimap<std::string, std::string>& dataset::getGenesToReactions() const {
    return genes_to_reactions;
 }
-const std::unordered_map<std::string, std::unordered_set<std::string>>& dataset::getGenesToPathways() const {
+const std::unordered_multimap<std::string, std::string>& dataset::getGenesToPathways() const {
    return genes_to_pathways;
 }
-const std::unordered_map<std::string, std::unordered_set<std::string>>& dataset::getProteinsToReactions() const {
+const std::unordered_multimap<std::string, std::string>& dataset::getProteinsToReactions() const {
    return proteins_to_reactions;
 }
-const std::unordered_map<std::string, std::unordered_set<std::string>>& dataset::getProteinsToPathways() const {
+const std::unordered_multimap<std::string, std::string>& dataset::getProteinsToPathways() const {
    return proteins_to_pathways;
 }
-const std::unordered_map<std::string, std::unordered_set<std::string>>& dataset::getProteoformsToReactions() const {
+const std::unordered_multimap<std::string, std::string>& dataset::getProteoformsToReactions() const {
    return proteoforms_to_reactions;
 }
-const std::unordered_map<std::string, std::unordered_set<std::string>>& dataset::getProteoformsToPathways() const {
+const std::unordered_multimap<std::string, std::string>& dataset::getProteoformsToPathways() const {
    return proteoforms_to_pathways;
 }
 const std::unordered_multimap<std::string, std::string>& dataset::getGenesToProteins() const {
@@ -143,10 +143,10 @@ void dataset::setGeneMapping(std::string_view path_file_mapping) {
       temp_genes_to_proteins.insert(std::make_pair(gene, protein));
 
       pathways_to_genes[pathway].set(genes.entities_to_index.at(gene));
-      genes_to_pathways[gene].insert(pathway);
+      genes_to_pathways.emplace(gene, pathway);
 
       reactions_to_genes[reaction].set(genes.entities_to_index.at(gene));
-      genes_to_reactions[gene].insert(reaction);
+      genes_to_reactions.emplace(gene, reaction);
    }
 
    // Finish calculating genes to proteins
@@ -172,10 +172,10 @@ void dataset::setProteinMapping(std::string_view path_file_mapping) {
       getline(map_file, leftover);            // Read rest of line
 
       pathways_to_proteins[pathway].set(proteins.entities_to_index.at(protein));
-      proteins_to_pathways[protein].insert(pathway);
+      proteins_to_pathways.emplace(protein, pathway);
 
       reactions_to_proteins[reaction].set(proteins.entities_to_index.at(protein));
-      proteins_to_reactions[protein].insert(reaction);
+      proteins_to_reactions.emplace(protein, reaction);
    }
 }
 
@@ -199,10 +199,10 @@ void dataset::setProteoformMapping(std::string_view path_file_mapping) {
       getline(map_file, pathway);        // Read PATHWAY_STID
 
       pathways_to_proteoforms[pathway].set(proteoforms.entities_to_index.at(proteoform));
-      proteoforms_to_pathways[proteoform].insert(pathway);
+      proteoforms_to_pathways.emplace(proteoform, pathway);
 
       reactions_to_proteoforms[reaction].set(proteoforms.entities_to_index.at(proteoform));
-      proteoforms_to_reactions[proteoform].insert(reaction);
+      proteoforms_to_reactions.emplace(proteoform, reaction);
    }
 
    // Calculate proteins to proteoforms
@@ -213,13 +213,13 @@ void dataset::setProteoformMapping(std::string_view path_file_mapping) {
 
 void dataset::calculateModifiedProteinsAndProteoforms() {
    std::unordered_set<std::string> temp_modified_proteins;
-   for (const auto& proteoform : getProteoforms()){
-      if(proteoform::isModified(proteoform)){
+   for (const auto& proteoform : getProteoforms()) {
+      if (proteoform::isModified(proteoform)) {
          temp_modified_proteins.insert(proteoform::getAccession(proteoform));
          modified_proteoforms.push_back(proteoform);
       }
    }
-   for(const auto& accession : temp_modified_proteins){
+   for (const auto& accession : temp_modified_proteins) {
       modified_proteins.push_back(accession);
    }
 }

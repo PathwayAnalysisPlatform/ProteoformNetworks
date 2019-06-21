@@ -17,6 +17,7 @@ Release
 *.vcxproj*
 ipch
 *sdf
+x64
 
 ## Compiled Object files
 *.slo

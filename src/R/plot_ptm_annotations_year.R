@@ -22,7 +22,7 @@ p <- ggplot(data = data, aes(x = date, y = total)) +
   labs(title = "Evolution of PTM annotations") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   scale_x_discrete(name = "Years", limits = data$date, labels = as.numeric(format(data$date,'%Y'))) +
-  scale_y_discrete(name = "# PTM annotations", limits = y.ticks, labels = y.ticks)
+  ylab("# PTM annotations")
 png(get.path.figure(name), height = 12, width = 15, units = "cm", res = 600)
 plot(p)
 dummy <- dev.off()
