@@ -30,7 +30,6 @@ const std::string path_file_modified_overlap_trait_modifications = "reports/modi
 
 int main() try {
    doDegreeReductionAnalysis();
-
    doPercolationAnalysis();
 
    rule_out_gene_centric_overlap::doAnalysis(path_file_gene_search,
