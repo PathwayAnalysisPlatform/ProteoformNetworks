@@ -1,15 +1,15 @@
-#include "artefactual_overlap.hpp"
+#include "rule_out_gene_centric_overlap.hpp"
 
 using namespace std;
 
-namespace artefactual_overlap {
+namespace rule_out_gene_centric_overlap {
 
 /**
- * Find artefactual overlaps: pairs of pathways that share nodes only in the
+ * Find gene level only overlaps: pairs of pathways that share nodes only in the
  * gene or protein level, but not at the proteoform level
  */
 template <size_t size_genes, size_t size_proteins, size_t size_proteoforms>
-set<pair<string, string>> findArtefactualOverlapPairs(const unordered_map<string, bitset<size_proteoforms>>& sets_to_proteoforms,
+set<pair<string, string>> findGeneLevelOnlyOverlapPairs(const unordered_map<string, bitset<size_proteoforms>>& sets_to_proteoforms,
                                                       const map<pair<string, string>, bitset<size_genes>>& overlapping_gene_set_pairs,
                                                       const map<pair<string, string>, bitset<size_proteins>>& overlapping_protein_set_pairs,
                                                       const map<pair<string, string>, bitset<size_proteoforms>>& non_overlapping_proteoform_set_pairs) {
@@ -100,7 +100,7 @@ void writePathwayReport(ofstream& output,
                         const vector<string> index_to_genes,
                         const vector<string> index_to_proteins,
                         const vector<string> index_to_proteoforms) {
-   cerr << "Reporting pathway pairs with artefactual overlap...\n";
+   cerr << "Reporting pathway pairs with gene level only overlap...\n";
    output << "PATHWAY_1\tPATHWAY_2\tPATHWAY_1_NAME\tPATHWAY_2_NAME\t";
    output << "PATHWAY_1_GENE_SIZE\tPATHWAY_1_PROTEIN_SIZE\tPATHWAY_1_PROTEOFORM_SIZE\t";
    output << "PATHWAY_2_GENE_SIZE\tPATHWAY_2_PROTEIN_SIZE\tPATHWAY_2_PROTEOFORM_SIZE\t";
@@ -239,8 +239,8 @@ void reportPathwayPairs(const string& path_file_gene_search,
    cerr << "Non-overlapping: " << non_overlapping_proteoform_set_pairs.size() << "\n";
    cerr << "Total pairs defined: " << overlapping_proteoform_set_pairs.size() + non_overlapping_proteoform_set_pairs.size() << "\n";
 
-   cout << "Finding examples of artifactual overlap...\n";
-   const auto examples = findArtefactualOverlapPairs(pathways_to_proteoforms,
+   cout << "Finding examples of gene level only overlap...\n";
+   const auto examples = findGeneLevelOnlyOverlapPairs(pathways_to_proteoforms,
                                                      overlapping_gene_set_pairs,
                                                      overlapping_protein_set_pairs,
                                                      non_overlapping_proteoform_set_pairs);
@@ -306,8 +306,8 @@ void reportPhenotypePairs(const std::string& path_file_gene_search,
    cerr << "Non-overlapping: " << non_overlapping_proteoform_set_pairs.size() << "\n";
    cerr << "Total pairs defined: " << overlapping_proteoform_set_pairs.size() + non_overlapping_proteoform_set_pairs.size() << "\n";
 
-   cout << "Finding examples of artifactual overlap...\n";
-   const auto examples = findArtefactualOverlapPairs(traits_to_proteoforms,
+   cout << "Finding examples of gene level only overlap...\n";
+   const auto examples = findGeneLevelOnlyOverlapPairs(traits_to_proteoforms,
                                                      overlapping_gene_set_pairs,
                                                      overlapping_protein_set_pairs,
                                                      non_overlapping_proteoform_set_pairs);
@@ -327,7 +327,7 @@ void doAnalysis(const std::string& path_file_gene_search,
                 const std::string& path_file_mapping_proteins_to_genes,
                 const std::string& path_file_report_pathway,
                 const std::string& path_file_report_trait) {
-   cout << "Searching for artefactual overlap examples..." << endl;
+   cout << "Searching for gene level only overlap examples..." << endl;
 
    reportPathwayPairs(path_file_gene_search,
                       path_file_protein_search,
@@ -342,4 +342,4 @@ void doAnalysis(const std::string& path_file_gene_search,
                         path_file_report_trait);
 }
 
-}  // namespace artefactual_overlap
+}  // namespace rule_out_gene_centric_overlap

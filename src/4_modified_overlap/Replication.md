@@ -1,6 +1,6 @@
 # Steps to execute
 
-## Examples of pathway artefactual overlap
+## Examples of pathways with gene level only overlap
 
 * Get the protein and proteoform lists from the graph database in NEO4J console.
 
@@ -61,12 +61,12 @@ java -jar PathwayMatcher.jar -t proteoform -i reactome/all_proteoforms.csv -o re
 
 * Execute main C++ program to create the pathway sets and calculate overlaps:
 ~~~~
-g++ src/3_artefactual_overlap/artefactual_overlap.cpp src/main.cpp -O3 -o Debug/analysis.exe
+g++ src/3_rule_out_gene_centric_overlap/rule_out_gene_centric_overlap.cpp src/main.cpp -O3 -o Debug/analysis.exe
 ~~~~
 
-From the report file ("reports/3_artefactual_overlap_analysis.txt") choose a pair of pathways to see the variation in overlap.
+From the report file ("reports/3_rule_out_gene_centric_overlap_analysis.txt") choose a pair of pathways to see the variation in overlap.
 
-* Get members of both pathways at the different levels of granularity. The pathway names, isoforms and post translational modifications responsible for decomposing the artefactual overlap will show up.
+* Get members of both pathways at the different levels of granularity. The pathway names, isoforms and post translational modifications responsible for decomposing the gene level only overlap will show up.
 
 Genes:
 ~~~~
@@ -107,7 +107,7 @@ ORDER BY isoform, ptms
 
 ## Examples of modified overlap
 
-Follow the same steps of the artefactual overlap.
+Follow the same steps of the gene level only overlap.
 
 # Disease modules
 

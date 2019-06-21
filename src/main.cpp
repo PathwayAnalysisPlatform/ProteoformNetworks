@@ -1,12 +1,12 @@
 #include "1_degree_reduction/degree_reduction.hpp"
 #include "2_percolation/percolation.hpp"
-#include "3_artefactual_overlap/artefactual_overlap.hpp"
+#include "3_rule_out_gene_centric_overlap/rule_out_gene_centric_overlap.hpp"
 #include "4_modified_overlap/modified_overlap.hpp"
 
 // Input files
-const std::string path_file_gene_search = "resources/3_artefactual_overlap/gene_search.tsv";
-const std::string path_file_protein_search = "resources/3_artefactual_overlap/protein_search.tsv";
-const std::string path_file_proteoform_search = "resources/3_artefactual_overlap/proteoform_search.tsv";
+const std::string path_file_gene_search = "resources/3_rule_out_gene_centric_overlap/gene_search.tsv";
+const std::string path_file_protein_search = "resources/3_rule_out_gene_centric_overlap/protein_search.tsv";
+const std::string path_file_proteoform_search = "resources/3_rule_out_gene_centric_overlap/proteoform_search.tsv";
 
 const std::string path_file_PheGenI_full = "resources/PheGenI/PheGenI_Association_full.tab";
 const std::string path_file_mapping_proteins_to_genes = "resources/UniProt/proteins_to_genes.tab";
@@ -15,8 +15,8 @@ const std::string path_file_mapping_proteins_to_genes = "resources/UniProt/prote
 const std::string path_file_report_degree_reduction_analysis = "reports/degree_reduction_analysis.txt";
 const std::string path_file_report_percolation_analysis = "reports/percolation_analysis.txt";
 
-const std::string path_file_report_artefactual_overlap_pathway = "reports/artefactual_overlap_pathway.txt";
-const std::string path_file_report_artefactual_overlap_trait = "reports/artefactual_overlap_trait.txt";
+const std::string path_file_report_rule_out_gene_centric_overlap_pathway = "reports/rule_out_gene_centric_overlap_pathway.txt";
+const std::string path_file_report_rule_out_gene_centric_overlap_trait = "reports/rule_out_gene_centric_overlap_trait.txt";
 
 const std::string path_file_report_modified_overlap_pathway = "reports/modified_overlap_pathway.txt";
 const std::string path_file_modified_overlap_pathway_proteins = "reports/modified_overlap_pathway_proteins.txt";
@@ -33,13 +33,13 @@ int main() try {
 
    doPercolationAnalysis();
 
-   artefactual_overlap::doAnalysis(path_file_gene_search,
+   rule_out_gene_centric_overlap::doAnalysis(path_file_gene_search,
                                    path_file_protein_search,
                                    path_file_proteoform_search,
                                    path_file_PheGenI_full,
                                    path_file_mapping_proteins_to_genes,
-                                   path_file_report_artefactual_overlap_pathway,
-                                   path_file_report_artefactual_overlap_trait);
+                                   path_file_report_rule_out_gene_centric_overlap_pathway,
+                                   path_file_report_rule_out_gene_centric_overlap_trait);
    std::cout << "\n\n-----------------------------------------------------\n\n";
    modified_overlap::doAnalysis(path_file_gene_search,
                                 path_file_protein_search,
