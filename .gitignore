@@ -23,6 +23,7 @@ ipch
 *.o
 
 # C++
+src/Cpp/lib/
 
 ## Compiled Object files
 *.slo
