@@ -2,42 +2,9 @@
 
 using namespace std;
 
-vector<string> getIndexToEntities(const string& entities_file_path) {
-   ifstream entities_file(entities_file_path);
-   string entity, line_leftover;
-   unordered_set<string> temp_set;
-   vector<string> index_to_entities;
-
-   if (!entities_file.is_open()) {
-      throw runtime_error("Cannot open " + entities_file_path);
-   }
-
-   while (getline(entities_file, entity, '\t')) {
-      temp_set.insert(entity);
-      getline(entities_file, line_leftover);
-   }
-   index_to_entities = convert(temp_set);
-
-   return index_to_entities;
-}
-
-unordered_map<string, int> getEntitiesToIndex(const vector<string>& index_to_entities) {
-   unordered_map<string, int> entities_to_index;
-   for (int I = 0; I < index_to_entities.size(); I++) {
-      entities_to_index.emplace(index_to_entities[I], I);
-   }
-   return entities_to_index;
-}
-
-Entities_bimap loadEntities(const string& entities_file_path) {
-   auto index_to_entities = getIndexToEntities(entities_file_path);
-   auto entities_to_index = getEntitiesToIndex(index_to_entities);
-   return {index_to_entities, entities_to_index};
-}
-
-unordered_map<string, string> loadPathwayNames(const string& path_search_file) {
+unordered_map<string, string> loadPathwayNames(std::string_view path_search_file) {
    unordered_map<string, string> result;
-   ifstream file_search(path_search_file);
+   ifstream file_search(path_search_file.data());
    string field, pathway, pathway_name;
    int field_cont = 0;
    int pathway_stid_column = 0;
@@ -70,9 +37,9 @@ unordered_map<string, string> createTraitNames(const unordered_map<string, bitse
    return sets_to_names;
 }
 
-unordered_map<string, bitset<NUM_GENES>> loadGeneSets(const string& file_path, const unordered_map<string, int>& entities_to_index, bool pathways) {
+unordered_map<string, bitset<NUM_GENES>> loadGeneSets(std::string_view file_path, const unordered_map<string, int>& entities_to_index, bool pathways) {
    unordered_map<string, bitset<NUM_GENES>> result;
-   ifstream file_search(file_path);
+   ifstream file_search(file_path.data());
    string field, gene, reaction, pathway;
 
    getline(file_search, field);                // Skip csv header line
@@ -88,9 +55,9 @@ unordered_map<string, bitset<NUM_GENES>> loadGeneSets(const string& file_path, c
    return result;
 }
 
-unordered_map<string, bitset<NUM_PROTEINS>> loadProteinSets(const string& file_path, const unordered_map<string, int>& entities_to_index, bool pathways) {
+unordered_map<string, bitset<NUM_PROTEINS>> loadProteinSets(std::string_view file_path, const unordered_map<string, int>& entities_to_index, bool pathways) {
    unordered_map<string, bitset<NUM_PROTEINS>> result;
-   ifstream file_search(file_path);
+   ifstream file_search(file_path.data());
    string field, entity, reaction, pathway;
 
    getline(file_search, field);                  // Skip csv header line
@@ -105,9 +72,9 @@ unordered_map<string, bitset<NUM_PROTEINS>> loadProteinSets(const string& file_p
    return result;
 }
 
-unordered_map<string, bitset<NUM_PROTEOFORMS>> loadProteoformSets(const string& file_path, const unordered_map<string, int>& entities_to_index, bool pathways) {
+unordered_map<string, bitset<NUM_PROTEOFORMS>> loadProteoformSets(std::string_view file_path, const unordered_map<string, int>& entities_to_index, bool pathways) {
    unordered_map<string, bitset<NUM_PROTEOFORMS>> result;
-   ifstream file_search(file_path);
+   ifstream file_search(file_path.data());
    string field, entity, reaction, pathway;
 
    getline(file_search, field);                  // Skip csv header line
@@ -158,23 +125,8 @@ unordered_set<string> getProteoformStrings(const bitset<NUM_PHEGEN_PROTEOFORMS>&
    return getEntityStrings(proteoform_set, index_to_proteoforms);
 }
 
-string getAccession(string proteoform) {
-   smatch match_end_of_accession;
-   if (!regex_search(proteoform, match_end_of_accession, RGX_ACCESSION_DELIMITER)) {
-      return proteoform;
-   }
-   return proteoform.substr(0, match_end_of_accession.position(0));
-}
-
-vector<string> convert(const unordered_set<string>& a_set) {
-   vector<string> result;
-   result.assign(a_set.begin(), a_set.end());
-   sort(result.begin(), result.end());
-   return result;
-}
-
 // entities_column argument starts counting at 0
-index_to_entitites_phegen_result getIndexToEntititesPheGen(const string& path_file_PheGenI_full,
+index_to_entitites_phegen_result getIndexToEntititesPheGen(const std::string& path_file_PheGenI_full,
                                                            const double& max_p_value,
                                                            const unordered_map<string, int>& reactome_genes_to_index) {
    ifstream file_phegen(path_file_PheGenI_full);
@@ -217,18 +169,18 @@ index_to_entitites_phegen_result getIndexToEntititesPheGen(const string& path_fi
    }
 
    //Create the final data structures
-   index_to_genes = convert(temp_gene_set);
-   index_to_traits = convert(temp_trait_set);
+   index_to_genes = pathway::convert(temp_gene_set);
+   index_to_traits = pathway::convert(temp_trait_set);
 
    return {index_to_genes, index_to_traits};
 }
 
-load_genes_phegen_result loadGenesPheGen(const std::string& path_file_PheGenI_full,
+load_genes_phegen_result loadGenesPheGen(std::string_view path_file_PheGenI_full,
                                          const double& max_p_value,
                                          const std::unordered_map<std::string, int>& reactome_genes_to_index) {
-   const auto [index_to_genes, index_to_traits] = getIndexToEntititesPheGen(path_file_PheGenI_full, max_p_value, reactome_genes_to_index);
-   const auto genes_to_index = getEntitiesToIndex(index_to_genes);
-   const auto traits_to_index = getEntitiesToIndex(index_to_traits);
+   const auto [index_to_genes, index_to_traits] = getIndexToEntititesPheGen(path_file_PheGenI_full.data(), max_p_value, reactome_genes_to_index);
+   const auto genes_to_index = pathway::createEntitiesToIndex(index_to_genes);
+   const auto traits_to_index = pathway::createEntitiesToIndex(index_to_traits);
 
    std::cerr << "PHEGEN genes: " << index_to_genes.size() << " = " << genes_to_index.size() << "\n";
    std::cerr << "PHEGEN traits: " << index_to_traits.size() << " = " << traits_to_index.size() << "\n";
@@ -377,17 +329,17 @@ unordered_map<string, bitset<NUM_PHEGEN_PROTEOFORMS>> convertProteinSets(const u
    return convertSets<NUM_PHEGEN_PROTEINS, NUM_PHEGEN_PROTEOFORMS>(traits_to_proteins, index_to_proteins, mapping_proteins_to_proteoforms, proteoforms_to_index, adjacency_list_proteoforms);
 }
 
-reactome_networks loadReactomeNetworks(const string& path_file_gene_search,
-                                       const string& path_file_protein_search,
-                                       const string& path_file_proteoform_search) {
+reactome_networks loadReactomeNetworks(std::string_view path_file_gene_search,
+                                       std::string_view path_file_protein_search,
+                                       std::string_view path_file_proteoform_search) {
    cout << "Loading Reactome networks.\n";
    // const unordered_multimap<string, string> adjacency_list_genes = loadGenesAdjacencyList(path_file_gene_search);
    return {loadProteinsAdjacencyList(path_file_protein_search), loadProteoformsAdjacencyList(path_file_proteoform_search)};
 }
 
-unordered_multimap<string, string> loadProteinsAdjacencyList(const string& search_file_path) {
+unordered_multimap<string, string> loadProteinsAdjacencyList(std::string_view search_file_path) {
    unordered_multimap<string, string> adjacenty_list;
-   const auto [index_to_entities, entities_to_index] = loadEntities(search_file_path);
+   const auto [index_to_entities, entities_to_index] = pathway::readEntities(search_file_path);
    const auto reactions_to_entities = loadProteinSets(search_file_path, entities_to_index, false);
 
    for (const auto& reaction_entry : reactions_to_entities) {
@@ -408,9 +360,9 @@ unordered_multimap<string, string> loadProteinsAdjacencyList(const string& searc
    return adjacenty_list;
 }
 
-unordered_multimap<string, string> loadProteoformsAdjacencyList(const string& search_file_path) {
+unordered_multimap<string, string> loadProteoformsAdjacencyList(std::string_view search_file_path) {
    unordered_multimap<string, string> adjacenty_list;
-   const auto [index_to_entities, entities_to_index] = loadEntities(search_file_path);
+   const auto [index_to_entities, entities_to_index] = pathway::readEntities(search_file_path);
    const auto reactions_to_entities = loadProteoformSets(search_file_path, entities_to_index, false);
 
    for (const auto& reaction_entry : reactions_to_entities) {
@@ -431,9 +383,9 @@ unordered_multimap<string, string> loadProteoformsAdjacencyList(const string& se
    return adjacenty_list;
 }
 
-Entities_bimap deductProteinsFromGenes(const string& path_file_mapping_proteins_genes,
-                                       const unordered_map<string, int>& genes_to_index,
-                                       const unordered_multimap<string, string>& genes_to_proteins) {
+pathway::entities_bimap deductProteinsFromGenes(std::string_view path_file_mapping_proteins_genes,
+                                                const unordered_map<string, int>& genes_to_index,
+                                                const unordered_multimap<string, string>& genes_to_proteins) {
    unordered_set<string> temp_protein_set;
 
    for (const auto& gene_entry : genes_to_index) {
@@ -443,15 +395,15 @@ Entities_bimap deductProteinsFromGenes(const string& path_file_mapping_proteins_
       }
    }
 
-   vector<string> index_to_proteins = convert(temp_protein_set);
-   unordered_map<string, int> proteins_to_index = getEntitiesToIndex(index_to_proteins);
+   vector<string> index_to_proteins = pathway::convert(temp_protein_set);
+   unordered_map<string, int> proteins_to_index = pathway::createEntitiesToIndex(index_to_proteins);
 
    cerr << "PHEGEN proteins: " << index_to_proteins.size() << " = " << proteins_to_index.size() << "\n";
 
    return {index_to_proteins, proteins_to_index};
 }
 
-Entities_bimap deductProteoformsFromProteins(const unordered_multimap<string, string>& proteins_to_proteoforms, const unordered_map<string, int>& proteins_to_index) {
+pathway::entities_bimap deductProteoformsFromProteins(const unordered_multimap<string, string>& proteins_to_proteoforms, const unordered_map<string, int>& proteins_to_index) {
    unordered_set<string> temp_proteoform_set;
 
    for (const auto& entry : proteins_to_index) {
@@ -465,8 +417,8 @@ Entities_bimap deductProteoformsFromProteins(const unordered_multimap<string, st
       }
    }
 
-   vector<string> index_to_proteoforms = convert(temp_proteoform_set);
-   unordered_map<string, int> proteoforms_to_index = getEntitiesToIndex(index_to_proteoforms);
+   vector<string> index_to_proteoforms = pathway::convert(temp_proteoform_set);
+   unordered_map<string, int> proteoforms_to_index = pathway::createEntitiesToIndex(index_to_proteoforms);
 
    cerr << "PHEGEN proteoforms: " << index_to_proteoforms.size() << " = " << proteoforms_to_index.size() << "\n";
 

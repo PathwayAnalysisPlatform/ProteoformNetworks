@@ -11,8 +11,16 @@ const std::string path_file_proteoform_search = "resources/3_rule_out_gene_centr
 const std::string path_file_PheGenI_full = "resources/PheGenI/PheGenI_Association_full.tab";
 const std::string path_file_mapping_proteins_to_genes = "resources/UniProt/proteins_to_genes.tab";
 
-// Output files
-const std::string path_file_report_degree_reduction_analysis = "reports/degree_reduction_analysis.txt";
+// 4) Modified overlap
+
+// ************* Output files
+
+//1) Degree analysis
+const std::string path_file_report_degree_analysis = "reports/degree_analysis.txt";
+const std::string path_file_hits = "reports/hits.txt";
+const std::string path_file_degree = "reports/degree.txt";
+
+// 2) Percolation
 const std::string path_file_report_percolation_analysis = "reports/percolation_analysis.txt";
 
 const std::string path_file_report_rule_out_gene_centric_overlap_pathway = "reports/rule_out_gene_centric_overlap_pathway.txt";
