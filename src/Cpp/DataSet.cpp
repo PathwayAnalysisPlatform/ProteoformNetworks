@@ -27,7 +27,7 @@ void dataset::setName(std::string_view value) {
    name = value;
 }
 
-const std::unordered_map<std::string, std::string>& dataset::getPathwayNames() const {
+const umss& dataset::getPathwayNames() const {
    return pathways_to_names;
 }
 
@@ -40,13 +40,13 @@ const int dataset::getNumPathways() const {
 }
 
 const int dataset::getNumGenes() const {
-   return genes.index_to_entities.size();
+   return genes.entities.size();
 }
 const int dataset::getNumProteins() const {
-   return proteins.index_to_entities.size();
+   return proteins.entities.size();
 }
 const int dataset::getNumProteoforms() const {
-   return proteoforms.index_to_entities.size();
+   return proteoforms.entities.size();
 }
 
 const int dataset::getNumModifiedProteins() const {
@@ -56,53 +56,53 @@ const int dataset::getNumModifiedProteoforms() const {
    return modified_proteoforms.size();
 }
 
-const std::vector<std::string>& dataset::getGenes() const {
-   return genes.index_to_entities;
+const vs& dataset::getGenes() const {
+   return genes.entities;
 }
-const std::vector<std::string>& dataset::getProteins() const {
-   return proteins.index_to_entities;
+const vs& dataset::getProteins() const {
+   return proteins.entities;
 }
-const std::vector<std::string>& dataset::getProteoforms() const {
-   return proteoforms.index_to_entities;
+const vs& dataset::getProteoforms() const {
+   return proteoforms.entities;
 }
-const std::vector<std::string>& dataset::getModifiedProteins() const {
+const vs& dataset::getModifiedProteins() const {
    return modified_proteins;
 }
-const std::vector<std::string>& dataset::getModifiedProteoforms() const {
+const vs& dataset::getModifiedProteoforms() const {
    return modified_proteoforms;
 }
 
-const std::unordered_multimap<std::string, std::string>& dataset::getGenesToReactions() const {
+const ummss& dataset::getGenesToReactions() const {
    return genes_to_reactions;
 }
-const std::unordered_multimap<std::string, std::string>& dataset::getGenesToPathways() const {
+const ummss& dataset::getGenesToPathways() const {
    return genes_to_pathways;
 }
-const std::unordered_multimap<std::string, std::string>& dataset::getProteinsToReactions() const {
+const ummss& dataset::getProteinsToReactions() const {
    return proteins_to_reactions;
 }
-const std::unordered_multimap<std::string, std::string>& dataset::getProteinsToPathways() const {
+const ummss& dataset::getProteinsToPathways() const {
    return proteins_to_pathways;
 }
-const std::unordered_multimap<std::string, std::string>& dataset::getProteoformsToReactions() const {
+const ummss& dataset::getProteoformsToReactions() const {
    return proteoforms_to_reactions;
 }
-const std::unordered_multimap<std::string, std::string>& dataset::getProteoformsToPathways() const {
+const ummss& dataset::getProteoformsToPathways() const {
    return proteoforms_to_pathways;
 }
-const std::unordered_multimap<std::string, std::string>& dataset::getGenesToProteins() const {
+const ummss& dataset::getGenesToProteins() const {
    return genes_to_proteins;
 }
-const std::unordered_multimap<std::string, std::string>& dataset::getProteinsToProteoforms() const {
+const ummss& dataset::getProteinsToProteoforms() const {
    return proteins_to_proteoforms;
 }
-const std::unordered_multimap<std::string, std::string>& dataset::getGeneNetwork() const {
+const ummss& dataset::getGeneNetwork() const {
    return gene_network;
 }
-const std::unordered_multimap<std::string, std::string>& dataset::getProteinNetwork() const {
+const ummss& dataset::getProteinNetwork() const {
    return protein_network;
 }
-const std::unordered_multimap<std::string, std::string>& dataset::getProteoformNetwork() const {
+const ummss& dataset::getProteoformNetwork() const {
    return proteoform_network;
 }
 
@@ -123,7 +123,7 @@ void dataset::setPathwayNames(std::string_view path_file_mapping) {
 
 void dataset::setGeneMapping(std::string_view path_file_mapping) {
    std::cerr << "Loading gene mapping\n";
-   genes = readEntities(path_file_mapping);
+   genes = createBimap(path_file_mapping);
    std::cerr << "Read " << getNumGenes() << " genes.\n";
 
    std::ifstream map_file(path_file_mapping.data());
@@ -142,10 +142,10 @@ void dataset::setGeneMapping(std::string_view path_file_mapping) {
 
       temp_genes_to_proteins.insert(std::make_pair(gene, protein));
 
-      pathways_to_genes[pathway].set(genes.entities_to_index.at(gene));
+      pathways_to_genes[pathway].set(genes.indexes.at(gene));
       genes_to_pathways.emplace(gene, pathway);
 
-      reactions_to_genes[reaction].set(genes.entities_to_index.at(gene));
+      reactions_to_genes[reaction].set(genes.indexes.at(gene));
       genes_to_reactions.emplace(gene, reaction);
    }
 
@@ -156,7 +156,7 @@ void dataset::setGeneMapping(std::string_view path_file_mapping) {
 
 void dataset::setProteinMapping(std::string_view path_file_mapping) {
    std::cerr << "Loading protein mapping\n";
-   proteins = readEntities(path_file_mapping.data());
+   proteins = createBimap(path_file_mapping.data());
    std::cerr << "Read " << getNumProteins() << " proteins.\n";
 
    std::ifstream map_file(path_file_mapping.data());
@@ -171,17 +171,17 @@ void dataset::setProteinMapping(std::string_view path_file_mapping) {
       getline(map_file, pathway, ',');        // Read PATHWAY_STID
       getline(map_file, leftover);            // Read rest of line
 
-      pathways_to_proteins[pathway].set(proteins.entities_to_index.at(protein));
+      pathways_to_proteins[pathway].set(proteins.indexes.at(protein));
       proteins_to_pathways.emplace(protein, pathway);
 
-      reactions_to_proteins[reaction].set(proteins.entities_to_index.at(protein));
+      reactions_to_proteins[reaction].set(proteins.indexes.at(protein));
       proteins_to_reactions.emplace(protein, reaction);
    }
 }
 
 void dataset::setProteoformMapping(std::string_view path_file_mapping) {
    std::cerr << "Loading proteoform mapping\n";
-   proteoforms = readEntities(path_file_mapping);
+   proteoforms = createBimap(path_file_mapping);
    std::cerr << "Read " << getNumProteoforms() << " proteoforms.\n";
 
    // Calculate proteoforms to reactions and pathways
@@ -198,21 +198,21 @@ void dataset::setProteoformMapping(std::string_view path_file_mapping) {
       getline(map_file, reaction, ',');  // Read REACTION_STID
       getline(map_file, pathway);        // Read PATHWAY_STID
 
-      pathways_to_proteoforms[pathway].set(proteoforms.entities_to_index.at(proteoform));
+      pathways_to_proteoforms[pathway].set(proteoforms.indexes.at(proteoform));
       proteoforms_to_pathways.emplace(proteoform, pathway);
 
-      reactions_to_proteoforms[reaction].set(proteoforms.entities_to_index.at(proteoform));
+      reactions_to_proteoforms[reaction].set(proteoforms.indexes.at(proteoform));
       proteoforms_to_reactions.emplace(proteoform, reaction);
    }
 
    // Calculate proteins to proteoforms
-   for (const auto& proteoform : proteoforms.index_to_entities) {
+   for (const auto& proteoform : proteoforms.entities) {
       proteins_to_proteoforms.emplace(proteoform::getAccession(proteoform), proteoform);
    }
 }  // namespace pathway
 
 void dataset::calculateModifiedProteinsAndProteoforms() {
-   std::unordered_set<std::string> temp_modified_proteins;
+   uss temp_modified_proteins;
    for (const auto& proteoform : getProteoforms()) {
       if (proteoform::isModified(proteoform)) {
          temp_modified_proteins.insert(proteoform::getAccession(proteoform));
@@ -249,8 +249,8 @@ void dataset::checkMappingConsistency() {
       throw std::runtime_error("The number of pathways mapped for each entity type differs.\n");
    }
 
-   std::unordered_set<std::string> temp_genes_mapped_to_proteins;
-   std::unordered_set<std::string> temp_proteins_mapped_from_genes;
+   uss temp_genes_mapped_to_proteins;
+   uss temp_proteins_mapped_from_genes;
    for (const auto& entry : genes_to_proteins) {
       temp_genes_mapped_to_proteins.insert(entry.first);
       temp_proteins_mapped_from_genes.insert(entry.second);
@@ -265,8 +265,8 @@ void dataset::checkMappingConsistency() {
       throw std::runtime_error("The number of proteins mapped from genes differs with the total number of proteins.");
    }
 
-   std::unordered_set<std::string> temp_proteins_mapped_to_proteoforms;
-   std::unordered_set<std::string> temp_proteoforms_mapped_from_proteins;
+   uss temp_proteins_mapped_to_proteoforms;
+   uss temp_proteoforms_mapped_from_proteins;
    for (const auto& entry : proteins_to_proteoforms) {
       temp_proteins_mapped_to_proteoforms.insert(entry.first);
       temp_proteoforms_mapped_from_proteins.insert(entry.second);

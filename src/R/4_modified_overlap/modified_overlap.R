@@ -22,14 +22,14 @@ plotHistogram <- function(data, title) {
   ggplot(data = data, aes(FREQUENCY)) + geom_histogram(binwidth = 20) + ggtitle(title)
 }
 
-png('figures/4_modified_overlap/protein_frequencies.png')
+png('figures/overlap_analysis/protein_frequencies.png')
 plot.proteins <- plotHistogram(proteins, "Protein frequencies")
 plot.proteins
 
-png('figures/4_modified_overlap/proteoforms_frequencies.png')
+png('figures/overlap_analysis/proteoforms_frequencies.png')
 plot.proteoforms <- plotHistogram(proteoforms, "Proteoform frequencies")
 plot.proteoforms
 
-png('figures/4_modified_overlap/modifications_frequencies.png')
+png('figures/overlap_analysis/modifications_frequencies.png')
 plot.modifications <- plotHistogram(modifications, "Modification frequencies")
 plot.modifications

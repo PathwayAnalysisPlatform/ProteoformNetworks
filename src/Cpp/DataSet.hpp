@@ -11,8 +11,10 @@
 #include <unordered_set>
 #include <vector>
 
+#include "types.hpp"
 #include "entity.hpp"
 #include "proteoform.hpp"
+#include "bimap.hpp"
 
 namespace pathway {
 
@@ -30,7 +32,7 @@ class dataset {
    std::string getName() const;
    void setName(std::string_view value);
 
-   const std::unordered_map<std::string, std::string>& getPathwayNames() const;
+   const umss& getPathwayNames() const;
 
    const int getNumReactions() const;
    const int getNumPathways() const;
@@ -41,57 +43,57 @@ class dataset {
    const int getNumModifiedProteins() const;
    const int getNumModifiedProteoforms() const;
 
-   const std::vector<std::string>& getGenes() const;
-   const std::vector<std::string>& getProteins() const;
-   const std::vector<std::string>& getProteoforms() const;
-   const std::vector<std::string>& getModifiedProteins() const;
-   const std::vector<std::string>& getModifiedProteoforms() const;
+   const vs& getGenes() const;
+   const vs& getProteins() const;
+   const vs& getProteoforms() const;
+   const vs& getModifiedProteins() const;
+   const vs& getModifiedProteoforms() const;
 
-   const std::unordered_multimap<std::string, std::string>& getGenesToReactions() const;
-   const std::unordered_multimap<std::string, std::string>& getGenesToPathways() const;
-   const std::unordered_multimap<std::string, std::string>& getProteinsToReactions() const;
-   const std::unordered_multimap<std::string, std::string>& getProteinsToPathways() const;
-   const std::unordered_multimap<std::string, std::string>& getProteoformsToReactions() const;
-   const std::unordered_multimap<std::string, std::string>& getProteoformsToPathways() const;
+   const ummss& getGenesToReactions() const;
+   const ummss& getGenesToPathways() const;
+   const ummss& getProteinsToReactions() const;
+   const ummss& getProteinsToPathways() const;
+   const ummss& getProteoformsToReactions() const;
+   const ummss& getProteoformsToPathways() const;
 
-   const std::unordered_multimap<std::string, std::string>& getGenesToProteins() const;
-   const std::unordered_multimap<std::string, std::string>& getProteinsToProteoforms() const;
+   const ummss& getGenesToProteins() const;
+   const ummss& getProteinsToProteoforms() const;
 
-   const std::unordered_multimap<std::string, std::string>& getGeneNetwork() const;
-   const std::unordered_multimap<std::string, std::string>& getProteinNetwork() const;
-   const std::unordered_multimap<std::string, std::string>& getProteoformNetwork() const;
+   const ummss& getGeneNetwork() const;
+   const ummss& getProteinNetwork() const;
+   const ummss& getProteoformNetwork() const;
 
   private:
    std::string name;
-   std::unordered_map<std::string, std::string> pathways_to_names;
+   umss pathways_to_names;
 
-   entities_bimap genes;
-   entities_bimap proteins;
-   entities_bimap proteoforms;
-   std::vector<std::string> modified_proteins;
-   std::vector<std::string> modified_proteoforms;
+   bimap genes;
+   bimap proteins;
+   bimap proteoforms;
+   vs modified_proteins;
+   vs modified_proteoforms;
 
-   std::unordered_map<std::string, std::bitset<NUM_GENES>> pathways_to_genes;
-   std::unordered_multimap<std::string, std::string> genes_to_pathways;
-   std::unordered_map<std::string, std::bitset<NUM_GENES>> reactions_to_genes;
-   std::unordered_multimap<std::string, std::string> genes_to_reactions;
+   um<std::string, std::bitset<NUM_GENES>> pathways_to_genes;
+   ummss genes_to_pathways;
+   um<std::string, std::bitset<NUM_GENES>> reactions_to_genes;
+   ummss genes_to_reactions;
 
-   std::unordered_map<std::string, std::bitset<NUM_GENES>> pathways_to_proteins;
-   std::unordered_multimap<std::string, std::string> proteins_to_pathways;
-   std::unordered_map<std::string, std::bitset<NUM_GENES>> reactions_to_proteins;
-   std::unordered_multimap<std::string, std::string> proteins_to_reactions;
+   um<std::string, std::bitset<NUM_GENES>> pathways_to_proteins;
+   ummss proteins_to_pathways;
+   um<std::string, std::bitset<NUM_GENES>> reactions_to_proteins;
+   ummss proteins_to_reactions;
 
-   std::unordered_map<std::string, std::bitset<NUM_GENES>> pathways_to_proteoforms;
-   std::unordered_multimap<std::string, std::string> proteoforms_to_pathways;
-   std::unordered_map<std::string, std::bitset<NUM_GENES>> reactions_to_proteoforms;
-   std::unordered_multimap<std::string, std::string> proteoforms_to_reactions;
+   um<std::string, std::bitset<NUM_GENES>> pathways_to_proteoforms;
+   ummss proteoforms_to_pathways;
+   um<std::string, std::bitset<NUM_GENES>> reactions_to_proteoforms;
+   ummss proteoforms_to_reactions;
 
-   std::unordered_multimap<std::string, std::string> gene_network;
-   std::unordered_multimap<std::string, std::string> protein_network;
-   std::unordered_multimap<std::string, std::string> proteoform_network;
+   ummss gene_network;
+   ummss protein_network;
+   ummss proteoform_network;
 
-   std::unordered_multimap<std::string, std::string> genes_to_proteins;
-   std::unordered_multimap<std::string, std::string> proteins_to_proteoforms;
+   ummss genes_to_proteins;
+   ummss proteins_to_proteoforms;
 
    void setPathwayNames(std::string_view path_file_mapping);
    void setGeneMapping(std::string_view path_file_mapping);
@@ -102,14 +104,14 @@ class dataset {
    void calculateInteractionNetworks();
 
    template <size_t num_entities>
-   void calculateNetwork(const entities_bimap& entities,
-                         const std::unordered_map<std::string, std::bitset<num_entities>>& reactions_to_entities,
-                         std::unordered_multimap<std::string, std::string>& entity_network) {
+   void calculateNetwork(const bimap& entities,
+                         const um<std::string, std::bitset<num_entities>>& reactions_to_entities,
+                         ummss& entity_network) {
       for (const auto& reaction_entry : reactions_to_entities) {
-         std::vector<std::string> members;
+         vs members;
          for (int I = 0; I < reaction_entry.second.size(); I++) {
             if (reaction_entry.second.test(I)) {
-               members.push_back(entities.index_to_entities[I]);
+               members.push_back(entities.entities[I]);
             }
          }
 

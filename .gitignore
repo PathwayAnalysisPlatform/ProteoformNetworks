@@ -48,7 +48,7 @@ src/Cpp/lib/
 *.tsv
 *.csv
 *.txt
-resources/PhenGenI/diseaseModules/
+resources/
 
 #R
 .Rhistory

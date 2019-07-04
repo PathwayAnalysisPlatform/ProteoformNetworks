@@ -7,6 +7,9 @@
 #include <bitset>
 #include <fstream>
 
+#include "types.hpp"
+#include "utility.hpp"
+
 namespace proteoform {
 
 // Method to get convert from Neo4j csv format to our simple custom format
@@ -22,7 +25,7 @@ std::string getAccession(const std::string& proteoform);
 bool isModified(const std::string& proteoform);
 
 template <size_t S>
-std::bitset<S> getSetOfModifiedProteoforms(const std::vector<std::string>& proteoforms) {
+std::bitset<S> getSetOfModifiedProteoforms(const vs& proteoforms) {
    std::bitset<S> modified_proteoforms;
 
    for (int I = 0; I < proteoforms.size(); I++) {
@@ -34,9 +37,11 @@ std::bitset<S> getSetOfModifiedProteoforms(const std::vector<std::string>& prote
    return modified_proteoforms;
 }
 
-std::vector<std::string> getModifications(std::string proteoform);
+vs getModifications(std::string proteoform);
 
 std::string readProteoformFromNeo4jCsv(std::ifstream& fs);
+
+const measures_result calculateModificationsPerProteoform(const vs& proteoforms);
 
 } // namespace proteoform
 

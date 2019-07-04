@@ -7,6 +7,11 @@
 
 #include "dataset.hpp"
 #include "utility.hpp"
+#include "proteoform.hpp"
+
+const std::string path_file_report_degree_analysis = "reports/degree_analysis.txt";
+const std::string path_file_hits = "reports/hits.txt";
+const std::string path_file_degree = "reports/degree.txt";
 
 namespace degree {
 
@@ -30,9 +35,9 @@ void reportHits(const pathway::dataset& ds,
                 std::string_view path_file_hits_reactions,
                 std::string_view path_file_hits_pathways);
 
-double calculateAvgDegree(pathway::entities entity_type, const std::vector<std::string>& entities, const std::unordered_multimap<std::string, std::string>& entity_network);
+double calculateAvgDegree(entities entity_type, const vs& entities, const ummss& entity_network);
 
-void createReportNodeDegree(const std::vector<std::string>& entities, const std::unordered_multimap<std::string, std::string>& entity_network, std::string_view path_file_report);
+void createReportNodeDegree(const vs& entities, const ummss& entity_network, std::string_view path_file_report);
 
 }  // namespace degree
 

@@ -25,7 +25,7 @@ void doAnalysis(const pathway::dataset& ds,
                   path_file_proteoforms_per_protein,
                   path_file_modified_proteoforms_per_protein);
 
-   reportHits(ds, path_file_report_degree_analysis, path_file_hits, path_file_hits_reactions, path_file_hits_pathways);
+   reportHits(ds, path_file_report_degree_analysis, path_file_hits, path_file_hits_reactions);
 
    // Number of nodes and links in each network
    std::cout << "Gene network nodes: " << ds.getNumGenes() << " links: " << (ds.getGeneNetwork().size() / 2) << "\n";
@@ -56,9 +56,9 @@ void doAnalysis(const pathway::dataset& ds,
          std::string_view gene = gene_entry.first;
          std::string_view protein = gene_entry.second;
          std::string_view proteoform = it->second;
-         double gene_degree = ds.getGeneNetwork().count(gene.data());
-         double protein_degree = ds.getProteinNetwork().count(protein.data());
-         double proteoform_degree = ds.getProteoformNetwork().count(proteoform.data());
+         size_t gene_degree = ds.getGeneNetwork().count(gene.data());
+         size_t protein_degree = ds.getProteinNetwork().count(protein.data());
+         size_t proteoform_degree = ds.getProteoformNetwork().count(proteoform.data());
          double variation_gene_to_protein = (protein_degree / gene_degree) - 1.0;
          double variation_protein_to_proteoform = (proteoform_degree / protein_degree) - 1.0;
 
@@ -137,7 +137,7 @@ void reportEntities(const pathway::dataset& ds,
    writeFrequencies(path_file_modified_proteoforms_per_protein, ds.getProteinsToProteoforms(), ds.getModifiedProteins());
 
    // Number of modifications per proteoform: average, max, min
-   measures = calculateModificationsPerProteoform(ds.getProteoforms());
+   measures = proteoform::calculateModificationsPerProteoform(ds.getProteoforms());
    writeMeasures(report_entities, measures, "modifications", "proteoform");
 
    // Frequency of modifications
@@ -156,7 +156,7 @@ void reportHits(const pathway::dataset& ds,
    std::ofstream report_hits_pathways(path_file_hits_pathways.data());
 
    writeMeasures(report_hits, ds.getGenesToReactions(), "reactions", "gene");
-   writeFrequencies(path_file)
+   //writeFrequencies(path_file);
    writeMeasures(report_hits, ds.getGenesToPathways(), "pathways", "gene");
    writeMeasures(report_hits, ds.getProteinsToReactions(), "reactions", "protein");
    writeMeasures(report_hits, ds.getProteoformsToReactions(), "reactions", "proteoform");
@@ -166,24 +166,7 @@ void reportHits(const pathway::dataset& ds,
    std::cerr << "Pathways for P31749: " << ds.getProteinsToPathways().count("P31749") << "\n";
 }
 
-const measures_result calculateModificationsPerProteoform(const std::vector<std::string>& proteoforms) {
-   double min = 1.0;
-   double max = 0.0;
-   double avg = 0.0;
-   double sum = 0.0;
-   for (const auto& proteoform : proteoforms) {
-      double num = proteoform::getModifications(proteoform).size();
-      if (num < min)
-         min = num;
-      if (num > max)
-         max = num;
-      sum += num;
-   }
-   avg = sum / proteoforms.size();
-   return {min, max, avg};
-}
-
-double calculateAvgDegree(pathway::entities entity_type, const std::vector<std::string>& entities, const std::unordered_multimap<std::string, std::string>& entity_network) {
+double calculateAvgDegree(entities entity_type, const vs& entities, const ummss& entity_network) {
    double sum = 0.0;
    // For each entity of the requested type, sum its degreee
    for (const auto& entity : entities) {

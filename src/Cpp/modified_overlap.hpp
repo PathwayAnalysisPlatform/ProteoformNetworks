@@ -7,14 +7,14 @@
 #include "overlap.hpp"
 #include "proteoform.hpp"
 
-const float MIN_MODIFIED_ALL_MEMBERS_RATIO = 0.1;
-const float MIN_MODIFIED_OVERLAP_MEMBERS_RATIO = 0.9;
+const double MIN_MODIFIED_ALL_MEMBERS_RATIO = 0.1;
+const double MIN_MODIFIED_OVERLAP_MEMBERS_RATIO = 0.9;
 
 namespace modified_overlap {
 void doAnalysis(std::string_view path_file_gene_search,
                 std::string_view path_file_protein_search,
                 std::string_view path_file_proteoform_search,
-                std::string_view path_file_PheGenI_full,
+                std::string_view path_file_PheGenI,
                 std::string_view path_file_mapping_proteins_to_genes,
                 std::string_view path_file_report_pathway,
                 std::string_view path_file_modified_overlap_pathway_proteins,
