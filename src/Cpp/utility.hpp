@@ -1,5 +1,5 @@
-#ifndef UTILITY_HPP
-#define UTILITY_HPP
+#ifndef UTILITY_HPP_
+#define UTILITY_HPP_
 
 #include <fstream>
 #include <iostream>
@@ -28,4 +28,4 @@ void writeFrequencies(std::string_view file_path, const ummss& mapping, const vs
 void writeMeasures(std::ofstream& report, const measures_result& measures, std::string_view label1, std::string_view label2);
 void writeMeasures(std::ofstream& report, const ummss& mapping, std::string_view label1, std::string_view label2);
 
-#endif /* UTILITY_HPP */
+#endif /* UTILITY_HPP_ */

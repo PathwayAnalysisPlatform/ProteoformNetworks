@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <bitset>
 
 using msi = std::map<std::string, int>;
 
@@ -25,9 +26,11 @@ using ummsi = std::unordered_multimap<std::string, int>;
 
 using vs = std::vector<std::string>;
 
-template<typename K>
-using bm = std::pair<std::vector<K>, um<K, int>>;
-using bms = bm<std::string>;	// TODO: Replace bimap for this
+template<typename bitset_entities, typename bitset_sets>
+struct entity_sets {
+	um<std::string, bitset_entities> getByEntity;
+	um<std::string, bitset_sets> getBySet;
+};
 
 #endif // ! TYPES_HPP
 

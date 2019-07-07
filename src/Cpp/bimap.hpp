@@ -2,6 +2,7 @@
 #define BIMAP_HPP_
 
 #include <fstream>
+#include <bitset>
 
 #include "types.hpp"
 #include "utility.hpp"
@@ -11,11 +12,10 @@ struct bimap {
 	umsi indexes;
 };
 
-vs createIndexToEntities(const std::string& path_file, bool hasHeader = false);
+bimap createBimap(std::string_view list_file_path, bool hasHeader = false);
+bimap createBimap(const vs& index_to_entities);
 
+vs createIndexToEntities(const std::string& list_file_path, bool hasHeader);
 umsi createEntitiesToIndex(const vs& index_to_entities);
-
-bimap createBimap(std::string_view entities_file_path, bool hasHeader = false);
-bimap createBimap(vs index_to_entities);
 
 #endif // !BIMAP_HPP_

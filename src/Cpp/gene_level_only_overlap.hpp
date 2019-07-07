@@ -5,6 +5,8 @@
 
 #include "overlap.hpp"
 #include "proteoform.hpp"
+#include "reactome.hpp"
+#include "phegeni.hpp"
 
 namespace gene_level_only_overlap {
 void doAnalysis(std::string_view path_file_gene_search,

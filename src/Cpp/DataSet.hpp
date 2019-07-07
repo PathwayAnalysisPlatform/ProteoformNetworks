@@ -15,12 +15,9 @@
 #include "entity.hpp"
 #include "proteoform.hpp"
 #include "bimap.hpp"
+#include "reactome.hpp"
 
 namespace pathway {
-
-const size_t NUM_GENES = 23970;
-const size_t NUM_PROTEINS = 10778;
-const size_t NUM_PROTEOFORMS = 13911;
 
 class dataset {
   public:
@@ -73,19 +70,19 @@ class dataset {
    vs modified_proteins;
    vs modified_proteoforms;
 
-   um<std::string, std::bitset<NUM_GENES>> pathways_to_genes;
+   reactome_gene_sets pathways_to_genes;
    ummss genes_to_pathways;
-   um<std::string, std::bitset<NUM_GENES>> reactions_to_genes;
+   um<std::string, std::bitset<REACTOME_GENES>> reactions_to_genes;
    ummss genes_to_reactions;
 
-   um<std::string, std::bitset<NUM_GENES>> pathways_to_proteins;
+   um<std::string, std::bitset<REACTOME_GENES>> pathways_to_proteins;
    ummss proteins_to_pathways;
-   um<std::string, std::bitset<NUM_GENES>> reactions_to_proteins;
+   um<std::string, std::bitset<REACTOME_GENES>> reactions_to_proteins;
    ummss proteins_to_reactions;
 
-   um<std::string, std::bitset<NUM_GENES>> pathways_to_proteoforms;
+   um<std::string, std::bitset<REACTOME_GENES>> pathways_to_proteoforms;
    ummss proteoforms_to_pathways;
-   um<std::string, std::bitset<NUM_GENES>> reactions_to_proteoforms;
+   um<std::string, std::bitset<REACTOME_GENES>> reactions_to_proteoforms;
    ummss proteoforms_to_reactions;
 
    ummss gene_network;

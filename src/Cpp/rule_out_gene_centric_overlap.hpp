@@ -2,6 +2,7 @@
 #define rule_out_gene_centric_overlap_H_
 
 #include "overlap.hpp"
+#include "reactome.hpp"
 
 namespace rule_out_gene_centric_overlap {
 void doAnalysis(const std::string& path_file_gene_search,

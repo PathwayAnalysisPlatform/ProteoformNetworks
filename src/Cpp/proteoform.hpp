@@ -7,6 +7,7 @@
 #include <bitset>
 #include <fstream>
 
+#include "bimap.hpp"
 #include "types.hpp"
 #include "utility.hpp"
 
@@ -25,16 +26,16 @@ std::string getAccession(const std::string& proteoform);
 bool isModified(const std::string& proteoform);
 
 template <size_t S>
-std::bitset<S> getSetOfModifiedProteoforms(const vs& proteoforms) {
-   std::bitset<S> modified_proteoforms;
+std::bitset<S> getSetOfModifiedProteoforms(const bimap& proteoforms) {
+	std::bitset<S> modified_proteoforms;
 
-   for (int I = 0; I < proteoforms.size(); I++) {
-      if (isModified(proteoforms[I])) {
-         modified_proteoforms.set(I);
-      }
-   }
+	for (int I = 0; I < proteoforms.entities.size(); I++) {
+		if (isModified(proteoforms.entities[I])) {
+			modified_proteoforms.set(I);
+		}
+	}
 
-   return modified_proteoforms;
+	return modified_proteoforms;
 }
 
 vs getModifications(std::string proteoform);
