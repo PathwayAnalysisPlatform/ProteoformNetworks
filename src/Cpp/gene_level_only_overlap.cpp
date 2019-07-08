@@ -1,8 +1,8 @@
-#include "rule_out_gene_centric_overlap.hpp"
+#include "gene_level_only_overlap.hpp"
 
 using namespace std;
 
-namespace rule_out_gene_centric_overlap {
+namespace gene_level_only_overlap {
 
 	/**
 	 * Find gene level only overlaps: pairs of pathways that share nodes only in the
@@ -31,8 +31,9 @@ namespace rule_out_gene_centric_overlap {
 		return result;
 	}
 
+	// Select the proteoforms in the set which have any of the argument accessions
 	template <size_t size_proteoforms>
-	bitset<size_proteoforms> getProteoformsWithAccessions(const uss& accessions,
+	bitset<size_proteoforms> getProteoformSetByAccessionStrings(const uss& accessions,
 		const bitset<size_proteoforms>& proteoform_set,
 		const bimap& proteoforms) {
 		bitset<size_proteoforms> result;
@@ -64,10 +65,10 @@ namespace rule_out_gene_centric_overlap {
 			bitset<size_genes> overlap_genes = sets_genes.at(example.first) & sets_genes.at(example.second);
 			bitset<size_proteins> overlap_proteins = sets_proteins.at(example.first) & sets_proteins.at(example.second);
 			bitset<size_proteoforms> overlap_proteoforms = sets_proteoforms.at(example.first) & sets_proteoforms.at(example.second);
-			auto decomposed_overlap_proteoforms_1 = getProteoformsWithAccessions(getProteinStrings(overlap_proteins, proteins),
-				sets_proteoforms.at(example.first), proteoforms);
-			auto decomposed_overlap_proteoforms_2 = getProteoformsWithAccessions(getProteinStrings(overlap_proteins, proteins),
-				sets_proteoforms.at(example.second), proteoforms);
+			auto protein_overlap_members = getStringSetFromEntityBitset(overlap_proteins, proteins);
+
+			auto decomposed_overlap_proteoforms_1 = getProteoformSetByAccessionStrings(protein_overlap_members, sets_proteoforms.at(example.first), proteoforms);
+			auto decomposed_overlap_proteoforms_2 = getProteoformSetByAccessionStrings(protein_overlap_members, sets_proteoforms.at(example.second), proteoforms);
 
 			output << example.first << "\t" << example.second << "\t" << sets_to_names.at(example.first) << "\t" << sets_to_names.at(example.second) << "\t";
 			output << sets_genes.at(example.first).count() << "\t" << sets_proteins.at(example.first).count() << "\t";
@@ -82,6 +83,7 @@ namespace rule_out_gene_centric_overlap {
 			printMembers(output, overlap_proteoforms, proteoforms);
 			output << "\t";
 
+			// Print the proteoforms to which the genes were converted, and that do not show the overlap anymore
 			printMembers(output, decomposed_overlap_proteoforms_1, proteoforms);
 			output << "\t";
 			printMembers(output, decomposed_overlap_proteoforms_2, proteoforms);
@@ -216,14 +218,14 @@ namespace rule_out_gene_centric_overlap {
 		std::string_view path_file_protein_search,
 		std::string_view path_file_proteoform_search,
 		std::string_view report_file_path) {
-		const auto genes = createBimap(path_file_gene_search);
-		const auto proteins = createBimap(path_file_protein_search);
-		const auto proteoforms = createBimap(path_file_proteoform_search);
+		const auto reactome_genes = createBimap(path_file_gene_search);
+		const auto reactome_proteins = createBimap(path_file_protein_search);
+		const auto reactome_proteoforms = createBimap(path_file_proteoform_search);
 		const auto pathways_to_names = loadPathwayNames(path_file_proteoform_search);
 
-		reactome_gene_sets pathways_to_genes = loadGeneSets(path_file_gene_search, genes, true);
-		reactome_protein_sets pathways_to_proteins = loadProteinSets(path_file_protein_search, proteins, true);
-		reactome_proteoform_sets pathways_to_proteoforms = loadProteoformSets(path_file_proteoform_search, proteoforms, true);
+		reactome_gene_sets pathways_to_genes = loadGeneSets(path_file_gene_search, reactome_genes, true);
+		reactome_protein_sets pathways_to_proteins = loadProteinSets(path_file_protein_search, reactome_proteins, true);
+		reactome_proteoform_sets pathways_to_proteoforms = loadProteoformSets(path_file_proteoform_search, reactome_proteoforms, true);
 
 		cout << "Calculating gene sets overlap..." << endl;
 		const auto overlapping_gene_set_pairs = findOverlappingPairs(pathways_to_genes, MIN_OVERLAP_SIZE, MAX_OVERLAP_SIZE, MIN_SET_SIZE, MAX_SET_SIZE);
@@ -248,7 +250,7 @@ namespace rule_out_gene_centric_overlap {
 		ofstream report(report_file_path.data());
 		writePathwayReport(report, examples, pathways_to_names,
 			pathways_to_genes, pathways_to_proteins, pathways_to_proteoforms,
-			genes, proteins, proteoforms);
+			reactome_genes, reactome_proteins, reactome_proteoforms);
 	}
 
 	void reportPhenotypePairs(std::string_view path_file_gene_search,
@@ -277,21 +279,21 @@ namespace rule_out_gene_centric_overlap {
 
 		cout << "Loading PheGen data\n";
 		const auto reactome_genes = createBimap(path_file_gene_search);
-		const auto [genes, traits] = loadPheGenIEntities(path_file_PheGenI, GENOME_WIDE_SIGNIFICANCE, reactome_genes);
-		const auto [proteins_to_genes, genes_to_proteins] = loadMapping(path_file_mapping_proteins_genes.data());
-		const auto [proteoforms_to_proteins, proteins_to_proteoforms] = loadMapping(path_file_proteoform_search.data());
-		const auto proteins = deductProteinsFromGenes(path_file_mapping_proteins_genes, genes, genes_to_proteins);
-		const auto proteoforms = deductProteoformsFromProteins(proteins_to_proteoforms, proteins);
+		const auto [phegeni_genes, phegeni_traits] = loadPheGenIEntities(path_file_PheGenI, reactome_genes);
+
+		const auto [gene_to_proteins, protein_to_genes] = loadMappingGenesProteins(path_file_mapping_proteins_genes.data());
+		const auto [proteins_to_proteoforms, proteoform_to_proteins] = loadMappingProteinsProteoforms(path_file_proteoform_search.data());
+		const auto phegeni_proteins = deductProteinsFromGenes(path_file_mapping_proteins_genes, gene_to_proteins, phegeni_genes);
+		const auto phegeni_proteoforms = deductProteoformsFromProteins(proteins_to_proteoforms, phegeni_proteins);
 
 		// Calculate adjacency lists for genes, proteins and proteoforms according to Reactome
 		// An entity is neighbour of another gene if the participate in the same Reaction
 
 		const auto [adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_gene_search, path_file_protein_search, path_file_proteoform_search);
-
-		const auto [genes_to_traits, traits_to_genes] = loadPheGenISets(path_file_PheGenI.data(), GENOME_WIDE_SIGNIFICANCE, genes, traits, reactome_genes);
-		const auto sets_to_names = createTraitNames(traits_to_genes);
-		const um<string, bitset<PHEGENI_PROTEINS>> traits_to_proteins = convertGeneSets(traits_to_genes, genes, genes_to_proteins, proteins, adjacency_list_proteins);
-		const um<string, bitset<PHEGENI_PROTEOFORMS>> traits_to_proteoforms = convertProteinSets(traits_to_proteins, proteins, proteins_to_proteoforms, proteoforms, adjacency_list_proteoforms);
+		const auto [traits_to_genes, genes_to_traits] = loadPheGenISets(path_file_PheGenI.data(), reactome_genes, phegeni_genes, phegeni_traits);
+		const auto traits_to_names = createTraitNames(traits_to_genes);
+		const um<string, bitset<PHEGENI_PROTEINS>> traits_to_proteins = convertGeneSets(traits_to_genes, phegeni_genes, gene_to_proteins, phegeni_proteins, adjacency_list_proteins);
+		const um<string, bitset<PHEGENI_PROTEOFORMS>> traits_to_proteoforms = convertProteinSets(traits_to_proteins, phegeni_proteins, proteins_to_proteoforms, phegeni_proteoforms, adjacency_list_proteoforms);
 
 		const auto overlapping_gene_set_pairs = findOverlappingPairs(traits_to_genes, MIN_OVERLAP_SIZE, MAX_OVERLAP_SIZE, MIN_SET_SIZE, MAX_SET_SIZE);
 		cout << "Calculating protein sets overlap..." << endl;
@@ -315,18 +317,18 @@ namespace rule_out_gene_centric_overlap {
 		cout << "Writing report...\n";
 		ofstream report(path_file_report_trait.data());
 
-		writePhenotypeReport(report, examples, sets_to_names, traits_to_genes, traits_to_proteins, traits_to_proteoforms,
-			genes, proteins, proteoforms);
+		writePhenotypeReport(report, examples, traits_to_names, traits_to_genes, traits_to_proteins, traits_to_proteoforms,
+			phegeni_genes, phegeni_proteins, phegeni_proteoforms);
 	}
 
 	// Find pairs of modules/pathways that overlap on gene or protein network, but not in proteoform network
-	void doAnalysis(const std::string& path_file_gene_search,
-		const std::string& path_file_protein_search,
-		const std::string& path_file_proteoform_search,
-		const std::string& path_file_PheGenI,
-		const std::string& path_file_mapping_proteins_to_genes,
-		const std::string& path_file_report_pathway,
-		const std::string& path_file_report_trait) {
+	void doAnalysis(string_view path_file_gene_search,
+		string_view path_file_protein_search,
+		string_view path_file_proteoform_search,
+		string_view path_file_PheGenI,
+		string_view path_file_mapping_proteins_to_genes,
+		string_view path_file_report_pathway,
+		string_view path_file_report_trait) {
 		cout << "Searching for gene level only overlap examples..." << endl;
 
 		reportPathwayPairs(path_file_gene_search,

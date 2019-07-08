@@ -1,19 +1,20 @@
 #include "phegeni.hpp"
 
+using namespace std;
+
 // Creates bimap for genes and traits from PheGenI data file
 load_phegeni_entities_result loadPheGenIEntities(
-	std::string_view path_file_phegeni,
-	const bimap& reactome_genes,
-	const double& max_p_value) {
+	string_view path_file_phegeni,
+	const bimap& reactome_genes) {
 
-	std::ifstream file_PheGenI(path_file_phegeni.data());
-	std::string line, field, trait, gene, gene2;
-	std::string p_value_str;
+	ifstream file_PheGenI(path_file_phegeni.data());
+	string line, field, trait, gene, gene2;
+	string p_value_str;
 	long double p_value;
 	uss temp_gene_set, temp_trait_set;
 
 	if (!file_PheGenI.is_open()) {
-		throw std::runtime_error("Cannot open path_file_phegeni at " __FUNCTION__);
+		throw runtime_error("Cannot open path_file_phegeni at " __FUNCTION__);
 	}
 
 	getline(file_PheGenI, line);                  // Read header line
@@ -39,27 +40,26 @@ load_phegeni_entities_result loadPheGenIEntities(
 	const auto phegeni_genes = createBimap(convert_uss_to_vs(temp_gene_set));
 	const auto phegeni_traits = createBimap(convert_uss_to_vs(temp_trait_set));
 
-	std::cerr << "PHEGEN genes: " << phegeni_genes.indexes.size() << " = " << phegeni_genes.entities.size() << "\n";
-	std::cerr << "PHEGEN traits: " << phegeni_traits.indexes.size() << " = " << phegeni_traits.entities.size() << "\n";
+	cerr << "PHEGEN genes: " << phegeni_genes.indexes.size() << " = " << phegeni_genes.entities.size() << "\n";
+	cerr << "PHEGEN traits: " << phegeni_traits.indexes.size() << " = " << phegeni_traits.entities.size() << "\n";
 
 	return { phegeni_genes,  phegeni_traits };
 }
 
 load_phegeni_sets_result loadPheGenISets(
-	std::string_view path_file_phegeni,
+	string_view path_file_phegeni,
 	const bimap& reactome_genes,
-	const double& max_p_value,
 	const bimap& phegeni_genes,
 	const bimap& phegeni_traits) {
-	std::ifstream file_phegen(path_file_phegeni.data());
-	std::string line, field, trait, gene, gene2;
-	std::string p_value_str;
+	ifstream file_phegen(path_file_phegeni.data());
+	string line, field, trait, gene, gene2;
+	string p_value_str;
 	long double p_value;
 	phegeni_trait_to_genes trait_to_genes;
 	phegeni_gene_to_traits gene_to_traits;
 
 	if (!file_phegen.is_open()) {
-		throw std::runtime_error("Cannot open path_file_phegeni at " __FUNCTION__);
+		throw runtime_error("Cannot open path_file_phegeni at " __FUNCTION__);
 	}
 
 	getline(file_phegen, line);                  // Read header line
@@ -86,10 +86,32 @@ load_phegeni_sets_result loadPheGenISets(
 		}
 	}
 
+	cerr << "Number of traits with gene members as bitset: " << trait_to_genes.size() << "\n";
+	cerr << "Number of genes with traits they belong as bitset: " << gene_to_traits.size() << "\n";
+
 	return { trait_to_genes, gene_to_traits };
 }
 
-//uss getGeneStrings(const std::bitset<PHEGENI_GENES>& gene_set, const bimap& genes) {
+phegeni_trait_to_proteins convertGeneSets(
+	const phegeni_trait_to_genes& traits_to_genes,
+	const bimap& genes,
+	const ummss& mapping_genes_to_proteins,
+	const bimap& proteins,
+	const ummss& adjacency_list_proteins) {
+	cout << "Converting gene to protein sets.\n";
+	return convertSets<PHEGENI_GENES, PHEGENI_PROTEINS>(traits_to_genes, genes.entities, mapping_genes_to_proteins, proteins.indexes, adjacency_list_proteins);
+}
+
+phegeni_trait_to_proteoforms convertProteinSets(const phegeni_trait_to_proteins& traits_to_proteins,
+	const bimap& proteins,
+	const ummss& mapping_proteins_to_proteoforms,
+	const bimap& proteoforms,
+	const ummss& adjacency_list_proteoforms) {
+	cout << "Converting protein to proteoform sets.\n";
+	return convertSets<PHEGENI_PROTEINS, PHEGENI_PROTEOFORMS>(traits_to_proteins, proteins.entities, mapping_proteins_to_proteoforms, proteoforms.indexes, adjacency_list_proteoforms);
+}
+
+//uss getGeneStrings(const bitset<PHEGENI_GENES>& gene_set, const bimap& genes) {
 //	uss result;
 //	for (int I = 0; I < PHEGENI_GENES; I++) {
 //		if (gene_set.test(I)) {
@@ -99,7 +121,7 @@ load_phegeni_sets_result loadPheGenISets(
 //	return result;
 //}
 //
-//uss getProteinStrings(const std::bitset<PHEGENI_PROTEINS>& protein_set, const bimap& proteins) {
+//uss getProteinStrings(const bitset<PHEGENI_PROTEINS>& protein_set, const bimap& proteins) {
 //	uss result;
 //	for (int I = 0; I < PHEGENI_GENES; I++) {
 //		if (protein_set.test(I)) {
@@ -109,7 +131,7 @@ load_phegeni_sets_result loadPheGenISets(
 //	return result;
 //}
 //
-//uss getProteoformStrings(const std::bitset<PHEGENI_PROTEOFORMS>& proteoform_set, const bimap& proteoforms) {
+//uss getProteoformStrings(const bitset<PHEGENI_PROTEOFORMS>& proteoform_set, const bimap& proteoforms) {
 //	uss result;
 //	for (int I = 0; I < PHEGENI_GENES; I++) {
 //		if (proteoform_set.test(I)) {
@@ -119,10 +141,11 @@ load_phegeni_sets_result loadPheGenISets(
 //	return result;
 //}
 //
-//umss createTraitNames(const um<std::string, std::bitset<PHEGENI_GENES>>& traits_to_genes) {
-//	umss sets_to_names;
-//	for (const auto& trait_entry : traits_to_genes) {
-//		sets_to_names.emplace(trait_entry.first, trait_entry.first);
-//	}
-//	return sets_to_names;
-//}
+
+umss createTraitNames(const um<string, bitset<PHEGENI_GENES>>& traits_to_genes) {
+	umss sets_to_names;
+	for (const auto& trait_entry : traits_to_genes) {
+		sets_to_names.emplace(trait_entry.first, trait_entry.first);
+	}
+	return sets_to_names;
+}

@@ -23,9 +23,9 @@ namespace modified_overlap {
 	}
 
 	void writePhenotypeReport(std::ofstream& output,
-		const map<pair<string, string>, bitset<PHEGEN_PROTEOFORMS>>& examples,
+		const map<pair<string, string>, bitset<PHEGENI_PROTEOFORMS>>& examples,
 		const umss& pathways_to_names,
-		const um<string, bitset<PHEGEN_PROTEOFORMS>>& pathways_to_proteoforms,
+		const um<string, bitset<PHEGENI_PROTEOFORMS>>& pathways_to_proteoforms,
 		const bimap& proteoforms) {
 		output << "PHENOTYPE_1\tPHENOTYPE_1_2\tPHENOTYPE_1_NAME\tPHENOTYPE_2_NAME\t";
 		output << "PHENOTYPE_1_PROTEOFORM_SIZE\tPHENOTYPE_2_PROTEOFORM_SIZE\tOVERLAP_SIZE\t";
@@ -139,23 +139,23 @@ namespace modified_overlap {
 		// Load data: trait gene sets, trait proteoform sets
 		cout << "Loading PheGen data\n";
 		const auto reactome_genes = createBimap(path_file_gene_search);
-		const auto [phegeni_genes, phegeni_traits] = loadPheGenIEntities(path_file_PheGenI, GENOME_WIDE_SIGNIFICANCE, reactome_genes);
-		const auto [proteins_to_genes, genes_to_proteins] = loadMapping(path_file_mapping_proteins_genes.data());
-		const auto [proteoforms_to_proteins, proteins_to_proteoforms] = loadMapping(path_file_proteoform_search.data());
-		const auto phegeni_proteins = deductProteinsFromGenes(path_file_mapping_proteins_genes, phegeni_genes, genes_to_proteins);
+		const auto [phegeni_genes, phegeni_traits] = loadPheGenIEntities(path_file_PheGenI, reactome_genes);
+		const auto [genes_to_proteins, proteins_to_genes] = loadMappingGenesProteins(path_file_mapping_proteins_genes.data());
+		const auto [proteins_to_proteoforms, proteoforms_to_proteins] = loadMappingProteinsProteoforms(path_file_proteoform_search.data());
+		const auto phegeni_proteins = deductProteinsFromGenes(path_file_mapping_proteins_genes, genes_to_proteins, phegeni_genes);
 		const auto phegeni_proteoforms = deductProteoformsFromProteins(proteins_to_proteoforms, phegeni_proteins);
-		const bitset<PHEGEN_PROTEOFORMS> modified_proteoforms = proteoform::getSetOfModifiedProteoforms<PHEGEN_PROTEOFORMS>(phegeni_proteoforms);
+		const bitset<PHEGENI_PROTEOFORMS> modified_proteoforms = proteoform::getSetOfModifiedProteoforms<PHEGENI_PROTEOFORMS>(phegeni_proteoforms);
 
 		const auto [adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_gene_search, path_file_protein_search, path_file_proteoform_search);
-		const auto [genes_to_traits, traits_to_genes] = loadTraitGeneSets(path_file_PheGenI.data(), GENOME_WIDE_SIGNIFICANCE, phegeni_genes, phegeni_traits, reactome_genes);
+		const auto [traits_to_genes, genes_to_traits] = loadPheGenISets(path_file_PheGenI.data(), reactome_genes, phegeni_genes, phegeni_traits);
 		const auto sets_to_names = createTraitNames(traits_to_genes);
-		const um<string, bitset<PHEGEN_PROTEINS>> traits_to_proteins = convertGeneSets(traits_to_genes, phegeni_genes, genes_to_proteins, phegeni_proteins, adjacency_list_proteins);
-		const um<string, bitset<PHEGEN_PROTEOFORMS>> traits_to_proteoforms = convertProteinSets(traits_to_proteins, phegeni_proteins, proteins_to_proteoforms, phegeni_proteoforms, adjacency_list_proteoforms);
+		const auto traits_to_proteins = convertGeneSets(traits_to_genes, phegeni_genes, genes_to_proteins, phegeni_proteins, adjacency_list_proteins);
+		const auto traits_to_proteoforms = convertProteinSets(traits_to_proteins, phegeni_proteins, proteins_to_proteoforms, phegeni_proteoforms, adjacency_list_proteoforms);
 
 		// Calculate overlap
-		const auto overlapping_proteoform_set_pairs = findOverlappingPairs(traits_to_proteoforms, 1, PHEGEN_PROTEOFORMS, 1, PHEGEN_PROTEOFORMS);
-		const auto non_overlapping_proteoform_set_pairs = findOverlappingPairs(traits_to_proteoforms, 0, 0, 1, PHEGEN_PROTEOFORMS);
-		const auto& examples = findOverlappingProteoformSets(traits_to_proteoforms, MIN_OVERLAP_SIZE, MAX_OVERLAP_SIZE, MIN_SET_SIZE, MAX_SET_SIZE,
+		const auto overlapping_proteoform_set_pairs = findOverlappingPairs(traits_to_proteoforms, 1, PHEGENI_PROTEOFORMS, 1, PHEGENI_PROTEOFORMS);
+		const auto non_overlapping_proteoform_set_pairs = findOverlappingPairs(traits_to_proteoforms, 0, 0, 1, PHEGENI_PROTEOFORMS);
+		const auto examples = findOverlappingProteoformSets(traits_to_proteoforms, MIN_OVERLAP_SIZE, MAX_OVERLAP_SIZE, MIN_SET_SIZE, MAX_SET_SIZE,
 			modified_proteoforms, MIN_MODIFIED_ALL_MEMBERS_RATIO, MIN_MODIFIED_OVERLAP_MEMBERS_RATIO);
 
 		// Write report
