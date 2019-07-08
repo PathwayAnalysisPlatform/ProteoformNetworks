@@ -20,18 +20,18 @@ using phegeni_trait_to_genes = um<std::string, std::bitset<PHEGENI_GENES>>;
 using phegeni_trait_to_proteins = um<std::string, std::bitset<PHEGENI_PROTEINS>>;
 using phegeni_trait_to_proteoforms = um<std::string, std::bitset<PHEGENI_PROTEOFORMS>>;
 
-struct load_phegeni_entities_result {
-	const bimap genes;
-	const bimap traits;
+struct load_phegeni_genes_and_traits_result {
+	const bimap phegeni_genes;
+	const bimap phegeni_traits;
 };
 
-load_phegeni_entities_result loadPheGenIEntities(
+load_phegeni_genes_and_traits_result loadPheGenIGenesAndTraits(
 	std::string_view path_file_phegeni,
 	const bimap& reactome_genes);
 
 struct load_phegeni_sets_result {
-	phegeni_trait_to_genes trait_to_genes;
-	phegeni_gene_to_traits gene_to_traits;
+	phegeni_trait_to_genes traits_to_genes;
+	phegeni_gene_to_traits genes_to_traits;
 };
 
 load_phegeni_sets_result loadPheGenISets(
@@ -42,7 +42,7 @@ load_phegeni_sets_result loadPheGenISets(
 
 phegeni_trait_to_proteins convertGeneSets(
 	const phegeni_trait_to_genes& traits_to_genes,
-	const bimap& genes,
+	const bimap& phegeni_genes,
 	const ummss& mapping_genes_to_proteins,
 	const bimap& proteins,
 	const ummss& adjacency_list_proteins);

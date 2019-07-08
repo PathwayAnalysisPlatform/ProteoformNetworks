@@ -3,7 +3,7 @@
 namespace degree {
 
 /* Requirements:
--- The dataset must contain the mapping for genes, proteins and proteoforms to reactions and pathways.
+-- The dataset must contain the mapping for phegeni_genes, proteins and proteoforms to reactions and pathways.
 -- The gene mapping file should have the mapping from genes to proteins.
 -- The protein mapping file should have the pathway and reaction names.*/
 void doAnalysis(const pathway::dataset& ds,

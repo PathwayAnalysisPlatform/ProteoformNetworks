@@ -54,7 +54,7 @@ namespace gene_level_only_overlap {
 		const um<string, bitset<size_genes>>& sets_genes,
 		const um<string, bitset<size_proteins>>& sets_proteins,
 		const um<string, bitset<size_proteoforms>>& sets_proteoforms,
-		const bimap& genes,
+		const bimap& phegeni_genes,
 		const bimap& proteins,
 		const bimap& proteoforms) {
 		cout << "Writing records...\n";
@@ -76,7 +76,7 @@ namespace gene_level_only_overlap {
 			output << sets_genes.at(example.second).count() << "\t" << sets_proteins.at(example.second).count() << "\t";
 			output << sets_proteoforms.at(example.second).count() << "\t";
 			output << overlap_genes.count() << "\t" << overlap_proteins.count() << "\t" << overlap_proteoforms.count() << "\t";
-			printMembers(output, overlap_genes, genes);
+			printMembers(output, overlap_genes, phegeni_genes);
 			output << "\t";
 			printMembers(output, overlap_proteins, proteins);
 			output << "\t";
@@ -100,7 +100,7 @@ namespace gene_level_only_overlap {
 		const reactome_gene_sets& sets_genes,
 		const reactome_protein_sets& sets_proteins,
 		const reactome_proteoform_sets& sets_proteoforms,
-		const bimap& genes,
+		const bimap& phegeni_genes,
 		const bimap& proteins,
 		const bimap& proteoforms) {
 		cerr << "Reporting pathway pairs with gene level only overlap...\n";
@@ -110,7 +110,7 @@ namespace gene_level_only_overlap {
 		output << "GENE_OVERLAP\tPROTEIN_OVERLAP\tPROTEOFORM_OVERLAP\t";
 		output << "OVERLAP_GENES\tOVERLAP_PROTEINS\tOVERLAP_PROTEOFORMS\tDECOMPOSED_OVERLAP_PROTEOFORMS_1\tDECOMPOSED_OVERLAP_PROTEOFORMS_2\n";
 		writeReportRecords(output, examples, sets_to_names,
-			sets_genes, sets_proteins, sets_proteoforms, genes, proteins, proteoforms);
+			sets_genes, sets_proteins, sets_proteoforms, phegeni_genes, proteins, proteoforms);
 	}
 
 	void writePhenotypeReport(ofstream& output,
@@ -119,7 +119,7 @@ namespace gene_level_only_overlap {
 		const um<string, bitset<PHEGENI_GENES>>& sets_to_genes,
 		const um<string, bitset<PHEGENI_PROTEINS>>& sets_to_proteins,
 		const um<string, bitset<PHEGENI_PROTEOFORMS>>& sets_to_proteoforms,
-		const bimap& genes,
+		const bimap& phegeni_genes,
 		const bimap& proteins,
 		const bimap& proteoforms) {
 		output << "PHENOTYPE_1\tPHENOTYPE_2\tPHENOTYPE_1_NAME\tPHENOTYPE_2_NAME\t";
@@ -130,7 +130,7 @@ namespace gene_level_only_overlap {
 
 		writeReportRecords(output, examples, sets_to_names,
 			sets_to_genes, sets_to_proteins, sets_to_proteoforms,
-			genes, proteins, proteoforms);
+			phegeni_genes, proteins, proteoforms);
 	}
 
 	template <size_t total_num_entities>
@@ -193,14 +193,14 @@ namespace gene_level_only_overlap {
 
 	ummss loadGenesAdjacencyList(std::string_view search_file_path) {
 		ummss adjacenty_list;
-		const auto genes = createBimap(search_file_path);
-		const auto reactions_to_entities = loadGeneSets(search_file_path, genes, false);
+		const auto phegeni_genes = createBimap(search_file_path);
+		const auto reactions_to_entities = loadGeneSets(search_file_path, phegeni_genes, false);
 
 		for (const auto& reaction_entry : reactions_to_entities) {
 			vs members;
 			for (int I = 0; I < reaction_entry.second.size(); I++) {
 				if (reaction_entry.second.test(I)) {
-					members.push_back(genes.entities[I]);
+					members.push_back(phegeni_genes.entities[I]);
 				}
 			}
 
@@ -218,9 +218,9 @@ namespace gene_level_only_overlap {
 		std::string_view path_file_protein_search,
 		std::string_view path_file_proteoform_search,
 		std::string_view report_file_path) {
-		const auto reactome_genes = createBimap(path_file_gene_search);
-		const auto reactome_proteins = createBimap(path_file_protein_search);
-		const auto reactome_proteoforms = createBimap(path_file_proteoform_search);
+		const auto reactome_genes = loadReactomeEntities(path_file_gene_search);
+		const auto reactome_proteins = loadReactomeEntities(path_file_protein_search);
+		const auto reactome_proteoforms = loadReactomeEntities(path_file_proteoform_search);
 		const auto pathways_to_names = loadPathwayNames(path_file_proteoform_search);
 
 		reactome_gene_sets pathways_to_genes = loadGeneSets(path_file_gene_search, reactome_genes, true);
@@ -253,11 +253,12 @@ namespace gene_level_only_overlap {
 			reactome_genes, reactome_proteins, reactome_proteoforms);
 	}
 
-	void reportPhenotypePairs(std::string_view path_file_gene_search,
+	void reportPhenotypePairs(
+		std::string_view path_file_gene_search,
 		std::string_view path_file_protein_search,
 		std::string_view path_file_proteoform_search,
 		std::string_view path_file_PheGenI,
-		std::string_view path_file_mapping_proteins_genes,
+		std::string_view path_file_mapping_proteins_to_genes,
 		std::string_view path_file_report_trait) {
 		// Load reference network
 
@@ -273,29 +274,25 @@ namespace gene_level_only_overlap {
 		// Find overlapping pairs
 		// Write report
 
-		// Data structures:
-		// reference network: adjacency list: map<string, string>
-		// phegen set: bitset<MAX_ENTITIES> members, index_to_entities, string set_name
+		// Create gene sets for each trait
+		const auto reactome_genes = loadReactomeEntities(path_file_gene_search);
+		const auto [phegeni_genes, phegeni_traits] = loadPheGenIGenesAndTraits(path_file_PheGenI, reactome_genes);
+		const auto mapping_traits_genes = loadPheGenISets(path_file_PheGenI, reactome_genes, phegeni_genes, phegeni_traits);
+		const auto traits_to_names = createTraitNames(mapping_traits_genes.traits_to_genes);
 
-		cout << "Loading PheGen data\n";
-		const auto reactome_genes = createBimap(path_file_gene_search);
-		const auto [phegeni_genes, phegeni_traits] = loadPheGenIEntities(path_file_PheGenI, reactome_genes);
+		// Create proteoform sets for each trait
+		const auto [adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_protein_search, path_file_proteoform_search);		
 
-		const auto [gene_to_proteins, protein_to_genes] = loadMappingGenesProteins(path_file_mapping_proteins_genes.data());
-		const auto [proteins_to_proteoforms, proteoform_to_proteins] = loadMappingProteinsProteoforms(path_file_proteoform_search.data());
-		const auto phegeni_proteins = deductProteinsFromGenes(path_file_mapping_proteins_genes, gene_to_proteins, phegeni_genes);
+		const auto [genes_to_proteins, proteins_to_genes] = loadMappingGenesProteins(path_file_mapping_proteins_to_genes);
+		const auto phegeni_proteins = deductProteinsFromGenes(genes_to_proteins, phegeni_genes);
+		const um<string, bitset<PHEGENI_PROTEINS>> traits_to_proteins = convertGeneSets(mapping_traits_genes.traits_to_genes, phegeni_genes, genes_to_proteins, phegeni_proteins, adjacency_list_proteins);
+
+		const auto [proteins_to_proteoforms, proteoforms_to_proteins] = loadMappingProteinsProteoforms(path_file_proteoform_search);
 		const auto phegeni_proteoforms = deductProteoformsFromProteins(proteins_to_proteoforms, phegeni_proteins);
-
-		// Calculate adjacency lists for genes, proteins and proteoforms according to Reactome
-		// An entity is neighbour of another gene if the participate in the same Reaction
-
-		const auto [adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_gene_search, path_file_protein_search, path_file_proteoform_search);
-		const auto [traits_to_genes, genes_to_traits] = loadPheGenISets(path_file_PheGenI.data(), reactome_genes, phegeni_genes, phegeni_traits);
-		const auto traits_to_names = createTraitNames(traits_to_genes);
-		const um<string, bitset<PHEGENI_PROTEINS>> traits_to_proteins = convertGeneSets(traits_to_genes, phegeni_genes, gene_to_proteins, phegeni_proteins, adjacency_list_proteins);
 		const um<string, bitset<PHEGENI_PROTEOFORMS>> traits_to_proteoforms = convertProteinSets(traits_to_proteins, phegeni_proteins, proteins_to_proteoforms, phegeni_proteoforms, adjacency_list_proteoforms);
 
-		const auto overlapping_gene_set_pairs = findOverlappingPairs(traits_to_genes, MIN_OVERLAP_SIZE, MAX_OVERLAP_SIZE, MIN_SET_SIZE, MAX_SET_SIZE);
+		// Calculate overlaps
+		const auto overlapping_gene_set_pairs = findOverlappingPairs(mapping_traits_genes.traits_to_genes, MIN_OVERLAP_SIZE, MAX_OVERLAP_SIZE, MIN_SET_SIZE, MAX_SET_SIZE);
 		cout << "Calculating protein sets overlap..." << endl;
 		const auto overlapping_protein_set_pairs = findOverlappingPairs(traits_to_proteins, MIN_OVERLAP_SIZE, MAX_OVERLAP_SIZE, MIN_SET_SIZE, MAX_SET_SIZE);
 		cout << "Calculating proteoform sets overlap..." << endl;
@@ -317,7 +314,7 @@ namespace gene_level_only_overlap {
 		cout << "Writing report...\n";
 		ofstream report(path_file_report_trait.data());
 
-		writePhenotypeReport(report, examples, traits_to_names, traits_to_genes, traits_to_proteins, traits_to_proteoforms,
+		writePhenotypeReport(report, examples, traits_to_names, mapping_traits_genes.traits_to_genes, traits_to_proteins, traits_to_proteoforms,
 			phegeni_genes, phegeni_proteins, phegeni_proteoforms);
 	}
 

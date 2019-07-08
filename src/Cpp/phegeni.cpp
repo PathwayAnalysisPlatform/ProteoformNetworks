@@ -3,7 +3,7 @@
 using namespace std;
 
 // Creates bimap for genes and traits from PheGenI data file
-load_phegeni_entities_result loadPheGenIEntities(
+load_phegeni_genes_and_traits_result loadPheGenIGenesAndTraits(
 	string_view path_file_phegeni,
 	const bimap& reactome_genes) {
 
@@ -12,6 +12,8 @@ load_phegeni_entities_result loadPheGenIEntities(
 	string p_value_str;
 	long double p_value;
 	uss temp_gene_set, temp_trait_set;
+
+	std::cerr << "Loaded " << reactome_genes.entities.size() << " = " << reactome_genes.indexes.size() << " reactome genes.\n\n";
 
 	if (!file_PheGenI.is_open()) {
 		throw runtime_error("Cannot open path_file_phegeni at " __FUNCTION__);
@@ -55,8 +57,8 @@ load_phegeni_sets_result loadPheGenISets(
 	string line, field, trait, gene, gene2;
 	string p_value_str;
 	long double p_value;
-	phegeni_trait_to_genes trait_to_genes;
-	phegeni_gene_to_traits gene_to_traits;
+	phegeni_trait_to_genes traits_to_genes;
+	phegeni_gene_to_traits genes_to_traits;
 
 	if (!file_phegen.is_open()) {
 		throw runtime_error("Cannot open path_file_phegeni at " __FUNCTION__);
@@ -77,29 +79,29 @@ load_phegeni_sets_result loadPheGenISets(
 		getline(file_phegen, line);               // Skip header line leftoever: Source,	PubMed,	Analysis ID,	Study ID,	Study Name
 
 		if (reactome_genes.indexes.find(gene) != reactome_genes.indexes.end()) {
-			trait_to_genes[trait].set(phegeni_genes.indexes.at(gene));
-			gene_to_traits[gene].set(phegeni_traits.indexes.at(trait));
+			traits_to_genes[trait].set(phegeni_genes.indexes.at(gene));
+			genes_to_traits[gene].set(phegeni_traits.indexes.at(trait));
 		}
 		if (reactome_genes.indexes.find(gene2) != reactome_genes.indexes.end()) {
-			trait_to_genes[trait].set(phegeni_genes.indexes.at(gene2));
-			gene_to_traits[gene2].set(phegeni_traits.indexes.at(trait));
+			traits_to_genes[trait].set(phegeni_genes.indexes.at(gene2));
+			genes_to_traits[gene2].set(phegeni_traits.indexes.at(trait));
 		}
 	}
 
-	cerr << "Number of traits with gene members as bitset: " << trait_to_genes.size() << "\n";
-	cerr << "Number of genes with traits they belong as bitset: " << gene_to_traits.size() << "\n";
+	cerr << "Number of traits with gene members as bitset: " << traits_to_genes.size() << "\n";
+	cerr << "Number of genes with traits they belong as bitset: " << genes_to_traits.size() << "\n";
 
-	return { trait_to_genes, gene_to_traits };
+	return { traits_to_genes, genes_to_traits };
 }
 
 phegeni_trait_to_proteins convertGeneSets(
 	const phegeni_trait_to_genes& traits_to_genes,
-	const bimap& genes,
+	const bimap& phegeni_genes,
 	const ummss& mapping_genes_to_proteins,
 	const bimap& proteins,
 	const ummss& adjacency_list_proteins) {
 	cout << "Converting gene to protein sets.\n";
-	return convertSets<PHEGENI_GENES, PHEGENI_PROTEINS>(traits_to_genes, genes.entities, mapping_genes_to_proteins, proteins.indexes, adjacency_list_proteins);
+	return convertSets<PHEGENI_GENES, PHEGENI_PROTEINS>(traits_to_genes, phegeni_genes.entities, mapping_genes_to_proteins, proteins.indexes, adjacency_list_proteins);
 }
 
 phegeni_trait_to_proteoforms convertProteinSets(const phegeni_trait_to_proteins& traits_to_proteins,

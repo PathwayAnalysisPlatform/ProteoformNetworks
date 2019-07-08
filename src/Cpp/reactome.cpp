@@ -3,10 +3,10 @@
 using namespace std;
 
 // Read list of entities from a PathwayMatcher search file
-vs loadReactomeEntitiesIndexToEntitites(std::string_view path_search_file) {
+vs loadReactomeEntitiesIndexToEntitites(string_view path_search_file) {
 	vs result;
-	std::ifstream file_search(path_search_file.data());
-	std::string field, entity;
+	ifstream file_search(path_search_file.data());
+	string field, entity;
 	uss temp_set;
 
 	getline(file_search, field);					// Skip header line
@@ -17,14 +17,14 @@ vs loadReactomeEntitiesIndexToEntitites(std::string_view path_search_file) {
 	return convert_uss_to_vs(temp_set);
 }
 
-load_mapping_proteins_proteoforms_result loadMappingProteinsProteoforms(std::string_view path_file_mapping) {
+load_mapping_proteins_proteoforms_result loadMappingProteinsProteoforms(string_view path_file_mapping) {
 	ummss protein_to_proteforms;
 	ummss proteoform_to_proteins;
-	std::ifstream file_mapping(path_file_mapping.data());
-	std::string protein, proteoform, leftover;
+	ifstream file_mapping(path_file_mapping.data());
+	string protein, proteoform, leftover;
 
 	if (!file_mapping.is_open()) {
-		throw std::runtime_error("Error reading file at: " __FUNCTION__);
+		throw runtime_error("Error reading file at: " __FUNCTION__);
 	}
 
 	getline(file_mapping, protein);  // Discard the header line.
@@ -35,20 +35,20 @@ load_mapping_proteins_proteoforms_result loadMappingProteinsProteoforms(std::str
 		proteoform_to_proteins.emplace(proteoform, protein);
 	}
 
-	std::cerr << "Mapping proteins proteoforms loaded: " << protein_to_proteforms.size() << " = " << proteoform_to_proteins.size() << "\n";
+	cerr << "Mapping proteins proteoforms loaded: " << protein_to_proteforms.size() << " = " << proteoform_to_proteins.size() << "\n";
 	return { protein_to_proteforms, proteoform_to_proteins };
 }
 
 // Create bimap from entities in a PathwayMatcher search file
-bimap loadReactomeEntities(std::string_view path_search_file) {
+bimap loadReactomeEntities(string_view path_search_file) {
 	auto index_to_entities = loadReactomeEntitiesIndexToEntitites(path_search_file.data());
 	return createBimap(index_to_entities);
 }
 
-reactome_gene_sets loadGeneSets(std::string_view file_path, const bimap& genes, bool pathways) {
+reactome_gene_sets loadGeneSets(string_view file_path, const bimap& phegeni_genes, bool pathways) {
 	reactome_gene_sets result;
-	std::ifstream file_search(file_path.data());
-	std::string field, gene, reaction, pathway;
+	ifstream file_search(file_path.data());
+	string field, gene, reaction, pathway;
 
 	getline(file_search, field);                // Skip csv header line
 	while (getline(file_search, gene, '\t')) {  // Read the members of each gene_set // Read GENE
@@ -58,15 +58,15 @@ reactome_gene_sets loadGeneSets(std::string_view file_path, const bimap& genes, 
 		getline(file_search, pathway, '\t');     // Read PATHWAY_STID
 		getline(file_search, field);             // Read PATHWAY_DISPLAY_NAME
 
-		result[pathways ? pathway : reaction].set(genes.indexes.find(gene)->second);
+		result[pathways ? pathway : reaction].set(phegeni_genes.indexes.find(gene)->second);
 	}
 	return result;
 }
 
-reactome_protein_sets loadProteinSets(std::string_view file_path, const bimap& proteins, bool pathways) {
+reactome_protein_sets loadProteinSets(string_view file_path, const bimap& proteins, bool pathways) {
 	reactome_protein_sets result;
-	std::ifstream file_search(file_path.data());
-	std::string field, entity, reaction, pathway;
+	ifstream file_search(file_path.data());
+	string field, entity, reaction, pathway;
 
 	getline(file_search, field);                  // Skip csv header line
 	while (getline(file_search, entity, '\t')) {  // Read the members of each gene_set // Read UNIPROT
@@ -80,10 +80,10 @@ reactome_protein_sets loadProteinSets(std::string_view file_path, const bimap& p
 	return result;
 }
 
-reactome_proteoform_sets loadProteoformSets(std::string_view file_path, const bimap& proteoforms, bool pathways) {
+reactome_proteoform_sets loadProteoformSets(string_view file_path, const bimap& proteoforms, bool pathways) {
 	reactome_proteoform_sets result;
-	std::ifstream file_search(file_path.data());
-	std::string field, entity, reaction, pathway;
+	ifstream file_search(file_path.data());
+	string field, entity, reaction, pathway;
 
 	getline(file_search, field);                  // Skip csv header line
 	while (getline(file_search, entity, '\t')) {  // Read the members of each gene_set // Read PROTEOFORM
@@ -98,7 +98,7 @@ reactome_proteoform_sets loadProteoformSets(std::string_view file_path, const bi
 	return result;
 }
 
-umss loadPathwayNames(std::string_view path_search_file) {
+umss loadPathwayNames(string_view path_search_file) {
 	umss result;
 	ifstream file_search(path_search_file.data());
 	string field, pathway, pathway_name;
@@ -126,12 +126,11 @@ umss loadPathwayNames(std::string_view path_search_file) {
 }
 
 bimap deductProteinsFromGenes(
-	std::string_view path_file_mapping_proteins_genes,
 	const ummss& genes_to_proteins,
-	const bimap& genes) {
+	const bimap& phegeni_genes) {
 	uss temp_protein_set;
 
-	for (const auto& gene_entry : genes.indexes) {
+	for (const auto& gene_entry : phegeni_genes.indexes) {
 		auto ret = genes_to_proteins.equal_range(gene_entry.first);
 		for (auto it = ret.first; it != ret.second; ++it) {
 			temp_protein_set.insert(it->second);
@@ -169,15 +168,16 @@ bimap deductProteoformsFromProteins(const ummss& proteins_to_proteoforms, const 
 	return proteoforms;
 }
 
-reactome_networks loadReactomeNetworks(std::string_view path_file_gene_search,
-	std::string_view path_file_protein_search,
-	std::string_view path_file_proteoform_search) {
+// Calculate adjacency lists for genes, proteins and proteoforms according to Reactome
+// An entity is neighbour of another gene if the participate in the same Reaction
+reactome_networks loadReactomeNetworks(
+	string_view path_file_protein_search,
+	string_view path_file_proteoform_search) {
 	cout << "Loading Reactome networks.\n";
-	// const ummss adjacency_list_genes = loadGenesAdjacencyList(path_file_gene_search);
 	return { loadProteinsAdjacencyList(path_file_protein_search), loadProteoformsAdjacencyList(path_file_proteoform_search) };
 }
 
-ummss loadProteinsAdjacencyList(std::string_view search_file_path) {
+ummss loadProteinsAdjacencyList(string_view search_file_path) {
 	ummss adjacenty_list;
 	const auto proteins = createBimap(search_file_path);
 	const auto reactions_to_proteins = loadProteinSets(search_file_path, proteins, false);
@@ -200,7 +200,7 @@ ummss loadProteinsAdjacencyList(std::string_view search_file_path) {
 	return adjacenty_list;
 }
 
-ummss loadProteoformsAdjacencyList(std::string_view search_file_path) {
+ummss loadProteoformsAdjacencyList(string_view search_file_path) {
 	ummss adjacenty_list;
 	const auto proteoforms = createBimap(search_file_path);
 	const auto reactions_to_proteoforms = loadProteoformSets(search_file_path, proteoforms, false);

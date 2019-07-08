@@ -28,16 +28,15 @@ using reactome_gene_sets = um<std::string, std::bitset<REACTOME_GENES>>;
 using reactome_protein_sets = um<std::string, std::bitset<REACTOME_PROTEINS>>;
 using reactome_proteoform_sets = um<std::string, std::bitset<REACTOME_PROTEOFORMS>>;
 
-reactome_gene_sets loadGeneSets(std::string_view file_path, const bimap& genes, bool pathways);
+reactome_gene_sets loadGeneSets(std::string_view file_path, const bimap& phegeni_genes, bool pathways);
 reactome_protein_sets loadProteinSets(std::string_view file_path, const bimap& proteins, bool pathways);
 reactome_proteoform_sets loadProteoformSets(std::string_view file_path, const bimap& proteoforms, bool pathways);
 
 umss loadPathwayNames(std::string_view path_search_file);
 
 bimap deductProteinsFromGenes(
-	std::string_view path_file_mapping_proteins_genes,
 	const ummss& genes_to_proteins,
-	const bimap& genes);
+	const bimap& phegeni_genes);
 bimap deductProteoformsFromProteins(
 	const ummss& proteins_to_proteoforms, 
 	const bimap& proteins);
@@ -48,7 +47,6 @@ struct reactome_networks {
 };
 
 reactome_networks loadReactomeNetworks(
-	std::string_view path_file_gene_search,
 	std::string_view path_file_protein_search,
 	std::string_view path_file_proteoform_search);
 

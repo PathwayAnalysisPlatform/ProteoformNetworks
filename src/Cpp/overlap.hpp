@@ -23,8 +23,9 @@ struct Frequencies {
 
 void doOverlapAnalysis(
 	std::string_view path_file_PheGenI,
-	std::string_view path_file_gene_search,
+	std::string_view path_file_reactome_genes,
 	std::string_view path_file_mapping_proteins_to_genes,
+	std::string_view path_file_protein_search,
 	std::string_view path_file_proteoform_search);
 
 // Version with set size and overlap size limits
@@ -55,7 +56,7 @@ std::map<std::pair<std::string, std::string>, std::bitset<total_num_entities>> f
 		}
 	}
 	auto t1 = clock();
-	std::cerr << "tardamos " << double(t1 - t0) / CLOCKS_PER_SEC << "\n";
+	std::cerr << "tardamos " << (t1 - static_cast<double>(t0)) / CLOCKS_PER_SEC << "\n";
 	return result;
 }
 

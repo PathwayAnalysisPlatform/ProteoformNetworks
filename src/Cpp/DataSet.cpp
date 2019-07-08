@@ -40,7 +40,7 @@ const int dataset::getNumPathways() const {
 }
 
 const int dataset::getNumGenes() const {
-   return genes.entities.size();
+   return phegeni_genes.entities.size();
 }
 const int dataset::getNumProteins() const {
    return proteins.entities.size();
@@ -57,7 +57,7 @@ const int dataset::getNumModifiedProteoforms() const {
 }
 
 const vs& dataset::getGenes() const {
-   return genes.entities;
+   return phegeni_genes.entities;
 }
 const vs& dataset::getProteins() const {
    return proteins.entities;
@@ -123,7 +123,7 @@ void dataset::setPathwayNames(std::string_view path_file_mapping) {
 
 void dataset::setGeneMapping(std::string_view path_file_mapping) {
    std::cerr << "Loading gene mapping\n";
-   genes = createBimap(path_file_mapping);
+   phegeni_genes = createBimap(path_file_mapping);
    std::cerr << "Read " << getNumGenes() << " genes.\n";
 
    std::ifstream map_file(path_file_mapping.data());
@@ -142,10 +142,10 @@ void dataset::setGeneMapping(std::string_view path_file_mapping) {
 
       temp_genes_to_proteins.insert(std::make_pair(gene, protein));
 
-      pathways_to_genes[pathway].set(genes.indexes.at(gene));
+      pathways_to_genes[pathway].set(phegeni_genes.indexes.at(gene));
       genes_to_pathways.emplace(gene, pathway);
 
-      reactions_to_genes[reaction].set(genes.indexes.at(gene));
+      reactions_to_genes[reaction].set(phegeni_genes.indexes.at(gene));
       genes_to_reactions.emplace(gene, reaction);
    }
 
@@ -226,7 +226,7 @@ void dataset::calculateModifiedProteinsAndProteoforms() {
 
 void dataset::calculateInteractionNetworks() {
    std::cerr << "Calculating networks...\n";
-   calculateNetwork(genes, reactions_to_genes, gene_network);
+   calculateNetwork(phegeni_genes, reactions_to_genes, gene_network);
    calculateNetwork(proteins, reactions_to_proteins, protein_network);
    calculateNetwork(proteoforms, reactions_to_proteoforms, proteoform_network);
 }

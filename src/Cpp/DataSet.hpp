@@ -64,7 +64,7 @@ class dataset {
    std::string name;
    umss pathways_to_names;
 
-   bimap genes;
+   bimap phegeni_genes;
    bimap proteins;
    bimap proteoforms;
    vs modified_proteins;

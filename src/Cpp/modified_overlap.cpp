@@ -139,14 +139,14 @@ namespace modified_overlap {
 		// Load data: trait gene sets, trait proteoform sets
 		cout << "Loading PheGen data\n";
 		const auto reactome_genes = createBimap(path_file_gene_search);
-		const auto [phegeni_genes, phegeni_traits] = loadPheGenIEntities(path_file_PheGenI, reactome_genes);
+		const auto [phegeni_genes, phegeni_traits] = loadPheGenIGenesAndTraits(path_file_PheGenI, reactome_genes);
 		const auto [genes_to_proteins, proteins_to_genes] = loadMappingGenesProteins(path_file_mapping_proteins_genes.data());
 		const auto [proteins_to_proteoforms, proteoforms_to_proteins] = loadMappingProteinsProteoforms(path_file_proteoform_search.data());
-		const auto phegeni_proteins = deductProteinsFromGenes(path_file_mapping_proteins_genes, genes_to_proteins, phegeni_genes);
+		const auto phegeni_proteins = deductProteinsFromGenes(genes_to_proteins, phegeni_genes);
 		const auto phegeni_proteoforms = deductProteoformsFromProteins(proteins_to_proteoforms, phegeni_proteins);
 		const bitset<PHEGENI_PROTEOFORMS> modified_proteoforms = proteoform::getSetOfModifiedProteoforms<PHEGENI_PROTEOFORMS>(phegeni_proteoforms);
 
-		const auto [adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_gene_search, path_file_protein_search, path_file_proteoform_search);
+		const auto [adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_protein_search, path_file_proteoform_search);
 		const auto [traits_to_genes, genes_to_traits] = loadPheGenISets(path_file_PheGenI.data(), reactome_genes, phegeni_genes, phegeni_traits);
 		const auto sets_to_names = createTraitNames(traits_to_genes);
 		const auto traits_to_proteins = convertGeneSets(traits_to_genes, phegeni_genes, genes_to_proteins, phegeni_proteins, adjacency_list_proteins);
