@@ -9,7 +9,7 @@ load_mapping_genes_proteins_result loadMappingGenesProteins(std::string_view pat
 	std::string gene, protein, leftover;
 
 	if (!file_mapping.is_open()) {
-		throw std::runtime_error("Error reading file at: " __FUNCTION__);
+		throw std::runtime_error(std::strcat("Error reading file at: ", __FUNCTION__));
 	}
 
 	getline(file_mapping, leftover);  // Discard the header line.

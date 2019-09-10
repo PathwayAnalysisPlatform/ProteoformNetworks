@@ -8,7 +8,7 @@
 #include <string_view>
 
 #include "proteoform.hpp"
-#include "utility.hpp"
+#include "conversions.hpp"
 
 enum entities {
 	GENES,

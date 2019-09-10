@@ -14,7 +14,7 @@
 #include "types.hpp"
 #include "entity.hpp"
 #include "proteoform.hpp"
-#include "bimap.hpp"
+#include "bimap_str_int.hpp"
 #include "reactome.hpp"
 
 namespace pathway {
@@ -64,9 +64,9 @@ class dataset {
    std::string name;
    umss pathways_to_names;
 
-   bimap phegeni_genes;
-   bimap proteins;
-   bimap proteoforms;
+   bimap_str_int phegeni_genes;
+   bimap_str_int proteins;
+   bimap_str_int proteoforms;
    vs modified_proteins;
    vs modified_proteoforms;
 
@@ -101,14 +101,14 @@ class dataset {
    void calculateInteractionNetworks();
 
    template <size_t num_entities>
-   void calculateNetwork(const bimap& entities,
+   void calculateNetwork(const bimap_str_int& entities,
                          const um<std::string, std::bitset<num_entities>>& reactions_to_entities,
                          ummss& entity_network) {
       for (const auto& reaction_entry : reactions_to_entities) {
          vs members;
          for (int I = 0; I < reaction_entry.second.size(); I++) {
             if (reaction_entry.second.test(I)) {
-               members.push_back(entities.entities[I]);
+               members.push_back(entities.int_to_str[I]);
             }
          }
 

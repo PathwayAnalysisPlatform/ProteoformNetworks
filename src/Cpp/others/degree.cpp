@@ -98,7 +98,7 @@ void reportEntities(const pathway::dataset& ds,
    std::ofstream report_proteoforms_per_protein(path_file_proteoforms_per_protein.data());
 
    if (!report_entities.is_open()) {
-      throw std::runtime_error("Could not open report for entities file.\n");
+      throw std::runtime_error("Could not open report for int_to_str file.\n");
    }
    if (!report_proteins_per_gene.is_open()) {
       throw std::runtime_error("Could not open report for proteins per gene.\n");

@@ -2,6 +2,7 @@
 #define UNIPROT_HPP_
 
 #include <string>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <string_view>

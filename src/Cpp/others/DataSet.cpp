@@ -1,4 +1,4 @@
-#include "dataset.hpp"
+#include "DataSet.hpp"
 
 namespace pathway {
 
@@ -12,7 +12,7 @@ dataset::dataset(std::string_view path_file_gene_mapping,
    setProteoformMapping(path_file_proteoform_mapping);
    calculateModifiedProteinsAndProteoforms();
 
-   // Check consistency of reactions and pathways for the three types of entities
+   // Check consistency of reactions and pathways for the three types of int_to_str
    checkMappingConsistency();
 
    // Create interaction network
@@ -40,13 +40,13 @@ const int dataset::getNumPathways() const {
 }
 
 const int dataset::getNumGenes() const {
-   return phegeni_genes.entities.size();
+   return phegeni_genes.int_to_str.size();
 }
 const int dataset::getNumProteins() const {
-   return proteins.entities.size();
+   return proteins.int_to_str.size();
 }
 const int dataset::getNumProteoforms() const {
-   return proteoforms.entities.size();
+   return proteoforms.int_to_str.size();
 }
 
 const int dataset::getNumModifiedProteins() const {
@@ -57,13 +57,13 @@ const int dataset::getNumModifiedProteoforms() const {
 }
 
 const vs& dataset::getGenes() const {
-   return phegeni_genes.entities;
+   return phegeni_genes.int_to_str;
 }
 const vs& dataset::getProteins() const {
-   return proteins.entities;
+   return proteins.int_to_str;
 }
 const vs& dataset::getProteoforms() const {
-   return proteoforms.entities;
+   return proteoforms.int_to_str;
 }
 const vs& dataset::getModifiedProteins() const {
    return modified_proteins;
@@ -142,10 +142,10 @@ void dataset::setGeneMapping(std::string_view path_file_mapping) {
 
       temp_genes_to_proteins.insert(std::make_pair(gene, protein));
 
-      pathways_to_genes[pathway].set(phegeni_genes.indexes.at(gene));
+      pathways_to_genes[pathway].set(phegeni_genes.str_to_int.at(gene));
       genes_to_pathways.emplace(gene, pathway);
 
-      reactions_to_genes[reaction].set(phegeni_genes.indexes.at(gene));
+      reactions_to_genes[reaction].set(phegeni_genes.str_to_int.at(gene));
       genes_to_reactions.emplace(gene, reaction);
    }
 
@@ -171,10 +171,10 @@ void dataset::setProteinMapping(std::string_view path_file_mapping) {
       getline(map_file, pathway, ',');        // Read PATHWAY_STID
       getline(map_file, leftover);            // Read rest of line
 
-      pathways_to_proteins[pathway].set(proteins.indexes.at(protein));
+      pathways_to_proteins[pathway].set(proteins.str_to_int.at(protein));
       proteins_to_pathways.emplace(protein, pathway);
 
-      reactions_to_proteins[reaction].set(proteins.indexes.at(protein));
+      reactions_to_proteins[reaction].set(proteins.str_to_int.at(protein));
       proteins_to_reactions.emplace(protein, reaction);
    }
 }
@@ -198,15 +198,15 @@ void dataset::setProteoformMapping(std::string_view path_file_mapping) {
       getline(map_file, reaction, ',');  // Read REACTION_STID
       getline(map_file, pathway);        // Read PATHWAY_STID
 
-      pathways_to_proteoforms[pathway].set(proteoforms.indexes.at(proteoform));
+      pathways_to_proteoforms[pathway].set(proteoforms.str_to_int.at(proteoform));
       proteoforms_to_pathways.emplace(proteoform, pathway);
 
-      reactions_to_proteoforms[reaction].set(proteoforms.indexes.at(proteoform));
+      reactions_to_proteoforms[reaction].set(proteoforms.str_to_int.at(proteoform));
       proteoforms_to_reactions.emplace(proteoform, reaction);
    }
 
    // Calculate proteins to proteoforms
-   for (const auto& proteoform : proteoforms.entities) {
+   for (const auto& proteoform : proteoforms.int_to_str) {
       proteins_to_proteoforms.emplace(proteoform::getAccession(proteoform), proteoform);
    }
 }  // namespace pathway
@@ -225,7 +225,7 @@ void dataset::calculateModifiedProteinsAndProteoforms() {
 }
 
 void dataset::calculateInteractionNetworks() {
-   std::cerr << "Calculating networks...\n";
+   std::cerr << "Calculating networks_lib...\n";
    calculateNetwork(phegeni_genes, reactions_to_genes, gene_network);
    calculateNetwork(proteins, reactions_to_proteins, protein_network);
    calculateNetwork(proteoforms, reactions_to_proteoforms, proteoform_network);

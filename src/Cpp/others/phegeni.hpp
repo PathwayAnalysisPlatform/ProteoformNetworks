@@ -6,7 +6,7 @@
 #include <bitset>
 #include <unordered_map>
 
-#include "bimap.hpp"
+#include "bimap_str_int.hpp"
 
 const long double GENOME_WIDE_SIGNIFICANCE = 5e-8;
 
@@ -21,13 +21,13 @@ using phegeni_trait_to_proteins = um<std::string, std::bitset<PHEGENI_PROTEINS>>
 using phegeni_trait_to_proteoforms = um<std::string, std::bitset<PHEGENI_PROTEOFORMS>>;
 
 struct load_phegeni_genes_and_traits_result {
-	const bimap phegeni_genes;
-	const bimap phegeni_traits;
+	const bimap_str_int phegeni_genes;
+	const bimap_str_int phegeni_traits;
 };
 
 load_phegeni_genes_and_traits_result loadPheGenIGenesAndTraits(
 	std::string_view path_file_phegeni,
-	const bimap& reactome_genes);
+	const bimap_str_int& reactome_genes);
 
 struct load_phegeni_sets_result {
 	phegeni_trait_to_genes traits_to_genes;
@@ -36,26 +36,26 @@ struct load_phegeni_sets_result {
 
 load_phegeni_sets_result loadPheGenISets(
 	std::string_view path_file_phegeni,
-	const bimap& reactome_genes,
-	const bimap& phegeni_genes,
-	const bimap& phegeni_traits);
+	const bimap_str_int& reactome_genes,
+	const bimap_str_int& phegeni_genes,
+	const bimap_str_int& phegeni_traits);
 
 phegeni_trait_to_proteins convertGeneSets(
 	const phegeni_trait_to_genes& traits_to_genes,
-	const bimap& phegeni_genes,
+	const bimap_str_int& phegeni_genes,
 	const ummss& mapping_genes_to_proteins,
-	const bimap& proteins,
+	const bimap_str_int& proteins,
 	const ummss& adjacency_list_proteins);
 
 std::unordered_map<std::string, std::bitset<PHEGENI_PROTEOFORMS>> convertProteinSets(const std::unordered_map<std::string, std::bitset<PHEGENI_PROTEINS>>& traits_to_proteins,
-	const bimap& proteins,
+	const bimap_str_int& proteins,
 	const ummss& mapping_proteins_to_proteoforms,
-	const bimap& proteoforms,
+	const bimap_str_int& proteoforms,
 	const ummss& adjacency_list_proteoforms);
 
-//uss getGeneStrings(const std::bitset<PHEGENI_GENES>& gene_set, const bimap& genes);
-//uss getProteinStrings(const std::bitset<PHEGENI_PROTEINS>& protein_set, const bimap& proteins);
-//uss getProteoformStrings(const std::bitset<PHEGENI_PROTEOFORMS>& proteoform_set, const bimap& proteoforms);
+//uss getGeneStrings(const std::bitset<PHEGENI_GENES>& gene_set, const bimap_str_int& genes);
+//uss getProteinStrings(const std::bitset<PHEGENI_PROTEINS>& protein_set, const bimap_str_int& proteins);
+//uss getProteoformStrings(const std::bitset<PHEGENI_PROTEOFORMS>& proteoform_set, const bimap_str_int& proteoforms);
 //
 umss createTraitNames(const um<std::string, std::bitset<PHEGENI_GENES>>& traits_to_genes);
 

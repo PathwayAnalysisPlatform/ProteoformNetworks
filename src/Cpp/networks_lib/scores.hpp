@@ -4,23 +4,19 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-#include <string_view>
 #include <vector>
-#include <algorithm>
+#include <string_view>
 
-#include "types.hpp"
-
-vs convert_uss_to_vs(const uss& a_set);
+#include "../others/types.hpp"
 
 struct measures_result {
-	double min;
-	double max;
-	double avg;
+    double min;
+    double max;
+    double avg;
 };
 
 const measures_result calculateMeasures(const ummss& mapping);
-const measures_result calculateMeasuresWithSelectedKeys(const ummss& mapping,
-	const vs& keys);
+const measures_result calculateMeasuresWithSelectedKeys(const ummss& mapping, const vs& keys);
 
 void writeFrequencies(std::string_view file_path, const ummss& mapping);
 void writeFrequencies(std::string_view file_path, const ummss& mapping, const vs& keys);

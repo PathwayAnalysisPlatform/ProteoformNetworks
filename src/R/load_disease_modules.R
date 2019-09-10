@@ -138,7 +138,7 @@ for(t1 in traits) {
       #m.pt[t1, t2] <- Overlap(t1.graph.protein, t2.graph.protein)
       #m.pf[t1, t2] <- Overlap(t1.graph.proteoform, t2.graph.proteoform)
       
-      ## If the overlapping entities are proteoforms add to the candidates
+      ## If the overlapping int_to_str are proteoforms add to the candidates
       ## If they overlap just in the protein or the proteoform network
     }
   }

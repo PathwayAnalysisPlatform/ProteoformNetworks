@@ -4,10 +4,10 @@
 #include <iostream>
 #include <ctime>
 
-#include "phegeni.hpp"
-#include "bimap.hpp"
-#include "uniprot.hpp"
-#include "reactome.hpp"
+#include "../others/phegeni.hpp"
+#include "bimap_str_int.hpp"
+#include "../others/uniprot.hpp"
+#include "../others/reactome.hpp"
 
 const int MIN_OVERLAP_SIZE = 1;
 const int MAX_OVERLAP_SIZE = 100;
@@ -21,6 +21,9 @@ struct Frequencies {
 	msi proteoforms;
 };
 
+// Calculates differences in module overlap between gene and proteoform level networks_lib
+// It uses multiple scoring functions to calculate the overlap score between each pair of modules.
+// Creates a report for each scoring function. The report is a csv file with one row each module pair.
 void doOverlapAnalysis(
 	std::string_view path_file_PheGenI,
 	std::string_view path_file_reactome_genes,
@@ -30,7 +33,7 @@ void doOverlapAnalysis(
 
 // Version with set size and overlap size limits
 template <size_t total_num_entities>
-std::map<std::pair<std::string, std::string>, std::bitset<total_num_entities>> findOverlappingPairs(const std::unordered_map<std::string, std::bitset<total_num_entities>>& sets_to_members,
+std::map<std::pair<std::string, std::string>, std::bitset<total_num_entities>> findOverlappingPairs(const um<std::string, std::bitset<total_num_entities>>& sets_to_members,
 	const int& min_overlap, const int& max_overlap,
 	const int& min_set_size, const int& max_set_size) {
 	std::map<std::pair<std::string, std::string>, std::bitset<total_num_entities>> result;
@@ -101,13 +104,13 @@ std::map<std::pair<std::string, std::string>, std::bitset<S>> findOverlappingPro
 }
 
 template <size_t total_num_entities>
-void printMembers(std::ostream& output, const std::bitset<total_num_entities>& entity_set, const bimap& entities) {
+void printMembers(std::ostream& output, const std::bitset<total_num_entities>& entity_set, const bimap_str_int& entities) {
 	int printed = 0;
 	int total = entity_set.count();
 	output << "[";
 	for (int I = 0; I < total_num_entities; I++) {
 		if (entity_set.test(I)) {
-			output << "\"" << entities.entities[I] << "\"";
+			output << "\"" << entities.int_to_str[I] << "\"";
 			printed++;
 			if (printed != total) {
 				output << ",";
@@ -120,11 +123,11 @@ void printMembers(std::ostream& output, const std::bitset<total_num_entities>& e
 void printMembers(std::ostream& output, const uss& members);
 
 template<size_t total_num_entities>
-uss getStringSetFromEntityBitset(const std::bitset<total_num_entities>& entity_set, const bimap& entities) {
+uss getStringSetFromEntityBitset(const std::bitset<total_num_entities>& entity_set, const bimap_str_int& entities) {
 	uss result;
 	for (int I = 0; I < total_num_entities; I++) {
 		if (entity_set.test(I)) {
-			result.insert(entities.entities[I]);
+			result.insert(entities.int_to_str[I]);
 		}
 	}
 	return result;

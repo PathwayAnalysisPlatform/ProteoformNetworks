@@ -58,8 +58,8 @@ RemoveNEdges <- function(graph, n = 1) {
       n <- gsize(graph)
   
   if(n >= 1){
-      indexes <- sample(1:gsize(graph), n, replace = F)
-      graph <- delete.edges(graph, E(graph)[indexes])
+      str_to_int <- sample(1:gsize(graph), n, replace = F)
+      graph <- delete.edges(graph, E(graph)[str_to_int])
   }
   
   return(graph)
@@ -77,8 +77,8 @@ RemoveNVertices <- function(graph, n = 1) {
     n <- gorder(graph)
   
   if(n >= 1){
-    indexes <- sample(1:gorder(graph), n, replace = F)
-    graph <- delete.vertices(graph, V(graph)[indexes])
+    str_to_int <- sample(1:gorder(graph), n, replace = F)
+    graph <- delete.vertices(graph, V(graph)[str_to_int])
   }
   
   return(graph)

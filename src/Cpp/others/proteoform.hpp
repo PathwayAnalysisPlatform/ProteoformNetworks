@@ -6,10 +6,11 @@
 #include <set>
 #include <bitset>
 #include <fstream>
+#include <scores.hpp>
 
-#include "bimap.hpp"
+#include "bimap_str_int.hpp"
 #include "types.hpp"
-#include "utility.hpp"
+#include "conversions.hpp"
 
 namespace proteoform {
 
@@ -26,11 +27,11 @@ std::string getAccession(const std::string& proteoform);
 bool isModified(const std::string& proteoform);
 
 template <size_t S>
-std::bitset<S> getSetOfModifiedProteoforms(const bimap& proteoforms) {
+std::bitset<S> getSetOfModifiedProteoforms(const bimap_str_int& proteoforms) {
 	std::bitset<S> modified_proteoforms;
 
-	for (int I = 0; I < proteoforms.entities.size(); I++) {
-		if (isModified(proteoforms.entities[I])) {
+	for (int I = 0; I < proteoforms.int_to_str.size(); I++) {
+		if (isModified(proteoforms.int_to_str[I])) {
 			modified_proteoforms.set(I);
 		}
 	}

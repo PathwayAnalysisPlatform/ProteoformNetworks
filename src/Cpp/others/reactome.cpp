@@ -2,7 +2,7 @@
 
 using namespace std;
 
-// Read list of entities from a PathwayMatcher search file
+// Read list of int_to_str from a PathwayMatcher search file
 vs loadReactomeEntitiesIndexToEntitites(string_view path_search_file) {
 	vs result;
 	ifstream file_search(path_search_file.data());
@@ -24,7 +24,7 @@ load_mapping_proteins_proteoforms_result loadMappingProteinsProteoforms(string_v
 	string protein, proteoform, leftover;
 
 	if (!file_mapping.is_open()) {
-		throw runtime_error("Error reading file at: " __FUNCTION__);
+		throw runtime_error(strcat("Error reading file at: ", __FUNCTION__));
 	}
 
 	getline(file_mapping, protein);  // Discard the header line.
@@ -39,13 +39,13 @@ load_mapping_proteins_proteoforms_result loadMappingProteinsProteoforms(string_v
 	return { protein_to_proteforms, proteoform_to_proteins };
 }
 
-// Create bimap from entities in a PathwayMatcher search file
-bimap loadReactomeEntities(string_view path_search_file) {
+// Create bimap_str_int from int_to_str in a PathwayMatcher search file
+bimap_str_int loadReactomeEntities(string_view path_search_file) {
 	auto index_to_entities = loadReactomeEntitiesIndexToEntitites(path_search_file.data());
 	return createBimap(index_to_entities);
 }
 
-reactome_gene_sets loadGeneSets(string_view file_path, const bimap& phegeni_genes, bool pathways) {
+reactome_gene_sets loadGeneSets(string_view file_path, const bimap_str_int& phegeni_genes, bool pathways) {
 	reactome_gene_sets result;
 	ifstream file_search(file_path.data());
 	string field, gene, reaction, pathway;
@@ -58,12 +58,12 @@ reactome_gene_sets loadGeneSets(string_view file_path, const bimap& phegeni_gene
 		getline(file_search, pathway, '\t');     // Read PATHWAY_STID
 		getline(file_search, field);             // Read PATHWAY_DISPLAY_NAME
 
-		result[pathways ? pathway : reaction].set(phegeni_genes.indexes.find(gene)->second);
+		result[pathways ? pathway : reaction].set(phegeni_genes.str_to_int.find(gene)->second);
 	}
 	return result;
 }
 
-reactome_protein_sets loadProteinSets(string_view file_path, const bimap& proteins, bool pathways) {
+reactome_protein_sets loadProteinSets(string_view file_path, const bimap_str_int& proteins, bool pathways) {
 	reactome_protein_sets result;
 	ifstream file_search(file_path.data());
 	string field, entity, reaction, pathway;
@@ -75,12 +75,12 @@ reactome_protein_sets loadProteinSets(string_view file_path, const bimap& protei
 		getline(file_search, pathway, '\t');       // Read PATHWAY_STID
 		getline(file_search, field);               // Read PATHWAY_DISPLAY_NAME
 
-		result[pathways ? pathway : reaction].set(proteins.indexes.find(entity)->second);
+		result[pathways ? pathway : reaction].set(proteins.str_to_int.find(entity)->second);
 	}
 	return result;
 }
 
-reactome_proteoform_sets loadProteoformSets(string_view file_path, const bimap& proteoforms, bool pathways) {
+reactome_proteoform_sets loadProteoformSets(string_view file_path, const bimap_str_int& proteoforms, bool pathways) {
 	reactome_proteoform_sets result;
 	ifstream file_search(file_path.data());
 	string field, entity, reaction, pathway;
@@ -93,7 +93,7 @@ reactome_proteoform_sets loadProteoformSets(string_view file_path, const bimap& 
 		getline(file_search, pathway, '\t');       // Read PATHWAY_STID
 		getline(file_search, field);               // Read PATHWAY_DISPLAY_NAME
 
-		result[pathways ? pathway : reaction].set(proteoforms.indexes.find(entity)->second);
+		result[pathways ? pathway : reaction].set(proteoforms.str_to_int.find(entity)->second);
 	}
 	return result;
 }
@@ -125,12 +125,12 @@ umss loadPathwayNames(string_view path_search_file) {
 	return result;
 }
 
-bimap deductProteinsFromGenes(
+bimap_str_int deductProteinsFromGenes(
 	const ummss& genes_to_proteins,
-	const bimap& phegeni_genes) {
+	const bimap_str_int& phegeni_genes) {
 	uss temp_protein_set;
 
-	for (const auto& gene_entry : phegeni_genes.indexes) {
+	for (const auto& gene_entry : phegeni_genes.str_to_int) {
 		auto ret = genes_to_proteins.equal_range(gene_entry.first);
 		for (auto it = ret.first; it != ret.second; ++it) {
 			temp_protein_set.insert(it->second);
@@ -138,17 +138,17 @@ bimap deductProteinsFromGenes(
 	}
 
 	vs index_to_proteins = convert_uss_to_vs(temp_protein_set);
-	bimap proteins = createBimap(index_to_proteins);
+	bimap_str_int proteins = createBimap(index_to_proteins);
 
-	cerr << "PHEGEN proteins: " << proteins.entities.size() << " = " << proteins.indexes.size() << "\n";
+	cerr << "PHEGEN proteins: " << proteins.int_to_str.size() << " = " << proteins.str_to_int.size() << "\n";
 
 	return proteins;
 }
 
-bimap deductProteoformsFromProteins(const ummss& proteins_to_proteoforms, const bimap& proteins) {
+bimap_str_int deductProteoformsFromProteins(const ummss& proteins_to_proteoforms, const bimap_str_int& proteins) {
 	uss temp_proteoform_set;
 
-	for (const auto& entry : proteins.indexes) {
+	for (const auto& entry : proteins.str_to_int) {
 		auto ret = proteins_to_proteoforms.equal_range(entry.first);
 		if (ret.first != ret.second) {
 			for (auto it = ret.first; it != ret.second; ++it) {
@@ -161,9 +161,9 @@ bimap deductProteoformsFromProteins(const ummss& proteins_to_proteoforms, const 
 	}
 
 	auto index_to_proteoforms = convert_uss_to_vs(temp_proteoform_set);
-	bimap proteoforms = createBimap(index_to_proteoforms);
+	bimap_str_int proteoforms = createBimap(index_to_proteoforms);
 
-	cerr << "PHEGEN proteoforms: " << proteoforms.entities.size() << " = " << proteoforms.indexes.size() << "\n";
+	cerr << "PHEGEN proteoforms: " << proteoforms.int_to_str.size() << " = " << proteoforms.str_to_int.size() << "\n";
 
 	return proteoforms;
 }
@@ -173,7 +173,7 @@ bimap deductProteoformsFromProteins(const ummss& proteins_to_proteoforms, const 
 reactome_networks loadReactomeNetworks(
 	string_view path_file_protein_search,
 	string_view path_file_proteoform_search) {
-	cout << "Loading Reactome networks.\n";
+	cout << "Loading Reactome networks_lib.\n";
 	return { loadProteinsAdjacencyList(path_file_protein_search), loadProteoformsAdjacencyList(path_file_proteoform_search) };
 }
 
@@ -186,7 +186,7 @@ ummss loadProteinsAdjacencyList(string_view search_file_path) {
 		vs members;
 		for (int I = 0; I < reaction_entry.second.size(); I++) {
 			if (reaction_entry.second.test(I)) {
-				members.push_back(proteins.entities[I]);
+				members.push_back(proteins.int_to_str[I]);
 			}
 		}
 
@@ -209,7 +209,7 @@ ummss loadProteoformsAdjacencyList(string_view search_file_path) {
 		vs members;
 		for (int I = 0; I < reaction_entry.second.size(); I++) {
 			if (reaction_entry.second.test(I)) {
-				members.push_back(proteoforms.entities[I]);
+				members.push_back(proteoforms.int_to_str[I]);
 			}
 		}
 

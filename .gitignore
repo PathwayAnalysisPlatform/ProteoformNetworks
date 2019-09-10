@@ -18,6 +18,14 @@ Release
 ipch
 *sdf
 x64
+packages/
+
+# CLion
+.idea/
+*.iml
+*.iws
+*.ipr
+*.eml
 
 ## Compiled Object files
 *.slo
@@ -40,6 +48,7 @@ src/Cpp/lib/
 
 ## Not used Libraries
 src/Cpp/lib/
+src/Cpp/cmake-build-debug/
 
 # Java
 *.jar

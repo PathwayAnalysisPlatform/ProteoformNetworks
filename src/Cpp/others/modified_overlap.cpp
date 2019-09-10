@@ -8,7 +8,7 @@ namespace modified_overlap {
 		const std::map<std::pair<std::string, std::string>, std::bitset<REACTOME_PROTEOFORMS>>& examples,
 		const umss& pathways_to_names,
 		const um < std::string, std::bitset<REACTOME_PROTEOFORMS >>& pathways_to_proteoforms,
-		const bimap& proteoforms) {
+		const bimap_str_int& proteoforms) {
 		output << "PATHWAY_1\tPATHWAY_2\tPATHWAY_1_NAME\tPATHWAY_2_NAME\t";
 		output << "PATHWAY_1_PROTEOFORM_SIZE\tPATHWAY_2_PROTEOFORM_SIZE\tOVERLAP_SIZE\t";
 		output << "OVERLAP_PROTEOFORMS\n";
@@ -26,7 +26,7 @@ namespace modified_overlap {
 		const map<pair<string, string>, bitset<PHEGENI_PROTEOFORMS>>& examples,
 		const umss& pathways_to_names,
 		const um<string, bitset<PHEGENI_PROTEOFORMS>>& pathways_to_proteoforms,
-		const bimap& proteoforms) {
+		const bimap_str_int& proteoforms) {
 		output << "PHENOTYPE_1\tPHENOTYPE_1_2\tPHENOTYPE_1_NAME\tPHENOTYPE_2_NAME\t";
 		output << "PHENOTYPE_1_PROTEOFORM_SIZE\tPHENOTYPE_2_PROTEOFORM_SIZE\tOVERLAP_SIZE\t";
 		output << "OVERLAP_PROTEOFORMS\n";
@@ -67,24 +67,24 @@ namespace modified_overlap {
 
 	template <size_t total_proteoforms>
 	Frequencies getFrequencies(const map<pair<string, string>, bitset<total_proteoforms>>& proteoform_overlap_pairs,
-		const bimap& proteoforms) {
+		const bimap_str_int& proteoforms) {
 		Frequencies frequencies;
 		for (const auto& overlap_pair : proteoform_overlap_pairs) {
 			// For each overlap set
 			for (int I = 0; I < overlap_pair.second.size(); I++) {
 				if (overlap_pair.second.test(I)) {
-					string accession = proteoform::getAccession(proteoforms.entities[I]);
+					string accession = proteoform::getAccession(proteoforms.int_to_str[I]);
 					if (frequencies.proteins.find(accession) == frequencies.proteins.end()) {
 						frequencies.proteins.emplace(accession, 0);
 					}
 					frequencies.proteins[accession]++;
 
-					if (frequencies.proteoforms.find(proteoforms.entities[I]) == frequencies.proteoforms.end()) {
-						frequencies.proteoforms.emplace(proteoforms.entities[I], 0);
+					if (frequencies.proteoforms.find(proteoforms.int_to_str[I]) == frequencies.proteoforms.end()) {
+						frequencies.proteoforms.emplace(proteoforms.int_to_str[I], 0);
 					}
-					frequencies.proteoforms[proteoforms.entities[I]]++;
+					frequencies.proteoforms[proteoforms.int_to_str[I]]++;
 
-					for (const auto& modification : proteoform::getModifications(proteoforms.entities[I])) {
+					for (const auto& modification : proteoform::getModifications(proteoforms.int_to_str[I])) {
 						if (frequencies.modifications.find(modification) == frequencies.modifications.end()) {
 							frequencies.modifications[modification] = 0;
 						}

@@ -182,8 +182,8 @@ GetSingleMod <- function(i, x) {
 }
 
 GetModifications <- function(x) {
-  indexes <- gregexpr("(;|,)[[:digit:]]{5}", x)[[1]]
-  sapply(indexes, GetSingleMod, x = x) # The first argument goes implicit in the sapply
+  str_to_int <- gregexpr("(;|,)[[:digit:]]{5}", x)[[1]]
+  sapply(str_to_int, GetSingleMod, x = x) # The first argument goes implicit in the sapply
 }
 
 path <- "degreeDistribution/data/mm_"

@@ -5,7 +5,7 @@ library(igraph)
 source("src/R/paths.R")
 source("src/R/create_csv.R")
 
-# Get all possible connections: pairs of physical entities
+# Get all possible connections: pairs of physical int_to_str
 connections <- get.data("physical_entity_interactions")
 connections$pe1 <- trimws(connections$pe1)
 connections$pe2 <- trimws(connections$pe2)
@@ -34,7 +34,7 @@ plot.network.by.date <- function(date = "2003-01-01", nodes, connections){
   good2 <- which(connections$pe2.stId %in% pe.set)
   good <- good1[good1 %in% good2]
   
-  # Pairs of interacting proteoforms as physical entities
+  # Pairs of interacting proteoforms as physical int_to_str
   selected <- connections[good, ]
   colnames(selected) <- c("from", "to")
   

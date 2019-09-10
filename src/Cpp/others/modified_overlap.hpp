@@ -33,7 +33,7 @@ namespace modified_overlap {
 		const std::map<std::pair<std::string, std::string>, std::bitset<total_proteoforms>>& examples,
 		const umss& pathways_to_names,
 		const reactome_proteoform_sets& proteoform_pathways,
-		const bimap& proteoforms) {
+		const bimap_str_int& proteoforms) {
 		for (const auto& example : examples) {
 			output << example.first.first << "\t" << example.first.second << "\t" << pathways_to_names.at(example.first.first) << "\t"
 				<< pathways_to_names.at(example.first.second) << "\t";

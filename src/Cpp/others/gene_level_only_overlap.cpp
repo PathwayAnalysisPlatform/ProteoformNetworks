@@ -35,11 +35,11 @@ namespace gene_level_only_overlap {
 	template <size_t size_proteoforms>
 	bitset<size_proteoforms> getProteoformSetByAccessionStrings(const uss& accessions,
 		const bitset<size_proteoforms>& proteoform_set,
-		const bimap& proteoforms) {
+		const bimap_str_int& proteoforms) {
 		bitset<size_proteoforms> result;
 		for (int I = 0; I < proteoform_set.size(); I++) {
 			if (proteoform_set.test(I)) {
-				if (accessions.find(proteoform::getAccession(proteoforms.entities.at(I))) != accessions.end()) {
+				if (accessions.find(proteoform::getAccession(proteoforms.int_to_str.at(I))) != accessions.end()) {
 					result.set(I);
 				}
 			}
@@ -54,9 +54,9 @@ namespace gene_level_only_overlap {
 		const um<string, bitset<size_genes>>& sets_genes,
 		const um<string, bitset<size_proteins>>& sets_proteins,
 		const um<string, bitset<size_proteoforms>>& sets_proteoforms,
-		const bimap& phegeni_genes,
-		const bimap& proteins,
-		const bimap& proteoforms) {
+		const bimap_str_int& phegeni_genes,
+		const bimap_str_int& proteins,
+		const bimap_str_int& proteoforms) {
 		cout << "Writing records...\n";
 
 		auto t0 = clock();
@@ -100,9 +100,9 @@ namespace gene_level_only_overlap {
 		const reactome_gene_sets& sets_genes,
 		const reactome_protein_sets& sets_proteins,
 		const reactome_proteoform_sets& sets_proteoforms,
-		const bimap& phegeni_genes,
-		const bimap& proteins,
-		const bimap& proteoforms) {
+		const bimap_str_int& phegeni_genes,
+		const bimap_str_int& proteins,
+		const bimap_str_int& proteoforms) {
 		cerr << "Reporting pathway pairs with gene level only overlap...\n";
 		output << "PATHWAY_1\tPATHWAY_2\tPATHWAY_1_NAME\tPATHWAY_2_NAME\t";
 		output << "PATHWAY_1_GENE_SIZE\tPATHWAY_1_PROTEIN_SIZE\tPATHWAY_1_PROTEOFORM_SIZE\t";
@@ -119,9 +119,9 @@ namespace gene_level_only_overlap {
 		const um<string, bitset<PHEGENI_GENES>>& sets_to_genes,
 		const um<string, bitset<PHEGENI_PROTEINS>>& sets_to_proteins,
 		const um<string, bitset<PHEGENI_PROTEOFORMS>>& sets_to_proteoforms,
-		const bimap& phegeni_genes,
-		const bimap& proteins,
-		const bimap& proteoforms) {
+		const bimap_str_int& phegeni_genes,
+		const bimap_str_int& proteins,
+		const bimap_str_int& proteoforms) {
 		output << "PHENOTYPE_1\tPHENOTYPE_2\tPHENOTYPE_1_NAME\tPHENOTYPE_2_NAME\t";
 		output << "PHENOTYPE_1_GENE_SIZE\tPHENOTYPE_1_PROTEIN_SIZE\tPHENOTYPE_1_PROTEOFORM_SIZE\t";
 		output << "PHENOTYPE_2_GENE_SIZE\tPHENOTYPE_2_PROTEIN_SIZE\tPHENOTYPE_2_PROTEOFORM_SIZE\t";
@@ -200,7 +200,7 @@ namespace gene_level_only_overlap {
 			vs members;
 			for (int I = 0; I < reaction_entry.second.size(); I++) {
 				if (reaction_entry.second.test(I)) {
-					members.push_back(phegeni_genes.entities[I]);
+					members.push_back(phegeni_genes.int_to_str[I]);
 				}
 			}
 
