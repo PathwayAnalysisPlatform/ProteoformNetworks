@@ -15,7 +15,8 @@ int main() try {
 //	auto out = freopen("out.txt", "w", stdout);
 //	auto err = freopen("err.txt", "w", stderr);
 
-	doOverlapAnalysis(path_file_PheGenI, path_file_reactome_genes, path_file_mapping_proteins_to_genes, path_file_protein_search, path_file_proteoform_search);
+	doOverlapAnalysis(path_file_PheGenI, path_file_reactome_genes, path_file_mapping_proteins_to_genes,
+	        path_file_protein_search, path_file_proteoform_search);
 }
 catch (const std::exception& ex) {
 	std::cout << ex.what() << "\n";

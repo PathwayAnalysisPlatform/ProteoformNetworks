@@ -11,7 +11,8 @@ void doOverlapAnalysis(
 
 	// Create gene sets for each trait
 	const bimap_str_int reactome_genes = createBimap(path_file_reactome_genes); // Gene names --> str_to_int
-//	const auto [phegeni_genes, phegeni_traits] = loadPheGenIGenesAndTraits(path_file_PheGenI, reactome_genes);
+    std::cerr << "Loaded " << reactome_genes.int_to_str.size() << " = " << reactome_genes.str_to_int.size() << " reactome genes.\n\n";
+	const auto [phegeni_genes, phegeni_traits] = loadPheGenIGenesAndTraits(path_file_PheGenI, reactome_genes);
 //	const auto mapping_traits_genes = loadPheGenISets(path_file_PheGenI, reactome_genes, phegeni_genes, phegeni_traits);
 //	const auto traits_to_names = createTraitNames(mapping_traits_genes.traits_to_genes);
 //

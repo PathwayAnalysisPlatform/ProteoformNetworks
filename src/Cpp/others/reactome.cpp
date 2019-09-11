@@ -24,7 +24,9 @@ load_mapping_proteins_proteoforms_result loadMappingProteinsProteoforms(string_v
 	string protein, proteoform, leftover;
 
 	if (!file_mapping.is_open()) {
-		throw runtime_error(strcat("Error reading file at: ", __FUNCTION__));
+		std::string message = "Error reading file at: ";
+        std::string function = __FUNCTION__;
+        throw runtime_error(message + function);
 	}
 
 	getline(file_mapping, protein);  // Discard the header line.

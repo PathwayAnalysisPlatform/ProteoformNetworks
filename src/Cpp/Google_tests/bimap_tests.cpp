@@ -3,26 +3,10 @@
 #include <list>
 #include <bimap_str_int.hpp>
 
-#include <windows.h>
-
-std::string GetExeFileName()
-{
-    char buffer[MAX_PATH];
-    GetModuleFileName( NULL, buffer, MAX_PATH );
-    return std::string(buffer);
-}
-
-std::string GetExePath()
-{
-    std::string f = GetExeFileName();
-    return f.substr(0, f.find_last_of( "\\/" ));
-}
-
 class BimapStrIntFixture : public ::testing::Test {
 
 protected:
     virtual void SetUp() {
-        std::cout << GetExePath() << std::endl;
 
         genes.push_back("MAP1ALC3");
         genes.push_back("PARK2");

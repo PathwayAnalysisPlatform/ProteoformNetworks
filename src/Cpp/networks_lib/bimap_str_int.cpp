@@ -32,7 +32,9 @@ vs createIntToStr(string_view list_file_path, bool has_header) {
 	vs index_to_entities;
 
 	if (!map_file.is_open()) {
-		throw runtime_error(strcat("Could not open file list_file_path ", __FUNCTION__));
+		std::string message = "Could not open file list_file_path ";
+        std::string function = __FUNCTION__;
+        throw runtime_error(message + function);
 	}
 
 	if (has_header) {

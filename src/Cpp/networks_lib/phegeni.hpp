@@ -25,14 +25,14 @@ struct load_phegeni_genes_and_traits_result {
 	const bimap_str_int phegeni_traits;
 };
 
+struct load_phegeni_sets_result {
+    phegeni_trait_to_genes traits_to_genes;
+    phegeni_gene_to_traits genes_to_traits;
+};
+
 load_phegeni_genes_and_traits_result loadPheGenIGenesAndTraits(
 	std::string_view path_file_phegeni,
 	const bimap_str_int& reactome_genes);
-
-struct load_phegeni_sets_result {
-	phegeni_trait_to_genes traits_to_genes;
-	phegeni_gene_to_traits genes_to_traits;
-};
 
 load_phegeni_sets_result loadPheGenISets(
 	std::string_view path_file_phegeni,

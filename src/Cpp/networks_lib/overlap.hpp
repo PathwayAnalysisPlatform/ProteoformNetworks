@@ -4,7 +4,7 @@
 #include <iostream>
 #include <ctime>
 
-#include "../others/phegeni.hpp"
+#include "phegeni.hpp"
 #include "bimap_str_int.hpp"
 #include "../others/uniprot.hpp"
 #include "../others/reactome.hpp"

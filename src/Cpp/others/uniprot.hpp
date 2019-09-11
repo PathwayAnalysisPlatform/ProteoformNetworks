@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <string_view>
+#include <cstdio>
 
 #include "types.hpp"
 
