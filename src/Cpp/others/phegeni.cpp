@@ -1,4 +1,5 @@
 #include <cstring>
+#include <iostream>
 #include "phegeni.hpp"
 
 using namespace std;

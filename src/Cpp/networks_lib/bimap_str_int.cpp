@@ -41,6 +41,7 @@ vs createIntToStr(string_view list_file_path, bool hasHeader) {
 		temp_set.insert(entity);
 	}
 	index_to_entities = convert_uss_to_vs(temp_set);
+    sort(index_to_entities.begin(), index_to_entities.end());
 
 	return index_to_entities;
 }
