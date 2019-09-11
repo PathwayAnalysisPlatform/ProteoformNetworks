@@ -16,7 +16,7 @@ struct bimap_str_int {
 bimap_str_int createBimap(std::string_view list_file_path, bool has_header = true);
 bimap_str_int createBimap(const vs& index_to_entities);
 
-vs createIntToStr(std::string_view list_file_path, bool hasHeader = true);
+vs createIntToStr(std::string_view list_file_path, bool has_header = true);
 umsi createStrToInt(const vs& index_to_entities);
 
 #endif // !BIMAP_HPP_

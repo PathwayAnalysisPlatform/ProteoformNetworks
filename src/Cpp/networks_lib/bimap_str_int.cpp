@@ -11,6 +11,8 @@ umsi createStrToInt(const vs& index_to_entities) {
 	return entities_to_index;
 }
 
+// Creates a bimap of string to int and viceversa.
+// The int index assigned to each string corresponds to the lexicographic order.
 bimap_str_int createBimap(string_view list_file_path, bool has_header) {
 	vs index_to_entities = createIntToStr(list_file_path, has_header);
 	umsi entities_to_index = createStrToInt(index_to_entities);
@@ -23,7 +25,7 @@ bimap_str_int createBimap(const vs& index_to_entities) {
 }
 
 // The input file is a list of identifiers. One in each row
-vs createIntToStr(string_view list_file_path, bool hasHeader) {
+vs createIntToStr(string_view list_file_path, bool has_header) {
 	ifstream map_file(list_file_path.data());
 	string entity, leftover;
 	uss temp_set;
@@ -33,7 +35,7 @@ vs createIntToStr(string_view list_file_path, bool hasHeader) {
 		throw runtime_error(strcat("Could not open file list_file_path ", __FUNCTION__));
 	}
 
-	if (hasHeader) {
+	if (has_header) {
 		getline(map_file, leftover);  // Skip header line
 	}
 	while (map_file.peek() != EOF) {
