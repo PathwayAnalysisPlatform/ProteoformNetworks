@@ -56,6 +56,10 @@ load_phegeni_genes_and_traits_result loadPheGenIGenesAndTraits(
     return {phegeni_genes, phegeni_traits};
 }
 
+// Creates two mappings:
+// - trait strings to gene bitsets.
+// - gene strings to trait bitsets
+// The two mappings define the trait modules (also called, phenotype modules or disease modules)
 load_phegeni_sets_result loadPheGenISets(
         string_view path_file_phegeni,
         const bimap_str_int &reactome_genes,

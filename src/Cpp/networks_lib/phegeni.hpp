@@ -21,8 +21,8 @@ using phegeni_trait_to_proteins = um<std::string, std::bitset<PHEGENI_PROTEINS>>
 using phegeni_trait_to_proteoforms = um<std::string, std::bitset<PHEGENI_PROTEOFORMS>>;
 
 struct load_phegeni_genes_and_traits_result {
-	const bimap_str_int phegeni_genes;
-	const bimap_str_int phegeni_traits;
+	bimap_str_int phegeni_genes;
+	bimap_str_int phegeni_traits;
 };
 
 struct load_phegeni_sets_result {
