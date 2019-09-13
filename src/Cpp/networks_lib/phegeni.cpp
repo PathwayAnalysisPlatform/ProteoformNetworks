@@ -6,9 +6,10 @@ using namespace std;
 
 // Read the genes and traits of PheGenI data file.
 // Creates two bimaps: genes and traits
+// The gene list are those genes in the dataset that are also contained in the acceptable gene list.
 load_phegeni_genes_and_traits_result loadPheGenIGenesAndTraits(
         string_view path_file_phegeni,
-        const bimap_str_int &reactome_genes) {
+        const bimap_str_int &acceptable_genes) {
 
     ifstream file_PheGenI(path_file_phegeni.data());
     string line, field, trait, gene, gene2;
@@ -33,11 +34,11 @@ load_phegeni_genes_and_traits_result loadPheGenIGenesAndTraits(
         getline(file_PheGenI, field, '\t');        //	Gene ID 2
         getline(file_PheGenI, line);        // Read rest of line
 
-        if (reactome_genes.str_to_int.find(gene) != reactome_genes.str_to_int.end()) {
+        if (acceptable_genes.str_to_int.find(gene) != acceptable_genes.str_to_int.end()) {
             temp_trait_set.insert(trait);
             temp_gene_set.insert(gene);
         }
-        if (reactome_genes.str_to_int.find(gene2) != reactome_genes.str_to_int.end()) {
+        if (acceptable_genes.str_to_int.find(gene2) != acceptable_genes.str_to_int.end()) {
             temp_trait_set.insert(trait);
             temp_gene_set.insert(gene2);
         }
@@ -56,15 +57,13 @@ load_phegeni_genes_and_traits_result loadPheGenIGenesAndTraits(
     return {phegeni_genes, phegeni_traits};
 }
 
-// Creates two mappings:
+// Creates two mappings to represent the Trait modules with genes as members:
 // - trait strings to gene bitsets.
 // - gene strings to trait bitsets
 // The two mappings define the trait modules (also called, phenotype modules or disease modules)
 load_phegeni_sets_result loadPheGenISets(
         string_view path_file_phegeni,
-        const bimap_str_int &reactome_genes,
-        const bimap_str_int &phegeni_genes,
-        const bimap_str_int &phegeni_traits) {
+        const bimap_str_int &acceptable_genes) {
     ifstream file_phegen(path_file_phegeni.data());
     string line, field, trait, gene, gene2;
     string p_value_str;
@@ -77,6 +76,8 @@ load_phegeni_sets_result loadPheGenISets(
         std::string function = __FUNCTION__;
         throw runtime_error(message + function);
     }
+
+    const auto [phegeni_genes, phegeni_traits] = loadPheGenIGenesAndTraits(path_file_phegeni, acceptable_genes);
 
     getline(file_phegen, line);                  // Read header line
     while (getline(file_phegen, field, '\t')) {  // Read #
@@ -93,11 +94,11 @@ load_phegeni_sets_result loadPheGenISets(
         getline(file_phegen,
                 line);               // Skip header line leftoever: Source,	PubMed,	Analysis ID,	Study ID,	Study Name
 
-        if (reactome_genes.str_to_int.find(gene) != reactome_genes.str_to_int.end()) {
+        if (acceptable_genes.str_to_int.find(gene) != acceptable_genes.str_to_int.end()) {
             traits_to_genes[trait].set(phegeni_genes.str_to_int.at(gene));
             genes_to_traits[gene].set(phegeni_traits.str_to_int.at(trait));
         }
-        if (reactome_genes.str_to_int.find(gene2) != reactome_genes.str_to_int.end()) {
+        if (acceptable_genes.str_to_int.find(gene2) != acceptable_genes.str_to_int.end()) {
             traits_to_genes[trait].set(phegeni_genes.str_to_int.at(gene2));
             genes_to_traits[gene2].set(phegeni_traits.str_to_int.at(trait));
         }
@@ -162,11 +163,3 @@ phegeni_trait_to_proteoforms convertProteinSets(const phegeni_trait_to_proteins 
 //	return result;
 //}
 //
-
-umss createTraitNames(const um<string, bitset<PHEGENI_GENES>> &traits_to_genes) {
-    umss sets_to_names;
-    for (const auto &trait_entry : traits_to_genes) {
-        sets_to_names.emplace(trait_entry.first, trait_entry.first);
-    }
-    return sets_to_names;
-}

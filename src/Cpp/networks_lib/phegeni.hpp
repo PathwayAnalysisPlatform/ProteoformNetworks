@@ -32,13 +32,11 @@ struct load_phegeni_sets_result {
 
 load_phegeni_genes_and_traits_result loadPheGenIGenesAndTraits(
 	std::string_view path_file_phegeni,
-	const bimap_str_int& reactome_genes);
+	const bimap_str_int& acceptable_genes);
 
 load_phegeni_sets_result loadPheGenISets(
 	std::string_view path_file_phegeni,
-	const bimap_str_int& reactome_genes,
-	const bimap_str_int& phegeni_genes,
-	const bimap_str_int& phegeni_traits);
+	const bimap_str_int& acceptable_genes);
 
 phegeni_trait_to_proteins convertGeneSets(
 	const phegeni_trait_to_genes& traits_to_genes,

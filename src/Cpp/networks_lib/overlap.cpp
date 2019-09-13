@@ -9,12 +9,13 @@ void doOverlapAnalysis(
 	std::string_view path_file_protein_search,
 	std::string_view path_file_proteoform_search) {
 
-	// Create gene sets for each trait
+    // Read Reactome genes. Take them as all acceptable gene names.
 	const bimap_str_int reactome_genes = createBimap(path_file_reactome_genes); // Gene names --> str_to_int
-    std::cerr << "Loaded " << reactome_genes.int_to_str.size() << " = " << reactome_genes.str_to_int.size() << " reactome genes.\n\n";
-	const auto [phegeni_genes, phegeni_traits] = loadPheGenIGenesAndTraits(path_file_PheGenI, reactome_genes);
-	const auto modules = loadPheGenISets(path_file_PheGenI, reactome_genes, phegeni_genes, phegeni_traits);
-//	const auto traits_to_names = createTraitNames(modules.traits_to_genes);
+
+	// Read Phegeni trait modules with genes as members. Only gene members also in the acceptable gene list.
+	const auto modules = loadPheGenISets(path_file_PheGenI, reactome_genes);
+
+	// Calculate gene overlap scores
 
 	// Create proteoform sets for each trait
 //	const auto [adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_protein_search, path_file_proteoform_search);
@@ -32,7 +33,7 @@ void doOverlapAnalysis(
 	// Calculate overlap score between all trait proteoform set pairs
 
 	// Write scores to file
-	std::cout << "Just making it stop.";
+	std::cout << "Finished with the Overlap analysis";
 }
 
 void printMembers(std::ostream& output, const uss& members) {
