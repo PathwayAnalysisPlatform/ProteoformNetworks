@@ -1,6 +1,6 @@
 #include <conversions.hpp>
 #include "gtest/gtest.h"
-#include "../others/types.hpp"
+#include "types.hpp"
 
 class ConversionsFixture : public ::testing::Test {
 

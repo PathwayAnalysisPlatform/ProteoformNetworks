@@ -1,7 +1,7 @@
 #ifndef PROTEOFORMNETWORKS_CONVERSIONS_HPP
 #define PROTEOFORMNETWORKS_CONVERSIONS_HPP
 
-#include "../others/types.hpp"
+#include "types.hpp"
 
 #include <algorithm>
 

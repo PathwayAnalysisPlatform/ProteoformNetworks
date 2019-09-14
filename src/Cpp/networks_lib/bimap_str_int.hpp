@@ -5,7 +5,7 @@
 #include <bitset>
 #include <string_view>
 
-#include "../others/types.hpp"
+#include "types.hpp"
 #include "conversions.hpp"
 
 struct bimap_str_int {

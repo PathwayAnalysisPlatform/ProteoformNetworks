@@ -68,8 +68,8 @@ load_phegeni_sets_result loadPheGenISets(
     string line, field, trait, gene, gene2;
     string p_value_str;
     long double p_value;
-    phegeni_trait_to_genes traits_to_genes;
-    phegeni_gene_to_traits genes_to_traits;
+    umsb traits_to_genes;
+    umsb genes_to_traits;
 
     if (!file_phegen.is_open()) {
         std::string message = "Cannot open path_file_phegeni at ";
@@ -77,7 +77,7 @@ load_phegeni_sets_result loadPheGenISets(
         throw runtime_error(message + function);
     }
 
-    const auto [phegeni_genes, phegeni_traits] = loadPheGenIGenesAndTraits(path_file_phegeni, acceptable_genes);
+    const auto[phegeni_genes, phegeni_traits] = loadPheGenIGenesAndTraits(path_file_phegeni, acceptable_genes);
 
     getline(file_phegen, line);                  // Read header line
     while (getline(file_phegen, field, '\t')) {  // Read #
@@ -95,12 +95,12 @@ load_phegeni_sets_result loadPheGenISets(
                 line);               // Skip header line leftoever: Source,	PubMed,	Analysis ID,	Study ID,	Study Name
 
         if (acceptable_genes.str_to_int.find(gene) != acceptable_genes.str_to_int.end()) {
-            traits_to_genes[trait].set(phegeni_genes.str_to_int.at(gene));
-            genes_to_traits[gene].set(phegeni_traits.str_to_int.at(trait));
+            traits_to_genes[trait][phegeni_genes.str_to_int.at(gene)].set();
+            genes_to_traits[gene][phegeni_traits.str_to_int.at(trait)].set();
         }
         if (acceptable_genes.str_to_int.find(gene2) != acceptable_genes.str_to_int.end()) {
-            traits_to_genes[trait].set(phegeni_genes.str_to_int.at(gene2));
-            genes_to_traits[gene2].set(phegeni_traits.str_to_int.at(trait));
+            traits_to_genes[trait][phegeni_genes.str_to_int.at(gene2)].set();
+            genes_to_traits[gene2][phegeni_traits.str_to_int.at(trait)].set();
         }
     }
 
@@ -110,27 +110,60 @@ load_phegeni_sets_result loadPheGenISets(
     return {traits_to_genes, genes_to_traits};
 }
 
-phegeni_trait_to_proteins convertGeneSets(
-        const phegeni_trait_to_genes &traits_to_genes,
+umsb convertGeneSets(
+        const umsb &traits_to_genes,
         const bimap_str_int &phegeni_genes,
         const ummss &mapping_genes_to_proteins,
         const bimap_str_int &proteins,
         const ummss &adjacency_list_proteins) {
     cout << "Converting gene to protein sets.\n";
-    return convertSets<PHEGENI_GENES, PHEGENI_PROTEINS>(traits_to_genes, phegeni_genes.int_to_str,
-                                                        mapping_genes_to_proteins, proteins.str_to_int,
-                                                        adjacency_list_proteins);
+    return convertSets(traits_to_genes, phegeni_genes.int_to_str,
+                       mapping_genes_to_proteins, proteins.str_to_int,
+                       adjacency_list_proteins);
 }
 
-phegeni_trait_to_proteoforms convertProteinSets(const phegeni_trait_to_proteins &traits_to_proteins,
-                                                const bimap_str_int &proteins,
-                                                const ummss &mapping_proteins_to_proteoforms,
-                                                const bimap_str_int &proteoforms,
-                                                const ummss &adjacency_list_proteoforms) {
+umsb convertProteinSets(const umsb &traits_to_proteins,
+                        const bimap_str_int &proteins,
+                        const ummss &mapping_proteins_to_proteoforms,
+                        const bimap_str_int &proteoforms,
+                        const ummss &adjacency_list_proteoforms) {
     cout << "Converting protein to proteoform sets.\n";
-    return convertSets<PHEGENI_PROTEINS, PHEGENI_PROTEOFORMS>(traits_to_proteins, proteins.int_to_str,
-                                                              mapping_proteins_to_proteoforms, proteoforms.str_to_int,
-                                                              adjacency_list_proteoforms);
+    return convertSets(traits_to_proteins, proteins.int_to_str,
+                       mapping_proteins_to_proteoforms, proteoforms.str_to_int,
+                       adjacency_list_proteoforms);
+}
+
+umsb convertSets(const umsb &traits_to_original_entities,
+                 const vs &index_to_original_entities,
+                 const ummss &mapping,
+                 const umsi &result_entities_to_index,
+                 const ummss &adjacency_list_result_entities) {
+    umsb traits_to_result_entities;
+    for (const auto &trait_entry : traits_to_original_entities) {  // For each trait entry
+        uss candidates;
+        for (int I = 0; I < traits_to_original_entities.size(); I++) {  // For each member in this trait
+            if (trait_entry.second[I]) {
+                auto range = mapping.equal_range(index_to_original_entities[I]);  // For each mapping entity
+                for (auto it = range.first; it != range.second; it++) {
+                    candidates.insert(it->second);
+                }
+            }
+        }
+
+        // Keep only those connected to any of the other gene set members in the reference network
+        for (const auto &candidate : candidates) {
+            auto range = adjacency_list_result_entities.equal_range(candidate);
+            for (auto it = range.first; it != range.second; ++it) {
+                if (candidates.find(it->second) != candidates.end()) {
+                    // Set that the candidate is in the new set
+                    traits_to_result_entities[trait_entry.first][result_entities_to_index.at(candidate)].set();
+                    break;
+                }
+            }
+        }
+    }
+
+    return traits_to_result_entities;
 }
 
 //uss getGeneStrings(const bitset<PHEGENI_GENES>& gene_set, const bimap_str_int& genes) {

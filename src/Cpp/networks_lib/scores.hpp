@@ -8,7 +8,7 @@
 #include <string_view>
 #include <bitset.h>
 
-#include "../others/types.hpp"
+#include "types.hpp"
 #include "phegeni.hpp"
 
 struct measures_result {

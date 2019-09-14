@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <vector>
 #include <bitset>
+#include <bitset.h>
 
 using msi = std::map<std::string, int>;
 
@@ -26,10 +27,12 @@ using ummsi = std::unordered_multimap<std::string, int>;
 
 using vs = std::vector<std::string>;
 
+using umsb = um<std::string, base::dynamic_bitset<>>;
+
 template<typename bitset_entities, typename bitset_sets>
 struct entity_sets {
-	um<std::string, bitset_entities> getByEntity;
-	um<std::string, bitset_sets> getBySet;
+    um<std::string, bitset_entities> getByEntity;
+    um<std::string, bitset_sets> getBySet;
 };
 
 #endif // ! TYPES_HPP
