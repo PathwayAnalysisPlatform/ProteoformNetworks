@@ -99,12 +99,18 @@ void writeMeasures(ofstream& report, const ummss& mapping, string_view label1, s
 double getJaccardSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2) {
     if(set1.count() == 0 && set2.count() == 0){
         return 1.0;
+    } else{
+        double intersection_size = (set1 & set2).count();
+        double union_size = (set1 | set2).count();
+        return intersection_size / union_size;
     }
-    double intersection_size = (set1 & set2).count();
-    double union_size = (set1 | set2).count();
-    return intersection_size / union_size;
 }
 
 double getOverlapSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2) {
-    return 0.0;
+    if(set1.count() == 0 || set2.count() == 0){
+        return 1.0;
+    } else{
+        double intersection_size = (set1 & set2).count();
+        return intersection_size / min(set1.count(), set2.count());
+    }
 }
