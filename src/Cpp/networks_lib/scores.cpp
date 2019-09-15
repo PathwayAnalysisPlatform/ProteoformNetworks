@@ -114,3 +114,32 @@ double getOverlapSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> 
         return intersection_size / min(set1.count(), set2.count());
     }
 }
+
+std::vector<double> getScores(const msb &sets, std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score) {
+
+    std::vector<double> result;
+    for (auto it1 = sets.begin(); it1 != sets.end(); it1++){
+        for (auto it2 = next(it1, 1); it2 != sets.end(); it2++){
+            result.push_back(score(it1->second, it2->second));
+//            std::cerr << "Score (" << it1->first << ", " << it2->first << ") : " << *result.rbegin() << "\n";
+        }
+    }
+
+    return result;
+}
+
+void writeScores(const msb &sets, std::vector<double> scores, std::string_view path_output) {
+    ofstream output(path_output.data());
+    if (!output.is_open()) {
+        throw runtime_error("Problem opening scores file.\n");
+    }
+    int score = 0;
+    output << "SET1\tSET2\tSCORE\n";
+    for (auto it1 = sets.begin(); it1 != sets.end(); it1++){
+        for (auto it2 = next(it1, 1); it2 != sets.end(); it2++){
+            output << it1->first << "\t" << it2->first << "\t" << scores[score] << "\n";
+            score++;
+        }
+    }
+    output.close();
+}

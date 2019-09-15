@@ -1,13 +1,33 @@
 #include <bitset>
+#include <algorithm>
 #include "gtest/gtest.h"
 #include "scores.hpp"
 
 class ScoresFixture : public ::testing::Test {
 
+protected:
+    virtual void SetUp() {
+        // Create 4 sets of 5 members.
+        sets["A"] = base::dynamic_bitset<>(5);  // 0, 1, 2, 3, 4
+        sets["B"] = base::dynamic_bitset<>(5);  // 0, 1, 2
+        sets["C"] = base::dynamic_bitset<>(5);  // 3, 4
+        sets["D"] = base::dynamic_bitset<>(5);  // 1, 2, 3
+
+        for (int I = 0; I <= 4; I++)
+            sets["A"][I].set();
+        for (int I = 0; I <= 2; I++)
+            sets["B"][I].set();
+        for (int I = 3; I <= 4; I++)
+            sets["C"][I].set();
+        for (int I = 1; I <= 3; I++)
+            sets["D"][I].set();
+    }
+
+    msb sets;
 };
 
 // Jaccard similarity when both sets are empty
-TEST(ScoresFixture, JaccardBothEmpty) {
+TEST_F(ScoresFixture, JaccardBothEmpty) {
     base::dynamic_bitset<> set1, set2;
 
     EXPECT_EQ(0, set1.count()) << "The set1 should be empty.";
@@ -18,7 +38,7 @@ TEST(ScoresFixture, JaccardBothEmpty) {
 }
 
 // Jaccard similarity when the sets are disjoint (completely different)
-TEST(ScoresFixture, JaccardDisjoint) {
+TEST_F(ScoresFixture, JaccardDisjoint) {
     base::dynamic_bitset<> set1(5), set2(5);
     set1[0].set();
     set1[1].set();
@@ -33,7 +53,7 @@ TEST(ScoresFixture, JaccardDisjoint) {
 }
 
 // Jaccard similarity when both sets are the same
-TEST(ScoresFixture, JaccardBothSame) {
+TEST_F(ScoresFixture, JaccardBothSame) {
     base::dynamic_bitset<> set1(5), set2(5);
 
     set1[0].set();
@@ -50,7 +70,7 @@ TEST(ScoresFixture, JaccardBothSame) {
 
 }
 // Jaccard similarity when one set is completely contained in the other
-TEST(ScoresFixture, JaccardContained) {
+TEST_F(ScoresFixture, JaccardContained) {
     base::dynamic_bitset<> set1(5), set2(5);
 
     set1[0].set();
@@ -68,7 +88,7 @@ TEST(ScoresFixture, JaccardContained) {
 }
 
 // Jaccard similarity when one set is empty and the other not
-TEST(ScoresFixture, JaccardOneEmpty) {
+TEST_F(ScoresFixture, JaccardOneEmpty) {
     base::dynamic_bitset<> set1(5), set2(5);
 
     set1[0].set();
@@ -83,7 +103,7 @@ TEST(ScoresFixture, JaccardOneEmpty) {
 }
 
 // Jaccard similarity when they share a fraction of nodes
-TEST(ScoresFixture, JaccardFraction) {
+TEST_F(ScoresFixture, JaccardFraction) {
     base::dynamic_bitset<> set1(5), set2(5);
 
     set1[0].set();
@@ -99,7 +119,7 @@ TEST(ScoresFixture, JaccardFraction) {
 }
 
 // Overlap similarity: both sets empty
-TEST(ScoresFixtyre, OverlapBothEmpty) {
+TEST_F(ScoresFixture, OverlapBothEmpty) {
     base::dynamic_bitset<> set1(5), set2(5);
 
     EXPECT_EQ(0, set1.count()) << "Set1 should be empty.";
@@ -109,7 +129,7 @@ TEST(ScoresFixtyre, OverlapBothEmpty) {
 }
 
 // Overlap similarity: disjoint sets
-TEST(ScoresFixture, OverlapDisjoint) {
+TEST_F(ScoresFixture, OverlapDisjoint) {
     base::dynamic_bitset<> set1(5), set2(5);
 
     set1[0].set();
@@ -124,7 +144,7 @@ TEST(ScoresFixture, OverlapDisjoint) {
 }
 
 // Overlap similarity: both same set
-TEST(ScoresFixture, BothSameSet){
+TEST_F(ScoresFixture, BothSameSet) {
     base::dynamic_bitset<> set1(5), set2(5);
     set1[1].set();
     set1[3].set();
@@ -138,11 +158,11 @@ TEST(ScoresFixture, BothSameSet){
 }
 
 // Overlap similarity: one contained in the other set
-TEST(ScoresFixture, OnIsSubset) {
+TEST_F(ScoresFixture, OnIsSubset) {
     base::dynamic_bitset<> set1(5), set2(5);
     set1[0].set();
     set1[1].set();
-    for(int I = 0; I < 5; I++){
+    for (int I = 0; I < 5; I++) {
         set2[I].set();
     }
 
@@ -152,7 +172,7 @@ TEST(ScoresFixture, OnIsSubset) {
     EXPECT_EQ(1.0, getOverlapSimilarity(set2, set1)) << "The smaller set is contained in the other set, then score 1.";
 }
 // Overlap similarity: one set is empty the other is not
-TEST(ScoresFixture, OneEmpty) {
+TEST_F(ScoresFixture, OneEmpty) {
     base::dynamic_bitset<> set1(5), set2(5);
     set1[1].set();
     set1[2].set();
@@ -165,11 +185,11 @@ TEST(ScoresFixture, OneEmpty) {
 }
 
 // Overlap similarity: sets share fraction of elements
-TEST(ScoresFixture, ShareFraction){
+TEST_F(ScoresFixture, ShareFraction) {
     base::dynamic_bitset<> set1(5), set2(5);
-    for(int I = 0; I < 4; I++)  // 0, 1, 2, 3
+    for (int I = 0; I < 4; I++)  // 0, 1, 2, 3
         set1[I].set();
-    for(int I = 1; I < 5; I++)  // 1, 2, 3, 4
+    for (int I = 1; I < 5; I++)  // 1, 2, 3, 4
         set2[I].set();
 
     EXPECT_EQ(4, set1.count()) << "Set1 should have 4 elements.";
@@ -179,15 +199,86 @@ TEST(ScoresFixture, ShareFraction){
 }
 
 // Overlap similarity: sets share all the elements of the smaller set
-TEST(ScoresFixture, ShareSmallSet){
+TEST_F(ScoresFixture, ShareSmallSet) {
     base::dynamic_bitset<> set1(5), set2(5);
-    for(int I = 0; I <= 2; I++)  // 0, 1, 2
+    for (int I = 0; I <= 2; I++)  // 0, 1, 2
         set1[I].set();
-    for(int I = 0; I < 5; I++)  // 1, 2, 3, 4, 5
+    for (int I = 0; I < 5; I++)  // 1, 2, 3, 4, 5
         set2[I].set();
 
     EXPECT_EQ(3, set1.count()) << "Set1 should have 3 elements.";
     EXPECT_EQ(5, set2.count()) << "Set2 should have 5 elements.";
     EXPECT_NEAR(1, getOverlapSimilarity(set1, set2), 1e-2) << "Sets should share all smaller set members.";
     EXPECT_NEAR(1, getOverlapSimilarity(set2, set1), 1e-2) << "Sets should share all smaller set members.";
+}
+
+// Get scores for pairs of sets: Correct number of pairs
+TEST_F(ScoresFixture, AllPairsCorrectPairs) {
+    // Create 4 sets of 5 members.
+    msb sets;
+    sets["A"] = base::dynamic_bitset<>(5);
+    sets["B"] = base::dynamic_bitset<>(5);
+    sets["C"] = base::dynamic_bitset<>(5);
+    sets["D"] = base::dynamic_bitset<>(5);
+
+    auto scores = getScores(sets, getOverlapSimilarity);
+
+    EXPECT_EQ((sets.size() * (sets.size() - 1)) / 2, scores.size());
+}
+
+// Get scores for pairs of sets: Correct values
+TEST_F(ScoresFixture, AllPairsCorrectValues) {
+    std::vector<double> scores = getScores(sets, getOverlapSimilarity);
+
+    for (int I = 0; I < scores.size(); I++) {
+        std::cout << "Score " << I << ": " << scores[I] << std::endl;
+    }
+
+    // 0: (A, B)
+    // 1: (A, C)
+    // 2: (A, D)
+    // 3: (B, C)
+    // 4: (B, D)
+    // 5: (C, D)
+
+    EXPECT_EQ(1, scores[0]);    // A B
+    EXPECT_EQ(0, scores[3]);    // B C
+    EXPECT_NEAR(0.66, scores[4], 1e-1); // B D
+    EXPECT_EQ(0.5, scores[5]);  // C D
+}
+
+
+TEST_F(ScoresFixture, WriteScores) {
+    // Create example file
+    std::string file_name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
+    file_name += "_scores.txt";
+    writeScores(sets, getScores(sets, getOverlapSimilarity), file_name);
+
+    // Open file
+    std::ifstream scores_file(file_name);
+    std::string line;
+    std::vector<std::string> lines;
+    while (std::getline(scores_file, line)) {
+        lines.push_back(line);
+    }
+
+
+    EXPECT_EQ(7, lines.size()); // Check number of lines is correct
+    EXPECT_EQ("SET1\tSET2\tSCORE", lines[0]); // Check header is there
+    // Check every row has 3 columns
+    for(int I = 0; I < lines.size(); I++){
+        size_t appeareances = std::count(lines[I].begin(), lines[I].end(), '\t');
+        EXPECT_EQ(2, (int)appeareances );
+    }
+    // Check values are correct
+    EXPECT_EQ("A\tB\t1", lines[1]);
+    EXPECT_EQ("B\tC\t0", lines[4]);
+    EXPECT_EQ("B\tD\t0.666667", lines[5]);
+    EXPECT_EQ("C\tD\t0.5", lines[6]);
+
+    // Delete example file
+    int n = file_name.length();
+    char file_name_char[n + 1];
+    strcpy(file_name_char, file_name.c_str());
+    std::remove(file_name_char);
 }

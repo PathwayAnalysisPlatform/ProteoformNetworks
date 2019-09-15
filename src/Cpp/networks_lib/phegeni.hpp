@@ -1,11 +1,9 @@
 #ifndef PHEGENI_HPP
-#define PHEGENI_HPP
 
 #include <fstream>
 #include <string>
 #include <bitset>
 #include <unordered_map>
-#include <bitset.h>
 
 #include "bimap_str_int.hpp"
 
@@ -22,8 +20,8 @@ struct load_phegeni_genes_and_traits_result {
 };
 
 struct trait_modules {
-    umsb traits_to_genes;
-    umsb genes_to_traits;
+    msb traits_to_genes;
+    msb genes_to_traits;
 };
 
 load_phegeni_genes_and_traits_result loadPheGenIGenesAndTraits(

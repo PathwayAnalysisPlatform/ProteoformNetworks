@@ -6,10 +6,10 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <bitset>
 #include <bitset.h>
 
 using msi = std::map<std::string, int>;
+using msb = std::map<std::string, base::dynamic_bitset<>>;
 
 template<typename K>
 using us = std::unordered_set<K>;

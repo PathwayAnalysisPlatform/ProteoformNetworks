@@ -63,3 +63,6 @@ resources/
 .Rhistory
 .RData
 .Rproj.user
+
+#Python
+venv/
