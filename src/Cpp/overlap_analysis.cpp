@@ -1,4 +1,4 @@
-#include "overlap.hpp"
+#include "overlap_analysis.hpp"
 
 using namespace std;
 
@@ -7,7 +7,8 @@ void doOverlapAnalysis(
         std::string_view path_file_reactome_genes,
         std::string_view path_file_mapping_proteins_to_genes,
         std::string_view path_file_protein_search,
-        std::string_view path_file_proteoform_search) {
+        std::string_view path_file_proteoform_search,
+        std::string_view path_scores) {
 
     // Read Reactome genes. Take them as all acceptable gene names.
     const bimap_str_int reactome_genes = createBimap(path_file_reactome_genes); // Gene names --> str_to_int
@@ -16,9 +17,12 @@ void doOverlapAnalysis(
     const auto modules = loadPheGenIModules(path_file_PheGenI, reactome_genes);
 
     // Calculate overlap scores between all trait gene set pairs
-    const auto scores_overlap_similarity = getScores(modules.traits_to_genes, getOverlapSimilarity);
-    const auto scores_jaccard_similarity = getScores(modules.traits_to_genes, getJaccardSimilarity);
-
+    std::string file_name = "scores_overlap_similarity.tsv";
+    file_name = path_scores.data() + file_name;
+    writeScores(modules.traits_to_genes, getScores(modules.traits_to_genes, getOverlapSimilarity), file_name);
+    file_name = "scores_jaccard_similarity.tsv";
+    file_name = path_scores.data() + file_name;
+    writeScores(modules.traits_to_genes, getScores(modules.traits_to_genes, getJaccardSimilarity), file_name);
 
 
     // Create proteoform sets for each trait

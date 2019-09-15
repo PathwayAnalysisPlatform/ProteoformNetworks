@@ -1,7 +1,7 @@
 #ifndef PERCOLATION_H_
 #define PERCOLATION_H_
 
-#include "overlap.hpp"
+#include "../overlap_analysis.hpp"
 
 const std::string path_file_report_percolation_analysis = "reports/percolation_analysis.txt";
 

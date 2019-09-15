@@ -5,7 +5,7 @@
 #include <regex>
 #include <fstream>
 
-#include "overlap.hpp"
+#include "../overlap_analysis.hpp"
 #include "proteoform.hpp"
 #include "reactome.hpp"
 

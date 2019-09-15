@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <iostream>
 
-#include "overlap.hpp"
+#include "overlap_analysis.hpp"
 
 #include <windows.h>
 
@@ -23,6 +23,7 @@ const std::string path_file_reactome_genes = "../../../resources/Reactome/v69/ge
 const std::string path_file_mapping_proteins_to_genes = "../../../resources/UniProt/mapping_protein_to_genes.tab";
 const std::string path_file_protein_search = "../../../resources/Reactome/v69/protein_search.tsv";
 const std::string path_file_proteoform_search = "../../../resources/Reactome/v69/proteoforms_search.tsv";
+const std::string path_scores = "../../../reports/";
 
 int main() try {
 //	auto out = freopen("out.txt", "w", stdout);
@@ -30,7 +31,7 @@ int main() try {
     std::cout << GetExePath() << std::endl;
 
     doOverlapAnalysis(path_file_PheGenI, path_file_reactome_genes, path_file_mapping_proteins_to_genes,
-            path_file_protein_search, path_file_proteoform_search);
+            path_file_protein_search, path_file_proteoform_search, path_scores);
 }
 catch (const std::exception& ex) {
 	std::cout << ex.what() << "\n";
