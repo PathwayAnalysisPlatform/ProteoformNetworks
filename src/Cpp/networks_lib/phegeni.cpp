@@ -61,15 +61,13 @@ load_phegeni_genes_and_traits_result loadPheGenIGenesAndTraits(
 // - trait strings to gene bitsets.
 // - gene strings to trait bitsets
 // The two mappings define the trait modules (also called, phenotype modules or disease modules)
-load_phegeni_sets_result loadPheGenISets(
+trait_modules loadPheGenIModules(
         string_view path_file_phegeni,
         const bimap_str_int &acceptable_genes) {
     ifstream file_phegen(path_file_phegeni.data());
     string line, field, trait, gene, gene2;
     string p_value_str;
     long double p_value;
-    umsb traits_to_genes;
-    umsb genes_to_traits;
 
     if (!file_phegen.is_open()) {
         std::string message = "Cannot open path_file_phegeni at ";
@@ -78,6 +76,21 @@ load_phegeni_sets_result loadPheGenISets(
     }
 
     const auto[phegeni_genes, phegeni_traits] = loadPheGenIGenesAndTraits(path_file_phegeni, acceptable_genes);
+
+    // Initialize modules
+    trait_modules modules;
+    for (const auto &gene : phegeni_genes.int_to_str) {
+        modules.genes_to_traits[gene] = base::dynamic_bitset<>(phegeni_traits.int_to_str.size());
+    }
+    for (const auto &trait : phegeni_traits.int_to_str) {
+        modules.traits_to_genes[trait] = base::dynamic_bitset<>(phegeni_genes.int_to_str.size());
+    }
+
+    std::cout << "Initialized modules:\n"
+              << "Genes to traits: " << modules.genes_to_traits.size()
+              << "\t Traits bitsets size: " << modules.genes_to_traits.begin()->second.size()
+              << "\nTraits to genes: " << modules.traits_to_genes.size()
+              << "\t Genes bitsets size: " << modules.traits_to_genes.begin()->second.size() << "\n";
 
     getline(file_phegen, line);                  // Read header line
     while (getline(file_phegen, field, '\t')) {  // Read #
@@ -91,23 +104,22 @@ load_phegeni_sets_result loadPheGenISets(
         getline(file_phegen, field, '\t');        // Read Chromosome
         getline(file_phegen, field, '\t');        // Read Location
         getline(file_phegen, p_value_str, '\t');  // Read P-Value
-        getline(file_phegen,
-                line);               // Skip header line leftoever: Source,	PubMed,	Analysis ID,	Study ID,	Study Name
+        getline(file_phegen, line);               // Skip header line leftoever: Source,	PubMed,	Analysis ID,	Study ID,	Study Name
 
         if (acceptable_genes.str_to_int.find(gene) != acceptable_genes.str_to_int.end()) {
-            traits_to_genes[trait][phegeni_genes.str_to_int.at(gene)].set();
-            genes_to_traits[gene][phegeni_traits.str_to_int.at(trait)].set();
+            modules.traits_to_genes[trait][phegeni_genes.str_to_int.at(gene)].set();
+            modules.genes_to_traits[gene][phegeni_traits.str_to_int.at(trait)].set();
         }
         if (acceptable_genes.str_to_int.find(gene2) != acceptable_genes.str_to_int.end()) {
-            traits_to_genes[trait][phegeni_genes.str_to_int.at(gene2)].set();
-            genes_to_traits[gene2][phegeni_traits.str_to_int.at(trait)].set();
+            modules.traits_to_genes[trait][phegeni_genes.str_to_int.at(gene2)].set();
+            modules.genes_to_traits[gene2][phegeni_traits.str_to_int.at(trait)].set();
         }
     }
 
-    cerr << "Number of traits with gene members as bitset: " << traits_to_genes.size() << "\n";
-    cerr << "Number of genes with traits they belong as bitset: " << genes_to_traits.size() << "\n";
+    cerr << "Number of traits with gene members as bitset: " << modules.traits_to_genes.size() << "\n";
+    cerr << "Number of genes with traits they belong as bitset: " << modules.genes_to_traits.size() << "\n";
 
-    return {traits_to_genes, genes_to_traits};
+    return modules;
 }
 
 umsb convertGeneSets(

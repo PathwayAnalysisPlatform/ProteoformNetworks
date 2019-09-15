@@ -147,7 +147,8 @@ namespace modified_overlap {
 		const bitset<PHEGENI_PROTEOFORMS> modified_proteoforms = proteoform::getSetOfModifiedProteoforms<PHEGENI_PROTEOFORMS>(phegeni_proteoforms);
 
 		const auto [adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_protein_search, path_file_proteoform_search);
-		const auto [traits_to_genes, genes_to_traits] = loadPheGenISets(path_file_PheGenI.data(), reactome_genes, phegeni_genes, phegeni_traits);
+		const auto [traits_to_genes, genes_to_traits] = loadPheGenIModules(path_file_PheGenI.data(), reactome_genes,
+                                                                           phegeni_genes, phegeni_traits);
 		const auto sets_to_names = createTraitNames(traits_to_genes);
 		const auto traits_to_proteins = convertGeneSets(traits_to_genes, phegeni_genes, genes_to_proteins, phegeni_proteins, adjacency_list_proteins);
 		const auto traits_to_proteoforms = convertProteinSets(traits_to_proteins, phegeni_proteins, proteins_to_proteoforms, phegeni_proteoforms, adjacency_list_proteoforms);

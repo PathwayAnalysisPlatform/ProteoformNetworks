@@ -277,7 +277,8 @@ namespace gene_level_only_overlap {
 		// Create gene sets for each trait
 		const auto reactome_genes = loadReactomeEntities(path_file_gene_search);
 		const auto [phegeni_genes, phegeni_traits] = loadPheGenIGenesAndTraits(path_file_PheGenI, reactome_genes);
-		const auto mapping_traits_genes = loadPheGenISets(path_file_PheGenI, reactome_genes, phegeni_genes, phegeni_traits);
+		const auto mapping_traits_genes = loadPheGenIModules(path_file_PheGenI, reactome_genes, phegeni_genes,
+                                                             phegeni_traits);
 		const auto traits_to_names = createTraitNames(mapping_traits_genes.traits_to_genes);
 
 		// Create proteoform sets for each trait

@@ -13,7 +13,7 @@ void doOverlapAnalysis(
 	const bimap_str_int reactome_genes = createBimap(path_file_reactome_genes); // Gene names --> str_to_int
 
 	// Read Phegeni trait modules with genes as members. Only gene members also in the acceptable gene list.
-	const auto modules = loadPheGenISets(path_file_PheGenI, reactome_genes);
+	const auto modules = loadPheGenIModules(path_file_PheGenI, reactome_genes);
 
 	// Calculate gene overlap scores
 
