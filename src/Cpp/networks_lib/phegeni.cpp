@@ -2,6 +2,7 @@
 #include <iostream>
 #include "phegeni.hpp"
 
+
 using namespace std;
 
 // Read the genes and traits of PheGenI data file.
@@ -134,7 +135,7 @@ trait_modules createPheGenIProteinModules(const trait_modules &gene_modules,
                                           std::string_view path_file_proteins_to_genes,
                                           std::string_view path_file_protein_edges) {
     // Convert gene modules to protein modules using the mapping from proteins to genes
-    entity_mapping mapping = readMapping(path_file_proteins_to_genes);
+    entity_mapping mapping = readMapping(path_file_proteins_to_genes, true);
     trait_modules protein_modules = convertModulesWithMapping(gene_modules, genes, proteins, mapping);
 
     // Load interaction network

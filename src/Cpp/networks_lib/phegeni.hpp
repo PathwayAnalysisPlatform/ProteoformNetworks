@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "bimap_str_int.hpp"
+#include "conversions.hpp"
 
 const long double GENOME_WIDE_SIGNIFICANCE = 5e-8;
 

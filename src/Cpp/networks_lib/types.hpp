@@ -31,7 +31,7 @@ using umsb = um<std::string, base::dynamic_bitset<>>;
 
 struct entity_mapping {
     ummss first_to_second;
-    ummss secont_to_first;
+    ummss second_to_first;
 };
 
 #endif // ! TYPES_HPP
