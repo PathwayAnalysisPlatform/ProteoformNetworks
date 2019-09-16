@@ -8,7 +8,7 @@
 #include "scores.hpp"
 #include "bimap_str_int.hpp"
 #include "others/uniprot.hpp"
-#include "others/reactome.hpp"
+#include "reactome.hpp"
 
 const int MIN_OVERLAP_SIZE = 1;
 const int MAX_OVERLAP_SIZE = 100;
@@ -28,9 +28,10 @@ struct Frequencies {
 void doOverlapAnalysis(
         std::string_view path_file_PheGenI,
         std::string_view path_file_reactome_genes,
+        std::string_view path_file_reactome_proteins,
         std::string_view path_file_mapping_proteins_to_genes,
-        std::string_view path_file_protein_search,
-        std::string_view path_file_proteoform_search,
+        std::string_view path_file_protein_edges,
+        std::string_view path_file_proteoform_edges,
         std::string_view path_scores);
 
 // Version with set size and overlap size limits

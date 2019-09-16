@@ -29,10 +29,9 @@ using vs = std::vector<std::string>;
 
 using umsb = um<std::string, base::dynamic_bitset<>>;
 
-template<typename bitset_entities, typename bitset_sets>
-struct entity_sets {
-    um<std::string, bitset_entities> getByEntity;
-    um<std::string, bitset_sets> getBySet;
+struct entity_mapping {
+    ummss first_to_second;
+    ummss secont_to_first;
 };
 
 #endif // ! TYPES_HPP

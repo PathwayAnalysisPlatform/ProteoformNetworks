@@ -19,10 +19,11 @@ std::string GetExePath() {
 
 // Input files
 const std::string path_file_PheGenI = "../../../resources/PheGenI/PheGenI_Association_genome_wide_significant.txt";
-const std::string path_file_reactome_genes = "../../../resources/Reactome/v69/genes.csv";
+const std::string path_file_reactome_genes = "../../../resources/Reactome/v70/Genes/all_genes_v70.csv";
+const std::string path_file_reactome_proteins = "../../../resources/Reactome/v70/Proteins/all_proteins_v70.csv";
 const std::string path_file_mapping_proteins_to_genes = "../../../resources/UniProt/mapping_protein_to_genes.tab";
-const std::string path_file_protein_search = "../../../resources/Reactome/v69/protein_search.tsv";
-const std::string path_file_proteoform_search = "../../../resources/Reactome/v69/proteoforms_search.tsv";
+const std::string path_file_protein_edges = "../../../resources/Reactome/v70/Proteins/proteinInternalEdges.tsv";
+const std::string path_file_proteoform_edges = "../../../resources/Reactome/v70/Proteoforms/proteoformInternalEdges.tsv";
 const std::string path_scores = "../../../reports/";
 
 int main() try {
@@ -30,9 +31,14 @@ int main() try {
 //	auto err = freopen("err.txt", "w", stderr);
     std::cout << GetExePath() << std::endl;
 
-    doOverlapAnalysis(path_file_PheGenI, path_file_reactome_genes, path_file_mapping_proteins_to_genes,
-            path_file_protein_search, path_file_proteoform_search, path_scores);
+    doOverlapAnalysis(path_file_PheGenI,
+                      path_file_reactome_genes,
+                      path_file_reactome_proteins,
+                      path_file_mapping_proteins_to_genes,
+                      path_file_protein_edges,
+                      path_file_proteoform_edges,
+                      path_scores);
 }
-catch (const std::exception& ex) {
-	std::cout << ex.what() << "\n";
+catch (const std::exception &ex) {
+    std::cout << ex.what() << "\n";
 }

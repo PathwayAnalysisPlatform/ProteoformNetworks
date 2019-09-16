@@ -9,52 +9,39 @@
 
 const long double GENOME_WIDE_SIGNIFICANCE = 5e-8;
 
-const size_t PHEGENI_TRAITS = 790;
-const size_t PHEGENI_GENES = 3350;
-const size_t PHEGENI_PROTEINS = 5695;
-const size_t PHEGENI_PROTEOFORMS = 6971;
-
 struct load_phegeni_genes_and_traits_result {
     bimap_str_int phegeni_genes;
     bimap_str_int phegeni_traits;
 };
 
 struct trait_modules {
-    msb traits_to_genes;
-    msb genes_to_traits;
+    msb traits_to_entities;
+    msb entities_to_traits;
 };
 
 load_phegeni_genes_and_traits_result loadPheGenIGenesAndTraits(
         std::string_view path_file_phegeni,
         const bimap_str_int &acceptable_genes);
 
-trait_modules loadPheGenIModules(
+trait_modules loadPheGenIGeneModules(
         std::string_view path_file_phegeni,
-        const bimap_str_int &acceptable_genes);
-
-umsb convertGeneSets(
-        const umsb &traits_to_genes,
-        const bimap_str_int &phegeni_genes,
-        const ummss &mapping_genes_to_proteins,
-        const bimap_str_int &proteins,
-        const ummss &adjacency_list_proteins);
-
-umsb convertProteinSets(const umsb &traits_to_proteins,
-                        const bimap_str_int &proteins,
-                        const ummss &mapping_proteins_to_proteoforms,
-                        const bimap_str_int &proteoforms,
-                        const ummss &adjacency_list_proteoforms);
+        std::string_view path_file_genes);
 
 //uss getGeneStrings(const std::bitset<PHEGENI_GENES>& gene_set, const bimap_str_int& genes);
 //uss getProteinStrings(const std::bitset<PHEGENI_PROTEINS>& protein_set, const bimap_str_int& proteins);
 //uss getProteoformStrings(const std::bitset<PHEGENI_PROTEOFORMS>& proteoform_set, const bimap_str_int& proteoforms);
 //
-umsb convertSets(
-        const umsb &traits_to_original_entities,
-        const vs &index_to_original_entities,
-        const ummss &mapping,
-        const umsi &result_entities_to_index,
-        const ummss &adjacency_list_result_entities);
+trait_modules convertModulesWithMapping(
+        const trait_modules &original_modules,
+        const bimap_str_int &original_entities,
+        const bimap_str_int &destination_entities,
+        const entity_mapping &mapping);
+
+trait_modules createPheGenIProteinModules(const trait_modules &gene_modules,
+                                          const bimap_str_int &genes,
+                                          const bimap_str_int &proteins,
+                                          std::string_view path_file_proteins_to_genes,
+                                          std::string_view path_file_protein_edges);
 
 
 #endif // !PHEGENI_HPP

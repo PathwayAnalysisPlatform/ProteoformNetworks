@@ -28,3 +28,27 @@ TEST_F(ConversionsFixture, SameElements) {
         EXPECT_TRUE(myStrSet.find(vec_element) != myStrSet.end());
     }
 }
+
+class ReadMappingFixture : public ::testing::Test {
+
+protected:
+    virtual void SetUp() {
+        
+    }
+};
+
+// Test read mapping: Correct number of sources
+TEST(ReadMappingFixture, CorrectNumberOfSources) {
+    //TODO
+}
+
+// Test read mapping: Correct mapping for some sources
+
+TEST_F(ReadMappingFixture, CorrectMapping) {
+
+}
+
+// Test read mapping: Correct total number of destinations
+TEST_F(ReadMappingFixture, CorrectNumberOfDestinations){
+
+}
