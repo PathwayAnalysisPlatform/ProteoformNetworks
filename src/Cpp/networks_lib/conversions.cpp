@@ -11,6 +11,7 @@ vs convert_uss_to_vs(const uss &a_set) {
 // The mapping file must follow the convention that there are two columns separated by a tab
 // The second column can contain multiple values separated by a blank space
 // The first line of the file can have the header with the name of the columns.
+// There should be no extra spaces after the last string of the row
 entity_mapping readMapping(std::string_view path_file_mapping, bool has_header_row) {
     entity_mapping mapping;
     std::ifstream file_mapping(path_file_mapping.data());
@@ -25,12 +26,11 @@ entity_mapping readMapping(std::string_view path_file_mapping, bool has_header_r
     if (has_header_row)
         getline(file_mapping, leftover);    // Discard the header line.
     while (getline(file_mapping, source, '\t')) {
-        while (getline(file_mapping, destinations)) {   // get the whole second column until the end of the line
-            std::stringstream ss(destinations);
-            while (getline(ss, destination, ' ')) {
-                mapping.first_to_second.emplace(source, destination);
-                mapping.second_to_first.emplace(destination, source);
-            }
+        getline(file_mapping, destinations);   // get the whole second column until the end of the line
+        std::stringstream ss(destinations);
+        while (getline(ss, destination, ' ')) {
+            mapping.first_to_second.emplace(source, destination);
+            mapping.second_to_first.emplace(destination, source);
         }
     }
 
