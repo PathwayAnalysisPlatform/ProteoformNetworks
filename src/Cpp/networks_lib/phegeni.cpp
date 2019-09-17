@@ -136,7 +136,7 @@ trait_modules createPheGenIProteinModules(const trait_modules &gene_modules,
                                           std::string_view path_file_protein_edges) {
     // Convert gene modules to protein modules using the mapping from proteins to genes
     entity_mapping mapping = readMapping(path_file_proteins_to_genes, true);
-    trait_modules protein_modules = convertModulesWithMapping(gene_modules, genes, proteins, mapping);
+    trait_modules protein_modules = convertModulesWithMapping(gene_modules, genes, proteins, mapping.second_to_first);
 
     // Load interaction network
     ummss protein_interactions;
@@ -144,6 +144,17 @@ trait_modules createPheGenIProteinModules(const trait_modules &gene_modules,
 //                                                                                           path_file_proteoform_edges);
 
     // For each module, discard the members which are not connected to other members in the interaction network
+    // Keep only those connected to any of the other gene set members in the reference network
+//    for (const auto &candidate : candidates) {
+//        auto range = adjacency_list_result_entities.equal_range(candidate);
+//        for (auto it = range.first; it != range.second; ++it) {
+//            if (candidates.find(it->second) != candidates.end()) {
+//                // Set that the candidate is in the new set
+//                traits_to_result_entities[trait_entry.first][result_entities_to_index.at(candidate)].set();
+//                break;
+//            }
+//        }
+//    }
 
     return protein_modules;
 }
@@ -152,34 +163,38 @@ trait_modules convertModulesWithMapping(
         const trait_modules &original_modules,
         const bimap_str_int &original_entities,
         const bimap_str_int &destination_entities,
-        const entity_mapping &mapping) {
+        const ummss &mapping) {
     trait_modules modules;
-//    for (const auto &trait_entry : traits_to_original_entities) {  // For each trait entry
-//        uss candidates;
-//        for (int I = 0; I < traits_to_original_entities.size(); I++) {  // For each member in this trait
-//            if (trait_entry.second[I]) {
-//                auto range = mapping.equal_range(index_to_original_entities[I]);  // For each mapping entity
-//                for (auto it = range.first; it != range.second; it++) {
-//                    candidates.insert(it->second);
-//                }
-//            }
-//        }
-//
-//        // Keep only those connected to any of the other gene set members in the reference network
-//        for (const auto &candidate : candidates) {
-//            auto range = adjacency_list_result_entities.equal_range(candidate);
-//            for (auto it = range.first; it != range.second; ++it) {
-//                if (candidates.find(it->second) != candidates.end()) {
-//                    // Set that the candidate is in the new set
-//                    traits_to_result_entities[trait_entry.first][result_entities_to_index.at(candidate)].set();
-//                    break;
-//                }
-//            }
-//        }
-//    }
+
+    for (const auto &trait_entry : original_modules.traits_to_entities) {  // For each trait entry
+//        std::cout << "Mapping trait: " << trait_entry.first << std::endl;
+        modules.traits_to_entities.emplace(trait_entry.first, base::dynamic_bitset<>(destination_entities.int_to_str.size()));
+        for (int I = 0; I < trait_entry.second.size(); I++) {  // For each member in this trait
+            if (trait_entry.second[I]) {    // If it is really a member
+                std::string original_entity = original_entities.int_to_str[I];
+
+                auto range = mapping.equal_range(original_entity);  // For each destination entity of the original entity
+                for (auto it = range.first; it != range.second; it++) {
+                    std::string destination_entity = it->second;
+//                    std::cout << original_entity << " --> " << destination_entity << std::endl;
+
+                    // Check the mapped entity exists in the list of known acceptable destination entities
+                    if(destination_entities.str_to_int.find(destination_entity) != destination_entities.str_to_int.end()){
+                        int destination_entity_index = destination_entities.str_to_int.at(destination_entity);
+                        modules.traits_to_entities[trait_entry.first][destination_entity_index].set();
+                    }
+                    else{
+//                        std::cerr << original_entity << " --> ?" << std::endl;
+                    }
+                }
+            }
+        }
+    }
 
     return modules;
 }
+
+//
 
 //uss getGeneStrings(const bitset<PHEGENI_GENES>& gene_set, const bimap_str_int& genes) {
 //	uss result;

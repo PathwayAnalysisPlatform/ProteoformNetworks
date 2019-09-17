@@ -98,3 +98,63 @@ TEST_F(PhegeniLoadPheGenISetsFixture, CorrectTraitOwners) {
     EXPECT_EQ(1, modules.entities_to_traits["FADS1"].count()) << "The gene is member of the wrong number of traits.";
     EXPECT_TRUE(modules.entities_to_traits["FADS1"][phegeni_traits.str_to_int["Metabolism"]]);
 }
+
+class PhegeniConvertModulesWithMapping : public ::testing::Test {
+
+protected:
+    virtual void SetUp() {
+        gene_modules = loadPheGenIGeneModules(path_file_phegeni, path_file_genes);
+        genes = createBimap(path_file_genes);
+        proteins = createBimap(path_file_proteins);
+        mapping = readMapping(path_file_mapping);
+        protein_modules = convertModulesWithMapping(gene_modules,
+                                                                  genes,
+                                                                  proteins,
+                                                                  mapping.second_to_first);
+    }
+
+    std::string path_file_phegeni = "../../../../resources/PheGenI/PheGenI_Association_genome_wide_significant_slice.txt";
+    std::string path_file_genes = "../../../../resources/Reactome/v70/Genes/genes_slice.csv";
+    std::string path_file_proteins = "../../../../resources/Reactome/v70/Proteins/all_proteins_v70.csv";
+    std::string path_file_mapping = "../../../../resources/UniProt/mapping_genes_proteins_v70.tab";
+    trait_modules gene_modules, protein_modules;
+    bimap_str_int genes, proteins;
+    entity_mapping mapping;
+};
+
+// Return correct trait set names
+TEST_F(PhegeniConvertModulesWithMapping, ModuleTraitNamesCorrect) {
+    EXPECT_EQ(gene_modules.traits_to_entities.size(), protein_modules.traits_to_entities.size()) << "The gene modules should be the same number of protein modules.";
+    EXPECT_TRUE(protein_modules.traits_to_entities.find("Metabolism") != protein_modules.traits_to_entities.end());
+    EXPECT_TRUE(protein_modules.traits_to_entities.find("Vascular Endothelial Growth Factors") != protein_modules.traits_to_entities.end());
+    EXPECT_TRUE(protein_modules.traits_to_entities.find("Bilirubin") != protein_modules.traits_to_entities.end());
+}
+
+// Check module members are correct
+TEST_F(PhegeniConvertModulesWithMapping, ModuleTraitSetMembersCorrect){
+//    std::cout << "[ ";
+//    for(int I = 0; I < proteins.int_to_str.size(); I++){
+//        if(protein_modules.traits_to_entities["\"Cholesterol, HDL\""][I]){
+//            std::cout << proteins.int_to_str[I] << ", ";
+//        }
+//    }
+//    std::cout << "]\n" << std::endl;
+    EXPECT_EQ(2, protein_modules.traits_to_entities["\"Cholesterol, HDL\""].count());
+    EXPECT_TRUE(protein_modules.traits_to_entities["\"Cholesterol, HDL\""][proteins.str_to_int["Q15011"]]); // From gene HERPUD1
+    EXPECT_TRUE(protein_modules.traits_to_entities["\"Cholesterol, HDL\""][proteins.str_to_int["P11597"]]); // From gene CETP
+    EXPECT_FALSE(protein_modules.traits_to_entities["\"Cholesterol, HDL\""][proteins.str_to_int["P02649"]]); // From gene APOE
+
+    EXPECT_EQ(9, protein_modules.traits_to_entities["Bilirubin"].count());
+    EXPECT_TRUE(protein_modules.traits_to_entities["Bilirubin"][proteins.str_to_int["P22309"]]); // From gene UGT1A1
+    EXPECT_TRUE(protein_modules.traits_to_entities["Bilirubin"][proteins.str_to_int["P22310"]]); // From gene UGT1A4
+}
+
+// Return correct protein set names
+TEST_F(PhegeniConvertModulesWithMapping, ModuleProteinNamesCorrect) {
+    EXPECT_EQ(19, protein_modules.entities_to_traits.size()) << "The proteins in the modules should be NN.";
+    EXPECT_TRUE(protein_modules.entities_to_traits.find("P22309") != protein_modules.entities_to_traits.end()); // Comming from gene UGT1A1
+    EXPECT_TRUE(protein_modules.entities_to_traits.find("O60427") != protein_modules.entities_to_traits.end()); // Comming from gene FADS1
+    EXPECT_TRUE(protein_modules.entities_to_traits.find("Q15011") != protein_modules.entities_to_traits.end());   // Comming from gene HERPUD1
+    EXPECT_FALSE(protein_modules.entities_to_traits.find("ALMS1P") != protein_modules.entities_to_traits.end());    // There is no mapping for gene
+}
+

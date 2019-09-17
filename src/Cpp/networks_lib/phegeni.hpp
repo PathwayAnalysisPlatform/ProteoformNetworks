@@ -36,7 +36,7 @@ trait_modules convertModulesWithMapping(
         const trait_modules &original_modules,
         const bimap_str_int &original_entities,
         const bimap_str_int &destination_entities,
-        const entity_mapping &mapping);
+        const ummss &mapping);
 
 trait_modules createPheGenIProteinModules(const trait_modules &gene_modules,
                                           const bimap_str_int &genes,
