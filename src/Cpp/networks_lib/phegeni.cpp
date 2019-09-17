@@ -1,7 +1,4 @@
-#include <cstring>
-#include <iostream>
 #include "phegeni.hpp"
-
 
 using namespace std;
 
@@ -134,7 +131,8 @@ trait_modules createPheGenIProteinModules(const trait_modules &gene_modules,
     trait_modules protein_modules = convertModulesWithMapping(gene_modules, genes, proteins, traits, mapping.second_to_first);
 
     // Load interaction network
-    ummss protein_interactions;
+    auto protein_interactions = loadInteractionNetwork(path_file_protein_edges, proteins, true);
+//    protein_modules = removeDisconnectedMembers(protein_modules, protein_interactions);
 //    const auto[adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_protein_edges,
 //                                                                                           path_file_proteoform_edges);
 
@@ -197,6 +195,10 @@ trait_modules convertModulesWithMapping(
     }
 
     return modules;
+}
+
+trait_modules removeDisconnectedMembers(trait_modules modules, ummii interactions) {
+    return trait_modules();
 }
 
 //

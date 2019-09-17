@@ -1,23 +1,22 @@
-#ifndef PHEGENI_HPP
+#ifndef PHEGENI_HPP_
+#define PHEGENI_HPP_
 
 #include <fstream>
 #include <string>
 #include <bitset>
 #include <unordered_map>
+#include <cstring>
+#include <iostream>
 
 #include "bimap_str_int.hpp"
 #include "conversions.hpp"
+#include "networks.hpp"
 
 const long double GENOME_WIDE_SIGNIFICANCE = 5e-8;
 
 struct load_phegeni_genes_and_traits_result {
     bimap_str_int phegeni_genes;
     bimap_str_int phegeni_traits;
-};
-
-struct trait_modules {
-    msb traits_to_entities;
-    msb entities_to_traits;
 };
 
 load_phegeni_genes_and_traits_result loadPheGenIGenesAndTraits(
@@ -46,6 +45,7 @@ trait_modules createPheGenIProteinModules(const trait_modules &gene_modules,
                                           std::string_view path_file_proteins_to_genes,
                                           std::string_view path_file_protein_edges);
 
+trait_modules removeDisconnectedMembers(trait_modules modules, ummii interactions);
 
-#endif // !PHEGENI_HPP
+#endif // !PHEGENI_HPP_
 

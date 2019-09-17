@@ -1,4 +1,3 @@
-#include <cstring>
 #include "bimap_str_int.hpp"
 
 using namespace std;

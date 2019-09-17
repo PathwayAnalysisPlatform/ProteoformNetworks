@@ -24,6 +24,7 @@ template<typename K, typename V>
 using umm = std::unordered_multimap<K, V>;
 using ummss = umm<std::string, std::string>;
 using ummsi = std::unordered_multimap<std::string, int>;
+using ummii = std::unordered_multimap<int, int>;
 
 using vs = std::vector<std::string>;
 
@@ -32,6 +33,11 @@ using umsb = um<std::string, base::dynamic_bitset<>>;
 struct entity_mapping {
     ummss first_to_second;
     ummss second_to_first;
+};
+
+struct trait_modules {
+    msb traits_to_entities;
+    msb entities_to_traits;
 };
 
 #endif // ! TYPES_HPP
