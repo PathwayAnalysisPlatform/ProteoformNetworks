@@ -26,7 +26,7 @@ struct Frequencies {
 // It uses multiple scoring functions to calculate the overlap score between each pair of modules.
 // Creates a report for each scoring function. The report is a csv file with one row each module pair.
 void doOverlapAnalysis(
-        std::string_view path_file_PheGenI,
+        std::string_view path_file_phegeni,
         std::string_view path_file_reactome_genes,
         std::string_view path_file_reactome_proteins,
         std::string_view path_file_mapping_proteins_to_genes,

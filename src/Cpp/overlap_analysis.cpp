@@ -3,7 +3,7 @@
 using namespace std;
 
 void doOverlapAnalysis(
-        std::string_view path_file_PheGenI,
+        std::string_view path_file_phegeni,
         std::string_view path_file_reactome_genes,
         std::string_view path_file_reactome_proteins,
         std::string_view path_file_mapping_proteins_to_genes,
@@ -11,8 +11,14 @@ void doOverlapAnalysis(
         std::string_view path_file_proteoform_edges,
         std::string_view path_scores) {
 
+    // Read Reactome genes. Take them as all acceptable gene names.
+    const bimap_str_int genes = createBimap(path_file_reactome_genes); // Gene names --> str_to_int
+
+    // Read traits and genes in Phegeni file
+    const auto[phegeni_genes, traits] = loadPheGenIGenesAndTraits(path_file_phegeni, genes);
+
     // Read Phegeni trait modules with genes as members. Only gene members also in the acceptable gene list.
-    const auto gene_modules = loadPheGenIGeneModules(path_file_PheGenI, path_file_reactome_genes);
+    const auto gene_modules = loadPheGenIGeneModules(path_file_phegeni, genes, traits);
 
     // Calculate overlap scores between all trait gene set pairs
     std::string file_name = "scores_overlap_similarity.tsv";
@@ -26,11 +32,11 @@ void doOverlapAnalysis(
 
 
     // Create proteoform sets for each trait
-    const auto genes = createBimap(path_file_reactome_genes);
     const auto proteins = createBimap(path_file_reactome_proteins);
     const auto protein_modules = createPheGenIProteinModules(gene_modules,
                                                              genes,
                                                              proteins,
+                                                             traits,
                                                              path_file_mapping_proteins_to_genes,
                                                              path_file_protein_edges);
 

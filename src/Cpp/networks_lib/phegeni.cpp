@@ -64,7 +64,8 @@ load_phegeni_genes_and_traits_result loadPheGenIGenesAndTraits(
 // The two mappings define the trait modules (also called, phenotype modules or disease modules)
 trait_modules loadPheGenIGeneModules(
         string_view path_file_phegeni,
-        string_view path_file_genes) {
+        const bimap_str_int& genes,
+        const bimap_str_int& traits) {
     ifstream file_phegen(path_file_phegeni.data());
     string line, field, trait, gene, gene2;
     string p_value_str;
@@ -76,22 +77,15 @@ trait_modules loadPheGenIGeneModules(
         throw runtime_error(message + function);
     }
 
-    // Read Reactome genes. Take them as all acceptable gene names.
-    const bimap_str_int acceptable_genes = createBimap(path_file_genes); // Gene names --> str_to_int
-
-    // Read traits and genes in Phegeni file
-    const auto[phegeni_genes, phegeni_traits] = loadPheGenIGenesAndTraits(path_file_phegeni, acceptable_genes);
-
     // Initialize modules
     trait_modules modules;
-    for (const auto &gene : phegeni_genes.int_to_str) {
-        modules.entities_to_traits[gene] = base::dynamic_bitset<>(phegeni_traits.int_to_str.size());
-    }
-    for (const auto &trait : phegeni_traits.int_to_str) {
-        modules.traits_to_entities[trait] = base::dynamic_bitset<>(phegeni_genes.int_to_str.size());
-    }
+    for (const auto &trait : traits.int_to_str)
+        modules.traits_to_entities[trait] = base::dynamic_bitset<>(genes.int_to_str.size());
+    for (const auto &gene : genes.int_to_str)
+        modules.entities_to_traits[gene] = base::dynamic_bitset<>(traits.int_to_str.size());
 
-    std::cout << "Initialized modules:\n"
+
+    std::cerr << "Initialized modules:\n"
               << "Genes to traits: " << modules.entities_to_traits.size()
               << "\t Traits bitsets size: " << modules.entities_to_traits.begin()->second.size()
               << "\nTraits to genes: " << modules.traits_to_entities.size()
@@ -113,13 +107,13 @@ trait_modules loadPheGenIGeneModules(
         getline(file_phegen,
                 line);               // Skip header line leftoever: Source,	PubMed,	Analysis ID,	Study ID,	Study Name
 
-        if (acceptable_genes.str_to_int.find(gene) != acceptable_genes.str_to_int.end()) {
-            modules.traits_to_entities[trait][phegeni_genes.str_to_int.at(gene)].set();
-            modules.entities_to_traits[gene][phegeni_traits.str_to_int.at(trait)].set();
+        if (genes.str_to_int.find(gene) != genes.str_to_int.end()) {
+            modules.traits_to_entities[trait][genes.str_to_int.at(gene)].set();
+            modules.entities_to_traits[gene][traits.str_to_int.at(trait)].set();
         }
-        if (acceptable_genes.str_to_int.find(gene2) != acceptable_genes.str_to_int.end()) {
-            modules.traits_to_entities[trait][phegeni_genes.str_to_int.at(gene2)].set();
-            modules.entities_to_traits[gene2][phegeni_traits.str_to_int.at(trait)].set();
+        if (genes.str_to_int.find(gene2) != genes.str_to_int.end()) {
+            modules.traits_to_entities[trait][genes.str_to_int.at(gene2)].set();
+            modules.entities_to_traits[gene2][traits.str_to_int.at(trait)].set();
         }
     }
 
@@ -132,11 +126,12 @@ trait_modules loadPheGenIGeneModules(
 trait_modules createPheGenIProteinModules(const trait_modules &gene_modules,
                                           const bimap_str_int &genes,
                                           const bimap_str_int &proteins,
+                                          const bimap_str_int &traits,
                                           std::string_view path_file_proteins_to_genes,
                                           std::string_view path_file_protein_edges) {
     // Convert gene modules to protein modules using the mapping from proteins to genes
     entity_mapping mapping = readMapping(path_file_proteins_to_genes, true);
-    trait_modules protein_modules = convertModulesWithMapping(gene_modules, genes, proteins, mapping.second_to_first);
+    trait_modules protein_modules = convertModulesWithMapping(gene_modules, genes, proteins, traits, mapping.second_to_first);
 
     // Load interaction network
     ummss protein_interactions;
@@ -163,11 +158,12 @@ trait_modules convertModulesWithMapping(
         const trait_modules &original_modules,
         const bimap_str_int &original_entities,
         const bimap_str_int &destination_entities,
+        const bimap_str_int &traits,
         const ummss &mapping) {
     trait_modules modules;
 
     for (const auto &trait_entry : original_modules.traits_to_entities) {  // For each trait entry
-//        std::cout << "Mapping trait: " << trait_entry.first << std::endl;
+        std::cout << "Mapping trait: " << trait_entry.first << std::endl;
         modules.traits_to_entities.emplace(trait_entry.first, base::dynamic_bitset<>(destination_entities.int_to_str.size()));
         for (int I = 0; I < trait_entry.second.size(); I++) {  // For each member in this trait
             if (trait_entry.second[I]) {    // If it is really a member
@@ -176,15 +172,24 @@ trait_modules convertModulesWithMapping(
                 auto range = mapping.equal_range(original_entity);  // For each destination entity of the original entity
                 for (auto it = range.first; it != range.second; it++) {
                     std::string destination_entity = it->second;
-//                    std::cout << original_entity << " --> " << destination_entity << std::endl;
+                    std::cout << original_entity << " --> " << destination_entity << std::endl;
 
                     // Check the mapped entity exists in the list of known acceptable destination entities
                     if(destination_entities.str_to_int.find(destination_entity) != destination_entities.str_to_int.end()){
+
+                        // Set the entities as members of the trait member set
                         int destination_entity_index = destination_entities.str_to_int.at(destination_entity);
                         modules.traits_to_entities[trait_entry.first][destination_entity_index].set();
+
+                        // Set the traits as owners of the entity owner set
+                        int trait_index = traits.str_to_int.at(trait_entry.first);
+                        if(modules.entities_to_traits.find(destination_entity) == modules.entities_to_traits.end()){
+                            modules.entities_to_traits[destination_entity] = base::dynamic_bitset<>(traits.int_to_str.size());
+                        }
+                        modules.entities_to_traits[destination_entity][trait_index].set();
                     }
                     else{
-//                        std::cerr << original_entity << " --> ?" << std::endl;
+                        std::cerr << original_entity << " --> ?" << std::endl;
                     }
                 }
             }
