@@ -2,49 +2,53 @@
 
 using namespace std;
 
-umsi createStrToInt(const vs& index_to_entities) {
-	umsi entities_to_index;
-	for (int I = 0; I < index_to_entities.size(); I++) {
-		entities_to_index.emplace(index_to_entities[I], I);
-	}
-	return entities_to_index;
+umsi createStrToInt(const vs &index_to_entities) {
+    umsi entities_to_index;
+    for (int I = 0; I < index_to_entities.size(); I++) {
+        entities_to_index.emplace(index_to_entities[I], I);
+    }
+    return entities_to_index;
 }
 
 // Creates a bimap of string to int and viceversa.
 // The int index assigned to each string corresponds to the lexicographic order.
 bimap_str_int createBimap(string_view list_file_path, bool has_header) {
-	vs index_to_entities = createIntToStr(list_file_path, has_header);
-	umsi entities_to_index = createStrToInt(index_to_entities);
-	return { index_to_entities, entities_to_index };
+    vs index_to_entities = createIntToStr(list_file_path, has_header);
+    umsi entities_to_index = createStrToInt(index_to_entities);
+    return {index_to_entities, entities_to_index};
 }
 
-bimap_str_int createBimap(const vs& index_to_entities) {
-	umsi entities_to_index = createStrToInt(index_to_entities);
-	return { index_to_entities, entities_to_index };
+// Creates the bimap from a vector of elements
+// Removes the duplicate elements in the vector
+// Sorts the elements to assign the indexes
+bimap_str_int createBimap(const vs &index_to_entities) {
+    std::set<std::string> s(index_to_entities.begin(), index_to_entities.end());
+    vs sortedAndUniqueVector(s.begin(), s.end());
+    return {sortedAndUniqueVector, createStrToInt(sortedAndUniqueVector)};
 }
 
 // The input file is a list of identifiers. One in each row
 vs createIntToStr(string_view list_file_path, bool has_header) {
-	ifstream map_file(list_file_path.data());
-	string entity, leftover;
-	uss temp_set;
-	vs index_to_entities;
+    ifstream map_file(list_file_path.data());
+    string entity, leftover;
+    uss temp_set;
+    vs index_to_entities;
 
-	if (!map_file.is_open()) {
-		std::string message = "Could not open file list_file_path ";
+    if (!map_file.is_open()) {
+        std::string message = "Could not open file list_file_path ";
         std::string function = __FUNCTION__;
         throw runtime_error(message + function);
-	}
+    }
 
-	if (has_header) {
-		getline(map_file, leftover);  // Skip header line
-	}
-	while (map_file.peek() != EOF) {
-		getline(map_file, entity);
-		temp_set.insert(entity);
-	}
-	index_to_entities = convert_uss_to_vs(temp_set);
+    if (has_header) {
+        getline(map_file, leftover);  // Skip header line
+    }
+    while (map_file.peek() != EOF) {
+        getline(map_file, entity);
+        temp_set.insert(entity);
+    }
+    index_to_entities = convert_uss_to_vs(temp_set);
     sort(index_to_entities.begin(), index_to_entities.end());
 
-	return index_to_entities;
+    return index_to_entities;
 }

@@ -9,14 +9,14 @@ protected:
         genes = createBimap(path_file_genes);
         proteins = createBimap(path_file_proteins);
         auto ret = loadPheGenIGenesAndTraits(path_file_phegeni, genes);
-        traits = ret.phegeni_traits;
-        trait_modules gene_modules = loadPheGenIGeneModules(path_file_phegeni, genes, traits);
-        trait_modules protein_modules = createPheGenIProteinModules(gene_modules,
-                                                                    genes,
-                                                                    proteins,
-                                                                    traits,
-                                                                    path_file_mapping,
-                                                                    path_file_protein_interactions);
+        traits = ret.groups;
+        modules gene_modules = loadPheGenIGeneModules(path_file_phegeni, genes, traits);
+        modules protein_modules = createPheGenIProteinModules(gene_modules,
+                                                              genes,
+                                                              proteins,
+                                                              traits,
+                                                              path_file_mapping,
+                                                              path_file_protein_interactions);
     }
 
     std::string path_file_phegeni = "../../../../resources/PheGenI/PheGenI_Association_genome_wide_significant_slice.txt";

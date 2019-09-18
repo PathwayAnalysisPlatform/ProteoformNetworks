@@ -279,21 +279,21 @@ namespace gene_level_only_overlap {
 		const auto [phegeni_genes, phegeni_traits] = loadPheGenIGenesAndTraits(path_file_PheGenI, reactome_genes);
 		const auto mapping_traits_genes = loadPheGenIGeneModules(path_file_PheGenI, reactome_genes, phegeni_genes,
                                                                  phegeni_traits);
-		const auto traits_to_names = createTraitNames(mapping_traits_genes.traits_to_entities);
+		const auto traits_to_names = createTraitNames(mapping_traits_genes.group_to_members);
 
 		// Create proteoform sets for each trait
 		const auto [adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_protein_search, path_file_proteoform_search);		
 
 		const auto [genes_to_proteins, proteins_to_genes] = loadMappingGenesProteins(path_file_mapping_proteins_to_genes);
 		const auto phegeni_proteins = deductProteinsFromGenes(genes_to_proteins, phegeni_genes);
-		const um<string, bitset<PHEGENI_PROTEINS>> traits_to_proteins = convertGeneSets(mapping_traits_genes.traits_to_entities, phegeni_genes, genes_to_proteins, phegeni_proteins, adjacency_list_proteins);
+		const um<string, bitset<PHEGENI_PROTEINS>> traits_to_proteins = convertGeneSets(mapping_traits_genes.group_to_members, phegeni_genes, genes_to_proteins, phegeni_proteins, adjacency_list_proteins);
 
 		const auto [proteins_to_proteoforms, proteoforms_to_proteins] = loadMappingProteinsProteoforms(path_file_proteoform_search);
 		const auto phegeni_proteoforms = deductProteoformsFromProteins(proteins_to_proteoforms, phegeni_proteins);
 		const um<string, bitset<PHEGENI_PROTEOFORMS>> traits_to_proteoforms = convertProteinSets(traits_to_proteins, phegeni_proteins, proteins_to_proteoforms, phegeni_proteoforms, adjacency_list_proteoforms);
 
 		// Calculate overlaps
-		const auto overlapping_gene_set_pairs = findOverlappingPairs(mapping_traits_genes.traits_to_entities, MIN_OVERLAP_SIZE, MAX_OVERLAP_SIZE, MIN_SET_SIZE, MAX_SET_SIZE);
+		const auto overlapping_gene_set_pairs = findOverlappingPairs(mapping_traits_genes.group_to_members, MIN_OVERLAP_SIZE, MAX_OVERLAP_SIZE, MIN_SET_SIZE, MAX_SET_SIZE);
 		cout << "Calculating protein sets overlap..." << endl;
 		const auto overlapping_protein_set_pairs = findOverlappingPairs(traits_to_proteins, MIN_OVERLAP_SIZE, MAX_OVERLAP_SIZE, MIN_SET_SIZE, MAX_SET_SIZE);
 		cout << "Calculating proteoform sets overlap..." << endl;
@@ -315,7 +315,7 @@ namespace gene_level_only_overlap {
 		cout << "Writing report...\n";
 		ofstream report(path_file_report_trait.data());
 
-		writePhenotypeReport(report, examples, traits_to_names, mapping_traits_genes.traits_to_entities, traits_to_proteins, traits_to_proteoforms,
+		writePhenotypeReport(report, examples, traits_to_names, mapping_traits_genes.group_to_members, traits_to_proteins, traits_to_proteoforms,
                              phegeni_genes, phegeni_proteins, phegeni_proteoforms);
 	}
 

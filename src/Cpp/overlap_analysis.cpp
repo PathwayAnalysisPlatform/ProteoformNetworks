@@ -23,11 +23,11 @@ void doOverlapAnalysis(
     // Calculate overlap scores between all trait gene set pairs
     std::string file_name = "scores_overlap_similarity.tsv";
     file_name = path_scores.data() + file_name;
-    writeScores(gene_modules.traits_to_entities, getScores(gene_modules.traits_to_entities, getOverlapSimilarity),
+    writeScores(gene_modules.group_to_members, getScores(gene_modules.group_to_members, getOverlapSimilarity),
                 file_name);
     file_name = "scores_jaccard_similarity.tsv";
     file_name = path_scores.data() + file_name;
-    writeScores(gene_modules.traits_to_entities, getScores(gene_modules.traits_to_entities, getJaccardSimilarity),
+    writeScores(gene_modules.group_to_members, getScores(gene_modules.group_to_members, getJaccardSimilarity),
                 file_name);
 
 

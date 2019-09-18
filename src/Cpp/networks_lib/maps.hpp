@@ -4,6 +4,7 @@
 #include <set>
 #include "types.hpp"
 
+bool hasKey(const umsi &m, std::string key);
 bool hasKey(const ummii &m, int key);
 
 bool keyHasValue(const ummii &m, int key, int value);

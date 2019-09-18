@@ -5,6 +5,7 @@
 #include <bitset>
 #include <string_view>
 #include <cstring>
+#include <set>
 
 #include "types.hpp"
 #include "conversions.hpp"
@@ -12,6 +13,11 @@
 struct bimap_str_int {
     vs int_to_str;
     umsi str_to_int;
+};
+
+struct module_bimaps{
+    bimap_str_int groups;
+    bimap_str_int members;
 };
 
 bimap_str_int createBimap(std::string_view list_file_path, bool has_header = true);

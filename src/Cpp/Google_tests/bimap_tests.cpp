@@ -64,3 +64,39 @@ TEST_F(BimapStrIntFixture, CreateBimapWithoutHeader) {
     EXPECT_EQ(0, bimap.str_to_int["C19orf1"]);
     EXPECT_EQ(5, bimap.str_to_int["TOMM40"]);
 }
+
+
+class CreateBimapFromVectorFixture : public ::testing::Test {
+protected:
+    virtual void SetUp() {
+        vs values = {"3", "2", "1", "1", "2", "3", "4", "4", "5", "0"};
+        bimap = createBimap(values);
+    }
+
+    bimap_str_int bimap;
+};
+
+
+TEST_F(CreateBimapFromVectorFixture, IntToStrSorted) {
+    EXPECT_EQ("0", bimap.int_to_str[0]);
+    EXPECT_EQ("1", bimap.int_to_str[1]);
+    EXPECT_EQ("2", bimap.int_to_str[2]);
+    EXPECT_EQ("3", bimap.int_to_str[3]);
+    EXPECT_EQ("4", bimap.int_to_str[4]);
+    EXPECT_EQ("5", bimap.int_to_str[5]);
+}
+
+TEST_F(CreateBimapFromVectorFixture, CorrectStrToInt) {
+    EXPECT_EQ(0, bimap.str_to_int["0"]);
+    EXPECT_EQ(1, bimap.str_to_int["1"]);
+    EXPECT_EQ(2, bimap.str_to_int["2"]);
+    EXPECT_EQ(3, bimap.str_to_int["3"]);
+    EXPECT_EQ(4, bimap.str_to_int["4"]);
+    EXPECT_EQ(5, bimap.str_to_int["5"]);
+}
+
+// This indirectly checks that the duplicate values are gone
+TEST_F(CreateBimapFromVectorFixture, CorrectSizes){
+    EXPECT_EQ(6, bimap.str_to_int.size());
+    EXPECT_EQ(6, bimap.int_to_str.size());
+}

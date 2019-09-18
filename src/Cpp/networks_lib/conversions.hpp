@@ -1,14 +1,15 @@
 #ifndef PROTEOFORMNETWORKS_CONVERSIONS_HPP
 #define PROTEOFORMNETWORKS_CONVERSIONS_HPP
 
-#include "types.hpp"
-
 #include <algorithm>
 #include <fstream>
 #include <cstdio>
 #include <vector>
 #include <sstream>
 #include <iostream>
+
+#include "types.hpp"
+#include "overlap_types.hpp"
 
 // Convert unordered string set, to string vector
 vs convert_uss_to_vs(const uss &a_set);

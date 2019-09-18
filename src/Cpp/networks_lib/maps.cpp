@@ -1,5 +1,9 @@
 #include "maps.hpp"
 
+bool hasKey(const umsi &m, std::string key) {
+    return m.find(key) != m.end();
+}
+
 bool hasKey(const ummii &m, int key) {
     return m.find(key) != m.end();
 }
