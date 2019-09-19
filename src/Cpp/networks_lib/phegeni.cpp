@@ -1,4 +1,5 @@
 #include "phegeni.hpp"
+#include "maps.hpp"
 
 using namespace std;
 
@@ -52,7 +53,7 @@ module_bimaps loadPheGenIGenesAndTraits(
     cerr << "PHEGEN genes: " << phegeni_genes.str_to_int.size() << " = " << phegeni_genes.int_to_str.size() << "\n";
     cerr << "PHEGEN traits: " << phegeni_traits.str_to_int.size() << " = " << phegeni_traits.int_to_str.size() << "\n";
 
-    return {phegeni_genes, phegeni_traits};
+    return {phegeni_traits, phegeni_genes};
 }
 
 // Creates two mappings to represent the Trait modules with genes as members:
@@ -104,13 +105,23 @@ modules loadPheGenIGeneModules(
         getline(file_phegen,
                 line);               // Skip header line leftoever: Source,	PubMed,	Analysis ID,	Study ID,	Study Name
 
-        if (genes.str_to_int.find(gene) != genes.str_to_int.end()) {
+        if (hasKey(traits.str_to_int, trait) && hasKey(genes.str_to_int, gene)) {
             modules.group_to_members[trait][genes.str_to_int.at(gene)].set();
             modules.member_to_groups[gene][traits.str_to_int.at(trait)].set();
+        } else {
+            if (!hasKey(traits.str_to_int, trait))
+                std::cerr << "The trait " << trait << " was not found in the bimap.\n";
+            if (!hasKey(genes.str_to_int, gene))
+                std::cerr << "The gene " << gene << " was not found in the bimap.\n";
         }
-        if (genes.str_to_int.find(gene2) != genes.str_to_int.end()) {
+        if (hasKey(traits.str_to_int, trait) && hasKey(genes.str_to_int, gene2)) {
             modules.group_to_members[trait][genes.str_to_int.at(gene2)].set();
             modules.member_to_groups[gene2][traits.str_to_int.at(trait)].set();
+        } else {
+            if (!hasKey(traits.str_to_int, trait))
+                std::cerr << "The trait " << trait << " was not found in the bimap.\n";
+            if (!hasKey(genes.str_to_int, gene2))
+                std::cerr << "The gene " << gene2 << " was not found in the bimap.\n";
         }
     }
 

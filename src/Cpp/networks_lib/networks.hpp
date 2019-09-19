@@ -15,7 +15,7 @@ struct load_modules_result{
     bimap_str_int members;
 };
 
-load_modules_result loadModules(std::string_view path_file_modules);
+load_modules_result loadModules(std::string_view path_file_modules, bool has_header = true);
 
 modules removeDisconnectedMembers(modules modules, ummii interactions);
 

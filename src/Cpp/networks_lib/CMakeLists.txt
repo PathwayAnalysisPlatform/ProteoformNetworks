@@ -1,7 +1,7 @@
 project(networks_lib)
 
 set(HEADER_FILES
-        ../overlap_analysis.hpp
+        reactome.hpp
         bimap_str_int.hpp
         conversions.hpp
         scores.hpp
@@ -10,7 +10,7 @@ set(HEADER_FILES
         )
 
 set(SOURCE_FILES
-        ../overlap_analysis.cpp
+        reactome.cpp
         bimap_str_int.cpp
         conversions.cpp
         scores.cpp

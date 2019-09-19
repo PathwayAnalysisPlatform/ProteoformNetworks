@@ -54,10 +54,12 @@ modules removeDisconnectedMembers(modules modules, ummii interactions) {
 }
 
 // Reads groups from files. It creates the bimap structures for the groups and the members
-load_modules_result loadModules(std::string_view path_file_modules) {
+// The file should follow the format convention: two colums, no extra spaces at the end of each row.
+// Columns separated by a '\t' (tab) character.
+load_modules_result loadModules(std::string_view path_file_modules, bool has_header) {
     modules result_modules;
-    bimap_str_int members;
     bimap_str_int groups;
+    bimap_str_int members;
 
     std::ifstream file_modules(path_file_modules.data());
     if (!file_modules.is_open()) {
@@ -66,12 +68,21 @@ load_modules_result loadModules(std::string_view path_file_modules) {
         throw std::runtime_error(message + function);
     }
 
-    // Read the file once to get the groups and members lists
-
-
+    // # Read the file once to get the groups and members lists
+    std::string group, member, line;
+    std::set<std::string> unique_groups, unique_members;
+    if (has_header)
+        std::getline(file_modules, line);
+    while (std::getline(file_modules, group, '\t')) {
+        getline(file_modules, member);
+        unique_groups.insert(group);
+        unique_members.insert(member);
+    }
+    groups = createBimap(vs(unique_groups.begin(), unique_groups.end()));
+    members = createBimap(vs(unique_members.begin(), unique_members.end()));
     file_modules.close();
 
-    // Read the file to create the modules
+    // # Read the file to create the modules
     file_modules.open(path_file_modules.data());
     if (!file_modules.is_open()) {
         std::string message = "Cannot open path_file_modules at ";
@@ -79,6 +90,21 @@ load_modules_result loadModules(std::string_view path_file_modules) {
         throw std::runtime_error(message + function);
     }
 
+    // ## Read modules
+    // Initialize the modules to the correct sizes
+    for (const auto &group : groups.int_to_str)
+        result_modules.group_to_members.emplace(group, base::dynamic_bitset<>(groups.int_to_str.size()));
+    for (const auto &member : members.int_to_str)
+        result_modules.member_to_groups.emplace(member, base::dynamic_bitset<>(members.int_to_str.size()));
+
+    // Set the members of each group and the owners of each member
+    if (has_header)
+        std::getline(file_modules, line);
+    while (std::getline(file_modules, group, '\t')) {
+        std::getline(file_modules, member);
+        result_modules.group_to_members[group][members.str_to_int[member]].set();
+        result_modules.member_to_groups[member][groups.str_to_int[group]].set();
+    }
 
     file_modules.close();
 

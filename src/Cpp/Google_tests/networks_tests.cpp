@@ -4,19 +4,6 @@
 #include "types.hpp"
 #include "maps.hpp"
 
-#include <windows.h>
-
-std::string GetExeFileName() {
-    char buffer[MAX_PATH];
-    GetModuleFileName(NULL, buffer, MAX_PATH);
-    return std::string(buffer);
-}
-
-std::string GetExePath() {
-    std::string f = GetExeFileName();
-    return f.substr(0, f.find_last_of("\\/"));
-}
-
 class LoadInteractionNetworkFixture : public testing::Test {
 protected:
     virtual void SetUp() {
@@ -76,64 +63,120 @@ TEST_F(LoadInteractionNetworkFixture, InverseEdges) {
 class LoadModulesFixture : public ::testing::Test {
 protected:
     virtual void SetUp() {
-        std::cerr << GetExePath() << std::endl;
+//        std::cerr << "The execution path is: " << get_current_dir_name() << std::endl;
+
         auto ret = loadModules(path_file_modules);
-        modules = ret.entity_modules;
+        example_modules = ret.entity_modules;
         groups = ret.groups;
         members = ret.members;
     }
 
-    std::string path_file_modules = "../../resources/modules.csv";
-    modules modules;
+    std::string path_file_modules = "../../../../resources/example_modules.csv";
+    modules example_modules;
     bimap_str_int groups, members;
 };
 
+// Check Members correct size
 TEST_F(LoadModulesFixture, CorrectMembersSize) {
     EXPECT_EQ(5, members.str_to_int.size());
     EXPECT_EQ(5, members.int_to_str.size());
 }
 
-// Check int_to_str elements are correct
+// Check Members int_to_str elements are correct
 TEST_F(LoadModulesFixture, CorrectMembers) {
     EXPECT_EQ("1", members.int_to_str[0]);
     EXPECT_EQ("3", members.int_to_str[2]);
     EXPECT_EQ("5", members.int_to_str[4]);
 }
 
-// Check str_to_int keys are correct
+// Check Members str_to_int keys are correct
 TEST_F(LoadModulesFixture, CorrectMembersStrToIntKeys){
-    ASSERT_TRUE(hasKey(members.str_to_int, "A"));
-    ASSERT_TRUE(hasKey(members.str_to_int, "B"));
-    ASSERT_TRUE(hasKey(members.str_to_int, "C"));
+    ASSERT_TRUE(hasKey(members.str_to_int, "1"));
+    ASSERT_TRUE(hasKey(members.str_to_int, "3"));
+    ASSERT_TRUE(hasKey(members.str_to_int, "5"));
 }
 
-// Check str_to_int values are correct
+// Check Members str_to_int index values are correct
 TEST_F(LoadModulesFixture, CorrectMembersStrToIntValues){
-    EXPECT_EQ(0, members.str_to_int["A"]);
-    EXPECT_EQ(1, members.str_to_int["B"]);
-    EXPECT_EQ(2, members.str_to_int["C"]);
+    EXPECT_EQ(0, members.str_to_int["1"]);
+    EXPECT_EQ(2, members.str_to_int["3"]);
+    EXPECT_EQ(4, members.str_to_int["5"]);
 }
 
+// Check groups correct size
+TEST_F(LoadModulesFixture, CorrectGroupsSize) {
+    EXPECT_EQ(3, groups.str_to_int.size());
+    EXPECT_EQ(3, groups.int_to_str.size());
+}
+
+// Check Groups int_to_str elements are correct
 TEST_F(LoadModulesFixture, CorrectGroups) {
-    // Check int_to_str size is correct
-
-    // Check int_to_str elements are correct
-
-    // Check str_to_int size is correct
-
-    // Check str_to_int keys are correct
-
-    // Check str_to_int values are correct
+    EXPECT_EQ("A", groups.int_to_str[0]);
+    EXPECT_EQ("B", groups.int_to_str[1]);
+    EXPECT_EQ("C", groups.int_to_str[2]);
 }
 
-TEST_F(LoadModulesFixture, CorrectModules) {
-    // Check keys in group_to_members are correct
+// Check Groups str_to_int keys are correct
+TEST_F(LoadModulesFixture, CorrectGroupsStrToIntKeys) {
+    ASSERT_TRUE(hasKey(groups.str_to_int, "A"));
+    ASSERT_TRUE(hasKey(groups.str_to_int, "B"));
+    ASSERT_TRUE(hasKey(groups.str_to_int, "C"));
+}
 
-    // Check values in group_to_members are correct
+// Check Groups str_to_int index values are correct
+TEST_F(LoadModulesFixture, CorrectGroupsStrToIntValues) {
+    EXPECT_EQ(0, groups.str_to_int["A"]);
+    EXPECT_EQ(1, groups.str_to_int["B"]);
+    EXPECT_EQ(2, groups.str_to_int["C"]);
+}
 
-    // Check keys in member_to_groups are correct
+// Check modules sizes
+TEST_F(LoadModulesFixture, CorrectModulesSizes) {
+    EXPECT_EQ(3, example_modules.group_to_members.size());
+    for (auto group_entry = example_modules.group_to_members.begin();
+         group_entry != example_modules.group_to_members.end(); group_entry++) {
+        EXPECT_EQ(groups.int_to_str.size(), group_entry->second.size());
+    }
+    EXPECT_EQ(5, example_modules.member_to_groups.size());
+    for (auto member_entry = example_modules.member_to_groups.begin();
+         member_entry != example_modules.member_to_groups.end(); member_entry++) {
+        EXPECT_EQ(members.int_to_str.size(), member_entry->second.size());
+    }
+}
 
-    // Check values in member_to_groups are correct
+// Check modules group --> members
+TEST_F(LoadModulesFixture, CorrectGroupToMembers) {
+    // Correct number of members
+    EXPECT_EQ(3, example_modules.group_to_members["A"].count());
+    EXPECT_EQ(2, example_modules.group_to_members["B"].count());
+    EXPECT_EQ(1, example_modules.group_to_members["C"].count());
+    // Correct members
+    EXPECT_TRUE(example_modules.group_to_members["A"][members.str_to_int["1"]]);
+    EXPECT_TRUE(example_modules.group_to_members["A"][members.str_to_int["2"]]);
+    EXPECT_TRUE(example_modules.group_to_members["A"][members.str_to_int["3"]]);
+
+    EXPECT_TRUE(example_modules.group_to_members["B"][members.str_to_int["3"]]);
+    EXPECT_TRUE(example_modules.group_to_members["B"][members.str_to_int["4"]]);
+
+    EXPECT_TRUE(example_modules.group_to_members["C"][members.str_to_int["5"]]);
+}
+
+// Check modules member --> groups
+TEST_F(LoadModulesFixture, CorrectMemberToGroups) {
+    // Correct number of owners
+    EXPECT_EQ(1, example_modules.member_to_groups["1"].count());
+    EXPECT_EQ(1, example_modules.member_to_groups["2"].count());
+    EXPECT_EQ(2, example_modules.member_to_groups["3"].count());
+    EXPECT_EQ(1, example_modules.member_to_groups["4"].count());
+    EXPECT_EQ(1, example_modules.member_to_groups["5"].count());
+
+    // Correct owners
+    EXPECT_TRUE(example_modules.member_to_groups["1"][groups.str_to_int["A"]]);
+    EXPECT_TRUE(example_modules.member_to_groups["2"][groups.str_to_int["A"]]);
+    EXPECT_TRUE(example_modules.member_to_groups["3"][groups.str_to_int["A"]]);
+    EXPECT_TRUE(example_modules.member_to_groups["3"][groups.str_to_int["B"]]);
+    EXPECT_TRUE(example_modules.member_to_groups["4"][groups.str_to_int["B"]]);
+    EXPECT_TRUE(example_modules.member_to_groups["5"][groups.str_to_int["C"]]);
 }
 
 class RemoveDisconnectedMembersFixture : public ::testing::Test {
