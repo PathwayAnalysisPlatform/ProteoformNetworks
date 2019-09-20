@@ -3,7 +3,8 @@ project(ProteoformNetworks)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(SOURCE_FILES main.cpp overlap_analysis.hpp)
+set(HEADER_FILES overlap_analysis.hpp)
+set(SOURCE_FILES main.cpp overlap_analysis.cpp)
 add_executable(ProteoformNetwork_run ${SOURCE_FILES})
 
 include_directories(networks_lib)

@@ -64,7 +64,7 @@ modules removeDisconnectedMembers(modules &modules, const bimap_str_int &groups,
             // Check if any interactor of this member is in the group
             auto range = interactions.equal_range(member_index);
             for (auto it = range.first; it != range.second; it++) { // For each interactor
-                if (hasKey(member_indexes, it->second)) {   // If the interactor is in the group
+                if (hasValue(member_indexes, it->second)) {   // If the interactor is in the group
                     isConnected = true;
                     break;
                 }

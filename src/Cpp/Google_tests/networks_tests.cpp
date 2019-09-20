@@ -91,9 +91,9 @@ TEST_F(LoadModulesFixture, CorrectMembers) {
 
 // Check Members str_to_int keys are correct
 TEST_F(LoadModulesFixture, CorrectMembersStrToIntKeys) {
-    ASSERT_TRUE(hasKey(members.str_to_int, "1"));
-    ASSERT_TRUE(hasKey(members.str_to_int, "3"));
-    ASSERT_TRUE(hasKey(members.str_to_int, "5"));
+    ASSERT_TRUE(hasKey(members.str_to_int, (std::string) "1"));
+    ASSERT_TRUE(hasKey(members.str_to_int, (std::string) "3"));
+    ASSERT_TRUE(hasKey(members.str_to_int, (std::string) "5"));
 }
 
 // Check Members str_to_int index values are correct
@@ -118,9 +118,9 @@ TEST_F(LoadModulesFixture, CorrectGroups) {
 
 // Check Groups str_to_int keys are correct
 TEST_F(LoadModulesFixture, CorrectGroupsStrToIntKeys) {
-    ASSERT_TRUE(hasKey(groups.str_to_int, "A"));
-    ASSERT_TRUE(hasKey(groups.str_to_int, "B"));
-    ASSERT_TRUE(hasKey(groups.str_to_int, "C"));
+    ASSERT_TRUE(hasKey(groups.str_to_int, (std::string) "A"));
+    ASSERT_TRUE(hasKey(groups.str_to_int, (std::string) "B"));
+    ASSERT_TRUE(hasKey(groups.str_to_int, (std::string) "C"));
 }
 
 // Check Groups str_to_int index values are correct

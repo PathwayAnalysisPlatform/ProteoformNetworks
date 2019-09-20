@@ -14,6 +14,7 @@
 // Convert unordered string set, to string vector
 vs convert_uss_to_vs(const uss &a_set);
 
-entity_mapping readMapping(std::string_view path_file_mapping, bool has_header_row = true);
+entity_mapping
+readMapping(std::string_view path_file_mapping, bool has_header_row = true, bool has_additional_columns = false);
 
 #endif //PROTEOFORMNETWORKS_CONVERSIONS_HPP

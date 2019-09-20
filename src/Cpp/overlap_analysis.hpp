@@ -29,9 +29,11 @@ void doOverlapAnalysis(
         std::string_view path_file_phegeni,
         std::string_view path_file_reactome_genes,
         std::string_view path_file_reactome_proteins,
+        std::string_view path_file_reactome_proteoforms,
         std::string_view path_file_mapping_proteins_to_genes,
-        std::string_view path_file_protein_edges,
-        std::string_view path_file_proteoform_edges,
+        std::string_view path_file_mapping_proteins_to_proteoforms,
+        std::string_view path_file_protein_interactions,
+        std::string_view path_file_proteoform_interactions,
         std::string_view path_scores);
 
 // Version with set size and overlap size limits

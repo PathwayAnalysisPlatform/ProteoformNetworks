@@ -14,8 +14,8 @@ protected:
         std::cerr << traits.str_to_int.size() << " === " << traits.int_to_str.size() << "\n";
     }
 
-    std::string path_file_phegeni = "../../../../resources/PheGenI/PheGenI_Association_genome_wide_significant_slice.txt";
-    std::string path_file_genes = "../../../../resources/Reactome/v70/Genes/genes_slice.csv";
+    std::string path_file_phegeni = "../../Google_tests/resources/PheGenI_Association_genome_wide_significant_slice.txt";
+    std::string path_file_genes = "../../Google_tests/resources/genes_slice.csv";
     bimap_str_int genes, traits;
     modules gene_modules;
 };
@@ -76,8 +76,10 @@ TEST_F(PhegeniLoadPheGenISetsFixture, CorrectGeneMembers) {
     EXPECT_FALSE(gene_modules.group_to_members["Bilirubin"][genes.str_to_int["DDDD"]]);  // From column GENE ID 2
 
     EXPECT_EQ(2, gene_modules.group_to_members["\"Cholesterol, HDL\""].count());
-    EXPECT_TRUE(gene_modules.group_to_members["\"Cholesterol, HDL\""][genes.str_to_int["HERPUD1"]]); // From column GENE ID
-    EXPECT_TRUE(gene_modules.group_to_members["\"Cholesterol, HDL\""][genes.str_to_int["CETP"]]); // From column GENE ID 2
+    EXPECT_TRUE(
+            gene_modules.group_to_members["\"Cholesterol, HDL\""][genes.str_to_int["HERPUD1"]]); // From column GENE ID
+    EXPECT_TRUE(
+            gene_modules.group_to_members["\"Cholesterol, HDL\""][genes.str_to_int["CETP"]]); // From column GENE ID 2
     EXPECT_FALSE(gene_modules.group_to_members["\"Cholesterol, HDL\""][genes.str_to_int["APOE"]]);
 
     EXPECT_EQ(9, gene_modules.group_to_members["Bilirubin"].count());
@@ -122,8 +124,8 @@ protected:
                                                     mapping.second_to_first);
     }
 
-    std::string path_file_phegeni = "../../../../resources/PheGenI/PheGenI_Association_genome_wide_significant_slice.txt";
-    std::string path_file_genes = "../../../../resources/Reactome/v70/Genes/genes_slice.csv";
+    std::string path_file_phegeni = "../../Google_tests/resources/PheGenI_Association_genome_wide_significant_slice.txt";
+    std::string path_file_genes = "../../Google_tests/resources/genes_slice.csv";
     std::string path_file_proteins = "../../../../resources/Reactome/v70/Proteins/all_proteins_v70.csv";
     std::string path_file_mapping = "../../../../resources/UniProt/mapping_genes_proteins_v70.tab";
     modules gene_modules, protein_modules;
@@ -180,4 +182,77 @@ TEST_F(PhegeniConvertModulesWithMapping, ModuleProteinOwnerSetCorrect) {
     EXPECT_EQ(1, protein_modules.member_to_groups["P22309"].count());
     EXPECT_TRUE(protein_modules.member_to_groups["P22309"][traits.str_to_int["Bilirubin"]]);
 }
+
+class createPheGenIModulesFixture : public ::testing::Test {
+
+protected:
+    virtual void SetUp() {
+        genes = createBimap(path_file_genes);
+        proteins = createBimap(path_file_proteins);
+        proteoforms = createBimap(path_file_proteoforms);
+        auto ret = loadPheGenIGenesAndTraits(path_file_phegeni_modules, genes);
+        traits = ret.groups;
+
+        gene_modules = loadPheGenIGeneModules(path_file_phegeni_modules, genes, traits);
+
+        protein_modules = createPheGenIModules(gene_modules, genes, proteins, traits,
+                                               path_file_mapping_proteins_to_genes,
+                                               path_file_protein_interactions);
+
+        proteoform_modules = createPheGenIModules(protein_modules, proteins, proteoforms, traits,
+                                                  path_file_mapping_proteins_to_proteoforms,
+                                                  path_file_proteoform_interactions);
+    }
+
+    bimap_str_int genes, proteins, proteoforms, traits;
+    modules gene_modules, protein_modules, proteoform_modules;
+
+    std::string path_file_phegeni_modules = "../../Google_tests/resources/createPheGenIModules/modules.csv";
+    std::string path_file_genes = "../../Google_tests/resources/createPheGenIModules/genes.csv";
+    std::string path_file_proteins = "../../Google_tests/resources/createPheGenIModules/proteins.csv";
+    std::string path_file_proteoforms = "../../Google_tests/resources/createPheGenIModules/proteoforms.csv";
+    std::string path_file_protein_interactions = "../../Google_tests/resources/createPheGenIModules/protein_interactions.csv";
+    std::string path_file_proteoform_interactions = "../../Google_tests/resources/createPheGenIModules/proteoform_interactions.csv";
+    std::string path_file_mapping_proteins_to_genes = "../../Google_tests/resources/createPheGenIModules/mapping_genes_to_proteins.csv";
+    std::string path_file_mapping_proteins_to_proteoforms = "../../Google_tests/resources/createPheGenIModules/mapping_proteins_to_proteoforms.csv";
+};
+
+// Check genes, proteins and proteoform bimaps are correct
+TEST_F(createPheGenIModulesFixture, CorrectGenes) {
+    EXPECT_EQ(10, genes.int_to_str.size());
+    EXPECT_EQ(10, genes.str_to_int.size());
+
+    EXPECT_EQ("A", genes.int_to_str[0]);
+    EXPECT_EQ("C", genes.int_to_str[2]);
+    EXPECT_EQ("G", genes.int_to_str[6]);
+    EXPECT_EQ("J", genes.int_to_str[9]);
+
+    EXPECT_EQ(0, genes.str_to_int["A"]);
+    EXPECT_EQ(1, genes.str_to_int["B"]);
+    EXPECT_EQ(3, genes.str_to_int["D"]);
+    EXPECT_EQ(4, genes.str_to_int["E"]);
+    EXPECT_EQ(8, genes.str_to_int["I"]);
+}
+
+// TODO: Finish these tests
+// Check gene modules are correct
+// Check members of modules are correct
+
+// Check protein modules are correct
+// -- Check the number of modules is the same
+// -- Check a gene with two protein products appears in the new modules
+// -- -- Check the proteins have/do not have ownership of the traits
+// -- Check that one of the protein products of a gene gets removed of the modules, because that one does not interact with other members
+// -- -- Check the proteins have/do not have ownership of the traits
+// -- Check random members are correct
+// -- -- Check the inverse ownership is correct
+
+// Check proteoform modules are correct
+// -- Check the number of modules is the same
+// -- Check a gene with two protein products appears in the new modules
+// -- -- Check the proteins have/do not have ownership of the traits
+// -- Check that one of the protein products of a gene gets removed of the modules, because that one does not interact with other members
+// -- -- Check the proteins have/do not have ownership of the traits
+// -- Check random members are correct
+// -- -- Check the inverse ownership is correct
 

@@ -5,6 +5,7 @@ using namespace std;
 // Read the genes and traits of PheGenI data file.
 // Creates two bimaps: genes and traits
 // The gene list are those genes in the dataset that are also contained in the acceptable gene list.
+// TODO: Add disconnected members removal
 module_bimaps loadPheGenIGenesAndTraits(
         string_view path_file_phegeni,
         const bimap_str_int &acceptable_genes) {
@@ -55,6 +56,7 @@ module_bimaps loadPheGenIGenesAndTraits(
     return {phegeni_traits, phegeni_genes};
 }
 
+// Read Phegeni trait modules with genes as members. Only gene members also in the acceptable gene list.
 // Creates two mappings to represent the Trait modules with genes as members:
 // - trait strings to gene bitsets.
 // - gene strings to trait bitsets
@@ -83,10 +85,10 @@ modules loadPheGenIGeneModules(
 
 
     std::cerr << "Initialized modules:\n"
-              << "Genes to traits: " << modules.member_to_groups.size()
-              << "\t Traits bitsets size: " << modules.member_to_groups.begin()->second.size()
-              << "\nTraits to genes: " << modules.group_to_members.size()
-              << "\t Genes bitsets size: " << modules.group_to_members.begin()->second.size() << "\n";
+            << "Genes to traits: " << modules.member_to_groups.size()
+            << "\t Traits bitsets size: " << modules.member_to_groups.begin()->second.size()
+            << "\nTraits to genes: " << modules.group_to_members.size()
+            << "\t Genes bitsets size: " << modules.group_to_members.begin()->second.size() << "\n";
 
     // Read members of each module
     getline(file_phegen, line);                  // Read header line
@@ -130,35 +132,23 @@ modules loadPheGenIGeneModules(
     return modules;
 }
 
-modules createPheGenIProteinModules(const modules &gene_modules,
-                                    const bimap_str_int &genes,
-                                    const bimap_str_int &proteins,
-                                    const bimap_str_int &traits,
-                                    std::string_view path_file_proteins_to_genes,
-                                    std::string_view path_file_protein_edges) {
-    // Convert gene modules to protein modules using the mapping from proteins to genes
-    entity_mapping mapping = readMapping(path_file_proteins_to_genes, true);
-    modules protein_modules = convertModulesWithMapping(gene_modules, genes, proteins, traits, mapping.second_to_first);
+// Creates modules of proteins and proteoforms.
+// Converts the modules from gene --> protein or protein --> proteoform, and then removes the disconnected vertices
+// It applies the logic that, some nodes should not be in the network module, because there are no connection to others
+modules createPheGenIModules(const modules &prev_modules,
+                             const bimap_str_int &prev_entities,
+                             const bimap_str_int &entities,
+                             const bimap_str_int &traits,
+                             std::string_view path_file_mapping_prev_entities_to_entities,
+                             std::string_view path_file_entity_interactions) {
+    // Convert gene modules to protein modules using the mapping from entities to genes
+    entity_mapping mapping = readMapping(path_file_mapping_prev_entities_to_entities, true);
+    modules protein_modules = convertModulesWithMapping(prev_modules, prev_entities, entities, traits,
+                                                        mapping.second_to_first);
 
     // Load interaction network
-    auto protein_interactions = loadInteractionNetwork(path_file_protein_edges, proteins, true);
-    removeDisconnectedMembers(protein_modules, traits, proteins, protein_interactions);
-
-    //    const auto[adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_protein_edges,
-//                                                                                           path_file_proteoform_edges);
-
-    // For each module, discard the members which are not connected to other members in the interaction network
-    // Keep only those connected to any of the other gene set members in the reference network
-//    for (const auto &candidate : candidates) {
-//        auto range = adjacency_list_result_entities.equal_range(candidate);
-//        for (auto it = range.first; it != range.second; ++it) {
-//            if (candidates.find(it->second) != candidates.end()) {
-//                // Set that the candidate is in the new set
-//                traits_to_result_entities[trait_entry.first][result_entities_to_index.at(candidate)].set();
-//                break;
-//            }
-//        }
-//    }
+    auto protein_interactions = loadInteractionNetwork(path_file_entity_interactions, entities, true);
+    removeDisconnectedMembers(protein_modules, traits, entities, protein_interactions);
 
     return protein_modules;
 }

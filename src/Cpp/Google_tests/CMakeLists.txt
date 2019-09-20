@@ -7,10 +7,8 @@ add_executable(Google_Tests_run conversions_tests.cpp
         bimap_tests.cpp
         phegeni_tests.cpp
         scores_tests.cpp
-        phegeni_create_protein_modules_tests.cpp
         networks_tests.cpp
-        phegeni_convert_modules_tests.cpp
-        conversions_read_mapping_tests.cpp)
+        )
 
 # linking Google_Tests_run with DateConverter_lib which will be tested
 target_link_libraries(Google_Tests_run networks_lib)
