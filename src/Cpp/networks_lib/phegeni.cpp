@@ -1,5 +1,4 @@
 #include "phegeni.hpp"
-#include "maps.hpp"
 
 using namespace std;
 
@@ -143,8 +142,9 @@ modules createPheGenIProteinModules(const modules &gene_modules,
 
     // Load interaction network
     auto protein_interactions = loadInteractionNetwork(path_file_protein_edges, proteins, true);
-    protein_modules = removeDisconnectedMembers(protein_modules, protein_interactions);
-//    const auto[adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_protein_edges,
+    removeDisconnectedMembers(protein_modules, traits, proteins, protein_interactions);
+
+    //    const auto[adjacency_list_proteins, adjacency_list_proteoforms] = loadReactomeNetworks(path_file_protein_edges,
 //                                                                                           path_file_proteoform_edges);
 
     // For each module, discard the members which are not connected to other members in the interaction network

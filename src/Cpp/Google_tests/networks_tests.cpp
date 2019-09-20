@@ -12,9 +12,9 @@ protected:
     }
 
     ummii interactions;
-    std::string path_file_proteins = "../../../../resources/Reactome/v70/Proteins/proteins_slice.csv";
+    std::string path_file_proteins = "../../Google_tests/resources/proteins_slice.csv";
     bimap_str_int proteins;
-    std::string path_file_interactions = "../../../../resources/Reactome/v70/Proteins/proteinInternalEdges_slice.tsv";
+    std::string path_file_interactions = "../../Google_tests/resources/proteinInternalEdges_slice.tsv";
 };
 
 
@@ -71,7 +71,7 @@ protected:
         members = ret.members;
     }
 
-    std::string path_file_modules = "../../../../resources/example_modules.csv";
+    std::string path_file_modules = "../../Google_tests/resources/example_modules.csv";
     modules example_modules;
     bimap_str_int groups, members;
 };
@@ -90,14 +90,14 @@ TEST_F(LoadModulesFixture, CorrectMembers) {
 }
 
 // Check Members str_to_int keys are correct
-TEST_F(LoadModulesFixture, CorrectMembersStrToIntKeys){
+TEST_F(LoadModulesFixture, CorrectMembersStrToIntKeys) {
     ASSERT_TRUE(hasKey(members.str_to_int, "1"));
     ASSERT_TRUE(hasKey(members.str_to_int, "3"));
     ASSERT_TRUE(hasKey(members.str_to_int, "5"));
 }
 
 // Check Members str_to_int index values are correct
-TEST_F(LoadModulesFixture, CorrectMembersStrToIntValues){
+TEST_F(LoadModulesFixture, CorrectMembersStrToIntValues) {
     EXPECT_EQ(0, members.str_to_int["1"]);
     EXPECT_EQ(2, members.str_to_int["3"]);
     EXPECT_EQ(4, members.str_to_int["5"]);
@@ -183,20 +183,54 @@ class RemoveDisconnectedMembersFixture : public ::testing::Test {
 
 protected:
     virtual void SetUp() {
-
-        ummii interactions;
-        removeDisconnectedMembers(example_modules, interactions);
+        auto[example_modules, groups, members] = loadModules(path_file_modules);
+        interactions = loadInteractionNetwork(path_file_interactions, members, true);
     }
 
-    modules example_modules;
+    std::string path_file_modules = "../../Google_tests/resources/example_modules.csv";
+    std::string path_file_interactions = "../../Google_tests/resources/example_interactions.csv";
+    ummii interactions;
+
 };
 
 
 TEST_F(RemoveDisconnectedMembersFixture, KeepsConnectedMembers) {
+    auto[example_modules, groups, members] = loadModules(path_file_modules);
 
+    // Check vertices are members
+    ASSERT_TRUE(example_modules.group_to_members["A"][members.str_to_int["1"]]);
+    ASSERT_TRUE(example_modules.group_to_members["A"][members.str_to_int["2"]]);
+    ASSERT_TRUE(example_modules.group_to_members["A"][members.str_to_int["3"]]);
+
+    ASSERT_TRUE(example_modules.group_to_members["B"][members.str_to_int["3"]]);
+    ASSERT_TRUE(example_modules.group_to_members["B"][members.str_to_int["4"]]);
+
+    removeDisconnectedMembers(example_modules, groups, members, interactions);
+
+    // In module A, should keep 1 and 2. But delete vertex 3, because it is disconnected
+    EXPECT_TRUE(example_modules.group_to_members["A"][members.str_to_int["1"]]);
+    EXPECT_TRUE(example_modules.group_to_members["A"][members.str_to_int["2"]]);
+
+    // In module B, should keep 3 and 4
+    EXPECT_TRUE(example_modules.group_to_members["B"][members.str_to_int["3"]]);
+    EXPECT_TRUE(example_modules.group_to_members["B"][members.str_to_int["4"]]);
 }
 
 TEST_F(RemoveDisconnectedMembersFixture, RemovesDisconnectedMember) {
-    // Check removes member from the members set
-    // Check removes the set from the owners set
+    auto[example_modules, groups, members] = loadModules(path_file_modules);
+
+    // Check vertices are members
+    ASSERT_TRUE(example_modules.group_to_members["A"][members.str_to_int["3"]]);
+
+    ASSERT_TRUE(example_modules.group_to_members["C"][members.str_to_int["5"]]);
+
+    auto ret = removeDisconnectedMembers(example_modules, groups, members, interactions);
+
+    // In module A, should keep 1 and 2. But delete vertex 3, because it is disconnected
+    // Removes vertex 3 from module A
+    EXPECT_FALSE(example_modules.group_to_members["A"][members.str_to_int["3"]]);
+
+    // Removes vertex 5 from module C
+    // In module C, should remove the only member 5
+    EXPECT_FALSE(example_modules.group_to_members["C"][members.str_to_int["5"]]);
 }

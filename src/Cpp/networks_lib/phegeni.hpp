@@ -1,7 +1,7 @@
 #ifndef PHEGENI_HPP_
 #define PHEGENI_HPP_
 
-#include <fstream>
+# include <fstream>
 #include <string>
 #include <bitset>
 #include <unordered_map>
@@ -12,6 +12,7 @@
 #include "conversions.hpp"
 #include "networks.hpp"
 #include "overlap_types.hpp"
+#include "maps.hpp"
 
 const long double GENOME_WIDE_SIGNIFICANCE = 5e-8;
 

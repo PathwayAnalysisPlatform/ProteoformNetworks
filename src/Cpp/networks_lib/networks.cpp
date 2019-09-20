@@ -1,8 +1,11 @@
 #include "networks.hpp"
 #include "overlap_types.hpp"
+#include "maps.hpp"
 
 // Read entity interactions in Reactome from a PathwayMatcher edges file
 // For each interacting entities A and B, adds both the edges A --> B and B --> A
+// The file must have three or more columns separated by a tab ('\t'). The first two columns contain the source
+// and destination interactors. From the third column there are other attributes of the interaction.
 ummii loadInteractionNetwork(std::string_view path_file_interactions,
                              const bimap_str_int &entities,
                              bool has_header_row) {
@@ -29,10 +32,10 @@ ummii loadInteractionNetwork(std::string_view path_file_interactions,
             interactions.emplace(index_e1, index_e2);
             interactions.emplace(index_e2, index_e1);
         } else {
-            if(entities.str_to_int.find(e1) == entities.str_to_int.end()){
+            if (entities.str_to_int.find(e1) == entities.str_to_int.end()) {
                 std::cerr << "Not found entity: " << e1 << "\n";
             }
-            if(entities.str_to_int.find(e2) == entities.str_to_int.end()){
+            if (entities.str_to_int.find(e2) == entities.str_to_int.end()) {
                 std::cerr << "Not found entity: " << e2 << "\n";
             }
         }
@@ -41,14 +44,43 @@ ummii loadInteractionNetwork(std::string_view path_file_interactions,
     return interactions;
 }
 
-modules removeDisconnectedMembers(modules modules, ummii interactions) {
+modules removeDisconnectedMembers(modules &modules, const bimap_str_int &groups, const bimap_str_int &members,
+                                  const ummii &interactions) {
     // For each module:
+    for (auto group_entry = modules.group_to_members.begin();
+         group_entry != modules.group_to_members.end(); group_entry++) {
         // Get module members
+        int group_index = groups.str_to_int.at(group_entry->first);
+        std::unordered_set<int> member_indexes;
 
-        // For each member, check if it has a neighbor in the members
+        for (int I = 0; I < members.int_to_str.size(); I++)
+            if (group_entry->second[I])
+                member_indexes.insert(I);
 
-        // Check if each member interacts with any other member of the module
+        // For each member, iterate over its interactors, check if any is also member of the group
+        for (int member_index : member_indexes) {
+            bool isConnected = false;
 
+            // Check if any interactor of this member is in the group
+            auto range = interactions.equal_range(member_index);
+            for (auto it = range.first; it != range.second; it++) { // For each interactor
+                if (hasKey(member_indexes, it->second)) {   // If the interactor is in the group
+                    isConnected = true;
+                    break;
+                }
+            }
+
+            if (!isConnected) {
+                // Remove vertex from the group
+                group_entry->second[member_index].reset();
+
+                // Remove owner from vertex owners
+                std::string member = members.int_to_str[member_index];
+                modules.member_to_groups[member][group_index].reset();
+            }
+        }
+
+    }
 
     return modules;
 }
