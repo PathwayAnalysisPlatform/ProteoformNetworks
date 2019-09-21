@@ -7,7 +7,7 @@
 #include "types.hpp"
 #include "bimap_str_int.hpp"
 
-entity_mapping loadMappingProteinsProteoforms(std::string_view path_file_mapping);
+bidirectional_mapping loadMappingProteinsProteoforms(std::string_view path_file_mapping);
 
 umsb loadGeneSets(std::string_view file_path, const bimap_str_int &phegeni_genes, bool pathways);
 

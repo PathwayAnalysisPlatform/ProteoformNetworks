@@ -13,8 +13,9 @@ vs convert_uss_to_vs(const uss &a_set) {
 //  2) Multiple columns, the first two one id, and the second only one other id.
 //  The first line of the file can have the header with the name of the columns.
 // There should be no extra spaces after the last string of the row
-entity_mapping readMapping(std::string_view path_file_mapping, bool has_header_row, bool has_additional_columns) {
-    entity_mapping mapping;
+bidirectional_mapping
+readMapping(std::string_view path_file_mapping, bool has_header_row, bool has_additional_columns) {
+    bidirectional_mapping mapping;
     std::ifstream file_mapping(path_file_mapping.data());
     std::string source, destination, destinations, leftover;
 

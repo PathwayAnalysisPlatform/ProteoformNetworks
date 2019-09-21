@@ -63,8 +63,8 @@ module_bimaps loadPheGenIGenesAndTraits(
 // The two mappings define the trait modules (also called, phenotype modules or disease modules)
 modules loadPheGenIGeneModules(
         string_view path_file_phegeni,
-        const bimap_str_int& genes,
-        const bimap_str_int& traits) {
+        const bimap_str_int &genes,
+        const bimap_str_int &traits) {
     ifstream file_phegen(path_file_phegeni.data());
     string line, field, trait, gene, gene2;
     string p_value_str;
@@ -85,10 +85,10 @@ modules loadPheGenIGeneModules(
 
 
     std::cerr << "Initialized modules:\n"
-            << "Genes to traits: " << modules.member_to_groups.size()
-            << "\t Traits bitsets size: " << modules.member_to_groups.begin()->second.size()
-            << "\nTraits to genes: " << modules.group_to_members.size()
-            << "\t Genes bitsets size: " << modules.group_to_members.begin()->second.size() << "\n";
+              << "Genes to traits: " << modules.member_to_groups.size()
+              << "\t Traits bitsets size: " << modules.member_to_groups.begin()->second.size()
+              << "\nTraits to genes: " << modules.group_to_members.size()
+              << "\t Genes bitsets size: " << modules.group_to_members.begin()->second.size() << "\n";
 
     // Read members of each module
     getline(file_phegen, line);                  // Read header line
@@ -139,18 +139,17 @@ modules createPheGenIModules(const modules &prev_modules,
                              const bimap_str_int &prev_entities,
                              const bimap_str_int &entities,
                              const bimap_str_int &traits,
-                             std::string_view path_file_mapping_prev_entities_to_entities,
+                             const ummss &mapping,
                              std::string_view path_file_entity_interactions) {
     // Convert gene modules to protein modules using the mapping from entities to genes
-    entity_mapping mapping = readMapping(path_file_mapping_prev_entities_to_entities, true);
-    modules protein_modules = convertModulesWithMapping(prev_modules, prev_entities, entities, traits,
-                                                        mapping.second_to_first);
+    modules result_modules = convertModulesWithMapping(prev_modules, prev_entities, entities, traits,
+                                                       mapping);
 
     // Load interaction network
-    auto protein_interactions = loadInteractionNetwork(path_file_entity_interactions, entities, true);
-    removeDisconnectedMembers(protein_modules, traits, entities, protein_interactions);
+    auto interactions = loadInteractionNetwork(path_file_entity_interactions, entities, true);
+    removeDisconnectedMembers(result_modules, traits, entities, interactions);
 
-    return protein_modules;
+    return result_modules;
 }
 
 modules convertModulesWithMapping(
@@ -161,20 +160,27 @@ modules convertModulesWithMapping(
         const ummss &mapping) {
     modules modules;
 
+    for (const auto &entity : destination_entities.int_to_str) {
+        modules.member_to_groups[entity] = base::dynamic_bitset<>(traits.int_to_str.size());
+    }
+
     for (const auto &trait_entry : original_modules.group_to_members) {  // For each trait entry
         std::cout << "Mapping trait: " << trait_entry.first << std::endl;
-        modules.group_to_members.emplace(trait_entry.first, base::dynamic_bitset<>(destination_entities.int_to_str.size()));
+        modules.group_to_members.emplace(trait_entry.first,
+                                         base::dynamic_bitset<>(destination_entities.int_to_str.size()));
+
         for (int I = 0; I < trait_entry.second.size(); I++) {  // For each member in this trait
             if (trait_entry.second[I]) {    // If it is really a member
                 std::string original_entity = original_entities.int_to_str[I];
 
-                auto range = mapping.equal_range(original_entity);  // For each destination entity of the original entity
+                auto range = mapping.equal_range(
+                        original_entity);  // For each destination entity of the original entity
                 for (auto it = range.first; it != range.second; it++) {
                     std::string destination_entity = it->second;
-                    std::cout << original_entity << " --> " << destination_entity << std::endl;
+//                    std::cout << original_entity << " --> " << destination_entity << std::endl;
 
                     // Check the mapped entity exists in the list of known acceptable destination entities
-                    if(destination_entities.str_to_int.find(destination_entity) != destination_entities.str_to_int.end()){
+                    if (hasKey(destination_entities.str_to_int, destination_entity)) {
 
                         // Set the entities as members of the trait member set
                         int destination_entity_index = destination_entities.str_to_int.at(destination_entity);
@@ -182,12 +188,8 @@ modules convertModulesWithMapping(
 
                         // Set the traits as owners of the entity owner set
                         int trait_index = traits.str_to_int.at(trait_entry.first);
-                        if(modules.member_to_groups.find(destination_entity) == modules.member_to_groups.end()){
-                            modules.member_to_groups[destination_entity] = base::dynamic_bitset<>(traits.int_to_str.size());
-                        }
                         modules.member_to_groups[destination_entity][trait_index].set();
-                    }
-                    else{
+                    } else {
                         std::cerr << original_entity << " --> ?" << std::endl;
                     }
                 }

@@ -23,12 +23,15 @@ void doOverlapAnalysis(
 
     const modules gene_modules = loadPheGenIGeneModules(path_file_phegeni, genes, traits);
 
+    bidirectional_mapping mapping_genes_to_proteins = readMapping(path_file_mapping_proteins_to_genes, true, false);;
     const modules protein_modules = createPheGenIModules(gene_modules, genes, proteins, traits,
-                                                         path_file_mapping_proteins_to_genes,
+                                                         mapping_genes_to_proteins.second_to_first,
                                                          path_file_protein_interactions);
 
+    bidirectional_mapping mapping_proteins_to_proteoforms = readMapping(path_file_mapping_proteins_to_proteoforms, true,
+                                                                        true);
     const modules proteoform_modules = createPheGenIModules(protein_modules, proteins, proteoforms, traits,
-                                                            path_file_mapping_proteins_to_proteoforms,
+                                                            mapping_proteins_to_proteoforms.first_to_second,
                                                             path_file_proteoform_interactions);
 
     // Calculate overlap scores between all gene module pairs

@@ -40,7 +40,7 @@ modules createPheGenIModules(const modules &prev_modules,
                              const bimap_str_int &prev_entities,
                              const bimap_str_int &entities,
                              const bimap_str_int &traits,
-                             std::string_view path_file_mapping_prev_entities_to_entities,
+                             const ummss &mapping,
                              std::string_view path_file_entity_interactions);
 
 #endif // !PHEGENI_HPP_

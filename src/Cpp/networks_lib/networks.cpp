@@ -4,7 +4,7 @@
 
 // Read entity interactions in Reactome from a PathwayMatcher edges file
 // For each interacting entities A and B, adds both the edges A --> B and B --> A
-// The file must have three or more columns separated by a tab ('\t'). The first two columns contain the source
+// The file must have THREE or MORE columns separated by a tab ('\t'). The first two columns contain the source
 // and destination interactors. From the third column there are other attributes of the interaction.
 ummii loadInteractionNetwork(std::string_view path_file_interactions,
                              const bimap_str_int &entities,
@@ -25,18 +25,17 @@ ummii loadInteractionNetwork(std::string_view path_file_interactions,
     while (getline(file_interactions, e1, '\t')) {
         getline(file_interactions, e2, '\t');   // get second entity
         getline(file_interactions, other_fields);// read other columns
-        if (entities.str_to_int.find(e1) != entities.str_to_int.end()
-            && entities.str_to_int.find(e2) != entities.str_to_int.end()) {
+        if (hasKey(entities.str_to_int, e1) && hasKey(entities.str_to_int, e2)) {
             int index_e1 = entities.str_to_int.at(e1);
             int index_e2 = entities.str_to_int.at(e2);
             interactions.emplace(index_e1, index_e2);
             interactions.emplace(index_e2, index_e1);
         } else {
-            if (entities.str_to_int.find(e1) == entities.str_to_int.end()) {
-                std::cerr << "Not found entity: " << e1 << "\n";
+            if (!hasKey(entities.str_to_int, e1)) {
+                std::cerr << "Not found entity: **" << e1 << "**" << std::endl;
             }
-            if (entities.str_to_int.find(e2) == entities.str_to_int.end()) {
-                std::cerr << "Not found entity: " << e2 << "\n";
+            if (!hasKey(entities.str_to_int, e2)) {
+                std::cerr << "Not found entity: **" << e2 << "**" << std::endl;
             }
         }
     }

@@ -5,6 +5,11 @@
 #include "types.hpp"
 
 template<class K, class V>
+bool hasKey(const std::map<K, V> &m, K key) {
+    return m.find(key) != m.end();
+}
+
+template<class K, class V>
 bool hasKey(const um<K, V> &m, K key) {
     return m.find(key) != m.end();
 }
@@ -52,8 +57,25 @@ bool hasValue(const us<V> &s, V value) {
     return s.find(value) != s.end();
 }
 
+template<class V>
+bool hasValue(const std::vector<V> &v, V value) {
+    for (const auto &element : v) {
+        if (element == value)
+            return true;
+    }
+    return false;
+}
+
 template<class T, class V>
 std::unordered_set<T> getKeys(const std::unordered_multimap<T, V> &m) {
+    std::unordered_set<T> keys;
+    for (auto it = m.begin(); it != m.end(); it++)
+        keys.insert(it->first);
+    return keys;
+}
+
+template<class T, class V>
+std::unordered_set<T> getKeys(const std::map<T, V> &m) {
     std::unordered_set<T> keys;
     for (auto it = m.begin(); it != m.end(); it++)
         keys.insert(it->first);

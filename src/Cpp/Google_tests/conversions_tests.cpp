@@ -39,8 +39,8 @@ protected:
     }
 
     std::string path_file_mapping = "../../Google_tests/resources/mapping_protein_to_genes_slice.tab";
-    entity_mapping mapping;
-    entity_mapping mapping_without_header;
+    bidirectional_mapping mapping;
+    bidirectional_mapping mapping_without_header;
 };
 
 // Test read mapping: Read file without header row
@@ -121,7 +121,7 @@ protected:
         mapping = readMapping(path_file_mapping, true, true);
     }
 
-    entity_mapping mapping;
+    bidirectional_mapping mapping;
     std::string path_file_mapping = "../../Google_tests/resources/createPheGenIModules/mapping_proteins_to_proteoforms.csv";
 };
 
@@ -175,7 +175,7 @@ protected:
         mapping = readMapping(path_file_mapping, false, true);
     }
 
-    entity_mapping mapping;
+    bidirectional_mapping mapping;
     std::string path_file_mapping = "../../Google_tests/resources/createPheGenIModules/mapping_proteins_to_proteoforms.csv";
 };
 

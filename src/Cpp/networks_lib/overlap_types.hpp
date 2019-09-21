@@ -4,7 +4,7 @@
 #include <types.hpp>
 #include <bimap_str_int.hpp>
 
-struct entity_mapping {
+struct bidirectional_mapping {
     ummss first_to_second;
     ummss second_to_first;
 };
