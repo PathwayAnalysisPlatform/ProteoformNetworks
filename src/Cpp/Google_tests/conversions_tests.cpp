@@ -125,11 +125,96 @@ protected:
     std::string path_file_mapping = "../../Google_tests/resources/createPheGenIModules/mapping_proteins_to_proteoforms.csv";
 };
 
-TEST_F(ReadMappingWithMultipleColumnsFixture, CorrectMappingSources) {
+
+TEST_F(ReadMappingWithMultipleColumnsFixture, CorrectKeys) {
+
     EXPECT_EQ(18, getKeys(mapping.first_to_second).size());
+    EXPECT_FALSE(hasKey(mapping.first_to_second, (std::string) "PROTEINS"));
+    EXPECT_FALSE(hasKey(mapping.first_to_second, (std::string) "EXTRA_COLUMN"));
+    EXPECT_FALSE(hasKey(mapping.first_to_second, (std::string) "extra"));
     EXPECT_TRUE(hasKey(mapping.first_to_second, (std::string) "A1"));
     EXPECT_TRUE(hasKey(mapping.first_to_second, (std::string) "C1"));
     EXPECT_TRUE(hasKey(mapping.first_to_second, (std::string) "H1"));
 }
 
-// TODO: Write other tests to check mapping is correct
+TEST_F(ReadMappingWithMultipleColumnsFixture, CorrectValues) {
+    EXPECT_EQ(26, getValues(mapping.first_to_second).size());
+    EXPECT_FALSE(hasValue(mapping.first_to_second, (std::string) "PROTEOFORMS"));
+    EXPECT_FALSE(hasValue(mapping.first_to_second, (std::string) "EXTRA_COLUMN"));
+    EXPECT_FALSE(hasValue(mapping.first_to_second, (std::string) "extra"));
+    EXPECT_TRUE(hasValue(mapping.first_to_second, (std::string) "A1_1"));
+    EXPECT_TRUE(hasValue(mapping.first_to_second, (std::string) "C1_2"));
+    EXPECT_TRUE(hasValue(mapping.first_to_second, (std::string) "J3_1"));
+}
+
+TEST_F(ReadMappingWithMultipleColumnsFixture, CorrectInverseKeys) {
+    EXPECT_EQ(26, getKeys(mapping.second_to_first).size());
+    EXPECT_FALSE(hasKey(mapping.second_to_first, (std::string) "PROTEOFORMS"));
+    EXPECT_FALSE(hasKey(mapping.second_to_first, (std::string) "EXTRA_COLUMN"));
+    EXPECT_FALSE(hasKey(mapping.second_to_first, (std::string) "extra"));
+    EXPECT_TRUE(hasKey(mapping.second_to_first, (std::string) "A1_1"));
+    EXPECT_TRUE(hasKey(mapping.second_to_first, (std::string) "C1_2"));
+    EXPECT_TRUE(hasKey(mapping.second_to_first, (std::string) "J3_1"));
+}
+
+TEST_F(ReadMappingWithMultipleColumnsFixture, CorrectInverseValues) {
+    EXPECT_EQ(18, getValues(mapping.second_to_first).size());
+    EXPECT_FALSE(hasValue(mapping.second_to_first, (std::string) "PROTEINS"));
+    EXPECT_FALSE(hasValue(mapping.second_to_first, (std::string) "EXTRA_COLUMN"));
+    EXPECT_FALSE(hasValue(mapping.second_to_first, (std::string) "extra"));
+    EXPECT_TRUE(hasValue(mapping.second_to_first, (std::string) "A1"));
+    EXPECT_TRUE(hasValue(mapping.second_to_first, (std::string) "C1"));
+    EXPECT_TRUE(hasValue(mapping.second_to_first, (std::string) "H1"));
+}
+
+
+class ReadMappingWithMultipleColumnsFileHasNoHeaderFixture : public ::testing::Test {
+
+protected:
+    virtual void SetUp() {
+        mapping = readMapping(path_file_mapping, false, true);
+    }
+
+    entity_mapping mapping;
+    std::string path_file_mapping = "../../Google_tests/resources/createPheGenIModules/mapping_proteins_to_proteoforms.csv";
+};
+
+TEST_F(ReadMappingWithMultipleColumnsFileHasNoHeaderFixture, FileWithoutHeaderCorrectKeys) {
+
+    EXPECT_EQ(19, getKeys(mapping.first_to_second).size());
+    EXPECT_TRUE(hasKey(mapping.first_to_second, (std::string) "PROTEINS"));
+    EXPECT_FALSE(hasKey(mapping.first_to_second, (std::string) "EXTRA_COLUMN"));
+    EXPECT_FALSE(hasKey(mapping.first_to_second, (std::string) "extra"));
+    EXPECT_TRUE(hasKey(mapping.first_to_second, (std::string) "A1"));
+    EXPECT_TRUE(hasKey(mapping.first_to_second, (std::string) "J3"));
+}
+
+TEST_F(ReadMappingWithMultipleColumnsFileHasNoHeaderFixture, FileWithoutHeaderCorrectValues) {
+    EXPECT_EQ(27, getValues(mapping.first_to_second).size());
+    EXPECT_TRUE(hasValue(mapping.first_to_second, (std::string) "PROTEOFORMS"));
+    EXPECT_FALSE(hasValue(mapping.first_to_second, (std::string) "EXTRA_COLUMN"));
+    EXPECT_FALSE(hasValue(mapping.first_to_second, (std::string) "extra"));
+    EXPECT_TRUE(hasValue(mapping.first_to_second, (std::string) "A1_1"));
+    EXPECT_TRUE(hasValue(mapping.first_to_second, (std::string) "C1_2"));
+    EXPECT_TRUE(hasValue(mapping.first_to_second, (std::string) "J3_1"));
+}
+
+TEST_F(ReadMappingWithMultipleColumnsFileHasNoHeaderFixture, CorrectInverseKeys) {
+    EXPECT_EQ(27, getKeys(mapping.second_to_first).size());
+    EXPECT_TRUE(hasKey(mapping.second_to_first, (std::string) "PROTEOFORMS"));
+    EXPECT_FALSE(hasKey(mapping.second_to_first, (std::string) "EXTRA_COLUMN"));
+    EXPECT_FALSE(hasKey(mapping.second_to_first, (std::string) "extra"));
+    EXPECT_TRUE(hasKey(mapping.second_to_first, (std::string) "A1_1"));
+    EXPECT_TRUE(hasKey(mapping.second_to_first, (std::string) "C1_2"));
+    EXPECT_TRUE(hasKey(mapping.second_to_first, (std::string) "J3_1"));
+}
+
+TEST_F(ReadMappingWithMultipleColumnsFileHasNoHeaderFixture, CorrectInverseValues) {
+    EXPECT_EQ(19, getValues(mapping.second_to_first).size());
+    EXPECT_TRUE(hasValue(mapping.second_to_first, (std::string) "PROTEINS"));
+    EXPECT_FALSE(hasValue(mapping.second_to_first, (std::string) "EXTRA_COLUMN"));
+    EXPECT_FALSE(hasValue(mapping.second_to_first, (std::string) "extra"));
+    EXPECT_TRUE(hasValue(mapping.second_to_first, (std::string) "A1"));
+    EXPECT_TRUE(hasValue(mapping.second_to_first, (std::string) "C1"));
+    EXPECT_TRUE(hasValue(mapping.second_to_first, (std::string) "H1"));
+}

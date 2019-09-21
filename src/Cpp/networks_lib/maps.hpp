@@ -32,6 +32,14 @@ bool keyHasValue(const umm<K, V> &m, K key, V value) {
 }
 
 template<class K, class V>
+bool hasValue(const umm<K, V> &m, V value) {
+    for (auto it = m.begin(); it != m.end(); it++)
+        if (it->second == value)
+            return true;
+    return false;
+}
+
+template<class K, class V>
 bool hasValue(const um<K, V> &m, V value) {
     for (auto it = m.begin(); it != m.end(); it++)
         if (it->second == value)
