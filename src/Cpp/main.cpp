@@ -12,6 +12,7 @@ const std::string path_file_reactome_proteins = "../../../resources/Reactome/v70
 const std::string path_file_reactome_proteoforms = "../../../resources/Reactome/v70/Proteoforms/proteoformSearch.tsv";  // Uses this file so that PathwayMatcher has sorted the PTMs in each proteoform.
 const std::string path_file_mapping_proteins_to_genes = "../../../resources/UniProt/mapping_proteins_to_genes_v70.tab";
 const std::string path_file_mapping_proteins_to_proteoforms = "../../../resources/Reactome/v70/Proteoforms/proteoformSearch.tsv";
+const std::string path_file_gene_interactions = "../../../resources/Reactome/v70/Genes/geneInternalEdges.tsv";
 const std::string path_file_protein_interactions = "../../../resources/Reactome/v70/Proteins/proteinEdges.tsv";
 const std::string path_file_proteoform_interactions = "../../../resources/Reactome/v70/Proteoforms/proteoformEdges.tsv";
 const std::string path_scores = "../../../reports/";
@@ -26,6 +27,7 @@ int main() try {
                       path_file_reactome_proteoforms,
                       path_file_mapping_proteins_to_genes,
                       path_file_mapping_proteins_to_proteoforms,
+                      path_file_gene_interactions,
                       path_file_protein_interactions,
                       path_file_proteoform_interactions,
                       path_scores);

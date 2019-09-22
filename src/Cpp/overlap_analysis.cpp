@@ -9,6 +9,7 @@ void doOverlapAnalysis(
         std::string_view path_file_reactome_proteoforms,
         std::string_view path_file_mapping_proteins_to_genes,
         std::string_view path_file_mapping_proteins_to_proteoforms,
+        std::string_view path_file_gene_interactions,
         std::string_view path_file_protein_interactions,
         std::string_view path_file_proteoform_interactions,
         std::string_view path_scores) {
@@ -22,7 +23,7 @@ void doOverlapAnalysis(
     const auto[phegeni_genes, traits] = loadPheGenIGenesAndTraits(path_file_phegeni, genes);
 
     std::cout << "Creating gene modules." << std::endl;
-    const modules gene_modules = loadPheGenIGeneModules(path_file_phegeni, genes, traits);
+    const modules gene_modules = loadPheGenIGeneModules(path_file_phegeni, genes, traits, path_file_gene_interactions);
 
     std::cout << "Creating protein modules." << std::endl;
     bidirectional_mapping mapping_genes_to_proteins = readMapping(path_file_mapping_proteins_to_genes, true, false);;

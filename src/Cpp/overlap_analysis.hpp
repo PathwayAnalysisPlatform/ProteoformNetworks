@@ -32,6 +32,7 @@ void doOverlapAnalysis(
         std::string_view path_file_reactome_proteoforms,
         std::string_view path_file_mapping_proteins_to_genes,
         std::string_view path_file_mapping_proteins_to_proteoforms,
+        std::string_view path_file_gene_interactions,
         std::string_view path_file_protein_interactions,
         std::string_view path_file_proteoform_interactions,
         std::string_view path_scores);
