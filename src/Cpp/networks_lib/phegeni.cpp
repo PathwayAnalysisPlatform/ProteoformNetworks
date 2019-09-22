@@ -64,7 +64,8 @@ module_bimaps loadPheGenIGenesAndTraits(
 modules loadPheGenIGeneModules(
         string_view path_file_phegeni,
         const bimap_str_int &genes,
-        const bimap_str_int &traits) {
+        const bimap_str_int &traits,
+        std::string_view path_file_gene_interactions) {
     ifstream file_phegen(path_file_phegeni.data());
     string line, field, trait, gene, gene2;
     string p_value_str;
@@ -125,6 +126,10 @@ modules loadPheGenIGeneModules(
                 std::cerr << "The gene " << gene2 << " was not found in the bimap.\n";
         }
     }
+
+    // Load interaction network
+    auto interactions = loadInteractionNetwork(path_file_gene_interactions, genes, true);
+    removeDisconnectedMembers(modules, traits, genes, interactions);
 
     cerr << "Number of traits with gene members as bitset: " << modules.group_to_members.size() << "\n";
     cerr << "Number of genes with traits they belong as bitset: " << modules.member_to_groups.size() << "\n";

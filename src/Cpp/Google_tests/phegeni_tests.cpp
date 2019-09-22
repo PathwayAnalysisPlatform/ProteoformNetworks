@@ -10,12 +10,13 @@ protected:
         genes = createBimap(path_file_genes);
         auto ret = loadPheGenIGenesAndTraits(path_file_phegeni, genes);
         traits = ret.groups;
-        gene_modules = loadPheGenIGeneModules(path_file_phegeni, genes, traits);
+        gene_modules = loadPheGenIGeneModules(path_file_phegeni, genes, traits, path_file_gene_interactions);
         std::cerr << traits.str_to_int.size() << " === " << traits.int_to_str.size() << "\n";
     }
 
     std::string path_file_phegeni = "../../Google_tests/resources/PheGenI_Association_genome_wide_significant_slice.txt";
     std::string path_file_genes = "../../Google_tests/resources/genes_slice.csv";
+    std::string path_file_gene_interactions = "../../Google_tests/resources/gene_interactions.tab";
     bimap_str_int genes, traits;
     modules gene_modules;
 };
@@ -116,7 +117,7 @@ protected:
         mapping = readMapping(path_file_mapping);
         auto ret = loadPheGenIGenesAndTraits(path_file_phegeni, genes);
         traits = ret.groups;
-        gene_modules = loadPheGenIGeneModules(path_file_phegeni, genes, traits);
+        gene_modules = loadPheGenIGeneModules(path_file_phegeni, genes, traits, path_file_gene_interactions);
         protein_modules = convertModulesWithMapping(gene_modules,
                                                     genes,
                                                     proteins,
@@ -126,6 +127,7 @@ protected:
 
     std::string path_file_phegeni = "../../Google_tests/resources/PheGenI_Association_genome_wide_significant_slice.txt";
     std::string path_file_genes = "../../Google_tests/resources/genes_slice.csv";
+    std::string path_file_gene_interactions = "../../Google_tests/resources/gene_interactions.tab";
     std::string path_file_proteins = "../../Google_tests/resources/proteins_slice.csv";
     std::string path_file_mapping = "../../../../resources/UniProt/mapping_proteins_to_genes_v70.tab";
     modules gene_modules, protein_modules;
@@ -193,7 +195,7 @@ protected:
         auto ret = loadPheGenIGenesAndTraits(path_file_phegeni_modules, genes);
         traits = ret.groups;
 
-        gene_modules = loadPheGenIGeneModules(path_file_phegeni_modules, genes, traits);
+        gene_modules = loadPheGenIGeneModules(path_file_phegeni_modules, genes, traits, path_file_gene_interactions);
 
         bidirectional_mapping mapping_genes_to_proteins = readMapping(path_file_mapping_genes_to_proteins,
                                                                       true, false);
@@ -216,6 +218,7 @@ protected:
     std::string path_file_genes = "../../Google_tests/resources/createPheGenIModules/genes.csv";
     std::string path_file_proteins = "../../Google_tests/resources/createPheGenIModules/proteins.csv";
     std::string path_file_proteoforms = "../../Google_tests/resources/createPheGenIModules/proteoforms.csv";
+    std::string path_file_gene_interactions = "../../Google_tests/resources/createPheGenIModules/gene_interactions.csv";
     std::string path_file_protein_interactions = "../../Google_tests/resources/createPheGenIModules/protein_interactions.csv";
     std::string path_file_proteoform_interactions = "../../Google_tests/resources/createPheGenIModules/proteoform_interactions.csv";
     std::string path_file_mapping_genes_to_proteins = "../../Google_tests/resources/createPheGenIModules/mapping_genes_to_proteins.csv";

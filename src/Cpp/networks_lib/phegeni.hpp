@@ -22,9 +22,11 @@ module_bimaps loadPheGenIGenesAndTraits(
 
 // Read Phegeni trait modules with genes as members. Only gene members also in the acceptable gene list.
 // The only method to create gene modules. For proteins and proteoforms use the method: createPheGenIModules
-modules loadPheGenIGeneModules(std::string_view path_file_phegeni,
-                               const bimap_str_int &genes,
-                               const bimap_str_int &traits);
+modules loadPheGenIGeneModules(
+        std::string_view path_file_phegeni,
+        const bimap_str_int &genes,
+        const bimap_str_int &traits,
+        std::string_view path_file_gene_interactions);
 
 // Creates new modules with the same groups, but replacing the member identifiers to new identifiers with the mapping
 modules convertModulesWithMapping(
