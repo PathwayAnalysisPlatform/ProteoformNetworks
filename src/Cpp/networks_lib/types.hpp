@@ -7,6 +7,7 @@
 #include <unordered_set>
 #include <vector>
 #include <bitset.h>
+#include <exception>
 
 
 using msi = std::map<std::string, int>;
@@ -30,6 +31,11 @@ using ummii = std::unordered_multimap<int, int>;
 using vs = std::vector<std::string>;
 
 using umsb = um<std::string, base::dynamic_bitset<>>;
+
+struct bidirectional_mapping {
+    ummss first_to_second;
+    ummss second_to_first;
+};
 
 #endif // ! TYPES_HPP
 

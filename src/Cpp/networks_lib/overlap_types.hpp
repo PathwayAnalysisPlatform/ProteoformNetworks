@@ -4,11 +4,6 @@
 #include <types.hpp>
 #include <bimap_str_int.hpp>
 
-struct bidirectional_mapping {
-    ummss first_to_second;
-    ummss second_to_first;
-};
-
 struct modules {
     msb group_to_members;
     msb member_to_groups;

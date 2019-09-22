@@ -5,8 +5,8 @@ using namespace std;
 umsb loadGeneSets(string_view file_path, const bimap_str_int &phegeni_genes, bool pathways) {
     umsb result;
     // TODO: Initialize result structure to the bitsets
-    ifstream file_search(file_path.data());
-    string field, gene, reaction, pathway;
+    std::ifstream file_search(file_path.data());
+    std::string field, gene, reaction, pathway;
 
     getline(file_search, field);                // Skip csv header line
     while (getline(file_search, gene, '\t')) {  // Read the members of each gene_set // Read GENE

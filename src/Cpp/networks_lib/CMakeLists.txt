@@ -7,6 +7,8 @@ set(HEADER_FILES
         scores.hpp
         phegeni.hpp
         types.hpp
+        maps.hpp
+        networks.hpp
         )
 
 set(SOURCE_FILES
@@ -15,6 +17,6 @@ set(SOURCE_FILES
         conversions.cpp
         scores.cpp
         phegeni.cpp
-        networks.hpp networks.cpp maps.hpp maps.cpp)
+        networks.cpp)
 
 add_library(networks_lib STATIC ${SOURCE_FILES} ${HEADER_FILES})

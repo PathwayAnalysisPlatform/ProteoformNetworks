@@ -15,16 +15,20 @@ struct bimap_str_int {
     umsi str_to_int;
 };
 
-struct module_bimaps{
+struct module_bimaps {
     bimap_str_int groups;
     bimap_str_int members;
 };
 
-bimap_str_int createBimap(std::string_view list_file_path, bool has_header = true);
+// Create bimap from element to index in a unique sorted array.
+// Creates a bimap of the elements in the selected column.
+// Column index starts counting at 0
+bimap_str_int
+createBimap(std::string_view path_file, bool has_header = true, int column_index = 0, int total_num_columns = 1);
 
 bimap_str_int createBimap(const vs &index_to_entities);
 
-vs createIntToStr(std::string_view list_file_path, bool has_header = true);
+vs createIntToStr(std::string_view path_file, bool has_header = true, int column_index = 0, int total_num_columns = 1);
 
 umsi createStrToInt(const vs &index_to_entities);
 
