@@ -1,0 +1,7 @@
+PROTEOFORM	UNIPROT	REACTION_STID	REACTION_DISPLAY_NAME	PATHWAY_STID	PATHWAY_DISPLAY_NAME
+Q9NXB0;	Q9NXB0	R-HSA-5626681	Recruitment of transition zone proteins	R-HSA-1852241	Organelle biogenesis and maintenance
+Q9UL59;	Q9UL59	R-HSA-975040	KRAB-ZNF / KAP Interaction	R-HSA-74160	Gene expression (Transcription)
+P28566;	P28566	R-HSA-749454	The Ligand:GPCR:Gi complex dissociates	R-HSA-418594	G alpha (i) signalling events
+P28566;	P28566	R-HSA-390929	HTR1 and 5A receptors can bind serotonin	R-HSA-500792	GPCR ligand binding
+Q9UKT8;	Q9UKT8	R-HSA-983147	Release of E3 from polyubiquitinated substrate	R-HSA-983168	Antigen processing: Ubiquitination & Proteasome degradation
+Q9UKT8;	Q9UKT8	R-HSA-8952618	AcM-UBE2M transfers NEDD8 to CRL1 E3 ubiquitin ligase complex	R-HSA-392499	Metabolism of proteins
