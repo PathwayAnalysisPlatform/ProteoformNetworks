@@ -6,11 +6,11 @@
 // For each interacting entities A and B, adds both the edges A --> B and B --> A
 // The file must have THREE or MORE columns separated by a tab ('\t'). The first two columns contain the source
 // and destination interactors. From the third column there are other attributes of the interaction.
-ummii loadInteractionNetwork(std::string_view path_file_interactions,
-                             const bimap_str_int &entities,
-                             bool has_header_row) {
+vusi loadInteractionNetwork(std::string_view path_file_interactions,
+                            const bimap_str_int &entities,
+                            bool has_header_row) {
 
-    ummii interactions;
+    vusi interactions(entities.int_to_str.size(), std::unordered_set<int>());
     std::ifstream file_interactions(path_file_interactions.data());
     std::string e1, e2, other_fields;
 
@@ -26,10 +26,10 @@ ummii loadInteractionNetwork(std::string_view path_file_interactions,
         getline(file_interactions, e2, '\t');   // get second entity
         getline(file_interactions, other_fields);// read other columns
         if (hasKey(entities.str_to_int, e1) && hasKey(entities.str_to_int, e2)) {
-            int index_e1 = entities.str_to_int.at(e1);
-            int index_e2 = entities.str_to_int.at(e2);
-            interactions.emplace(index_e1, index_e2);
-            interactions.emplace(index_e2, index_e1);
+            auto index_e1 = entities.str_to_int.at(e1);
+            auto index_e2 = entities.str_to_int.at(e2);
+            interactions[index_e1].insert(index_e2);
+            interactions[index_e2].insert(index_e1);
         } else {
             if (!hasKey(entities.str_to_int, e1)) {
                 std::cerr << "Not found entity: **" << e1 << "**" << std::endl;
@@ -44,7 +44,7 @@ ummii loadInteractionNetwork(std::string_view path_file_interactions,
 }
 
 modules removeDisconnectedMembers(modules &modules, const bimap_str_int &groups, const bimap_str_int &members,
-                                  const ummii &interactions) {
+                                  const vusi &interactions) {
     // For each module:
     for (auto group_entry = modules.group_to_members.begin();
          group_entry != modules.group_to_members.end(); group_entry++) {
@@ -61,9 +61,8 @@ modules removeDisconnectedMembers(modules &modules, const bimap_str_int &groups,
             bool isConnected = false;
 
             // Check if any interactor of this member is in the group
-            auto range = interactions.equal_range(member_index);
-            for (auto it = range.first; it != range.second; it++) { // For each interactor
-                if (hasValue(member_indexes, it->second)) {   // If the interactor is in the group
+            for (const auto &interactor : interactions[member_index]) {
+                if (hasValue(member_indexes, interactor)) {   // If the interactor is in the group
                     isConnected = true;
                     break;
                 }

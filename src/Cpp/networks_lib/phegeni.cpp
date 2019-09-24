@@ -111,24 +111,26 @@ modules loadPheGenIGeneModules(
             modules.group_to_members[trait][genes.str_to_int.at(gene)].set();
             modules.member_to_groups[gene][traits.str_to_int.at(trait)].set();
         } else {
-            if (!hasKey(traits.str_to_int, trait))
-                std::cerr << "The trait " << trait << " was not found in the bimap.\n";
-            if (!hasKey(genes.str_to_int, gene))
-                std::cerr << "The gene " << gene << " was not found in the bimap.\n";
+//            if (!hasKey(traits.str_to_int, trait))
+//                std::cerr << "The trait " << trait << " was not found in the bimap.\n";
+//            if (!hasKey(genes.str_to_int, gene))
+//                std::cerr << "The gene " << gene << " was not found in the bimap.\n";
         }
         if (hasKey(traits.str_to_int, trait) && hasKey(genes.str_to_int, gene2)) {
             modules.group_to_members[trait][genes.str_to_int.at(gene2)].set();
             modules.member_to_groups[gene2][traits.str_to_int.at(trait)].set();
         } else {
-            if (!hasKey(traits.str_to_int, trait))
-                std::cerr << "The trait " << trait << " was not found in the bimap.\n";
-            if (!hasKey(genes.str_to_int, gene2))
-                std::cerr << "The gene " << gene2 << " was not found in the bimap.\n";
+//            if (!hasKey(traits.str_to_int, trait))
+//                std::cerr << "The trait " << trait << " was not found in the bimap.\n";
+//            if (!hasKey(genes.str_to_int, gene2))
+//                std::cerr << "The gene " << gene2 << " was not found in the bimap.\n";
         }
     }
 
     // Load interaction network
+    std::cout << "Reading gene interaction network..." << std::endl;
     auto interactions = loadInteractionNetwork(path_file_gene_interactions, genes, true);
+    std::cout << "Removing disconnected genes from modules..." << std::endl;
     removeDisconnectedMembers(modules, traits, genes, interactions);
 
     cerr << "Number of traits with gene members as bitset: " << modules.group_to_members.size() << "\n";

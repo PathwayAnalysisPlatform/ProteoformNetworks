@@ -15,11 +15,15 @@ void doOverlapAnalysis(
         std::string_view path_scores) {
 
     // Read Reactome genes, proteins and proteoforms. Take them as set of acceptable identifiers.
+    std::cout << "Loading genes..." << std::endl;
     const bimap_str_int genes = createBimap(path_file_reactome_genes);
+    std::cout << "Loading proteins..." << std::endl;
     const bimap_str_int proteins = createBimap(path_file_reactome_proteins);
+    std::cout << "Loading proteoforms..." << std::endl;
     const bimap_str_int proteoforms = createBimap(path_file_reactome_proteoforms);
 
     // Read traits and genes in Phegeni file
+    std::cout << "Loading PhegenI genes and traits." << std::endl;
     const auto[phegeni_genes, traits] = loadPheGenIGenesAndTraits(path_file_phegeni, genes);
 
     std::cout << "Creating gene modules." << std::endl;
