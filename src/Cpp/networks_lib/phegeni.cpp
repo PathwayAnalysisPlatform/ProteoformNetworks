@@ -172,7 +172,7 @@ modules convertModulesWithMapping(
     }
 
     for (const auto &trait_entry : original_modules.group_to_members) {  // For each trait entry
-        std::cout << "Mapping trait: " << trait_entry.first << std::endl;
+//        std::cout << "Mapping trait: " << trait_entry.first << std::endl;
         modules.group_to_members.emplace(trait_entry.first,
                                          base::dynamic_bitset<>(destination_entities.int_to_str.size()));
 

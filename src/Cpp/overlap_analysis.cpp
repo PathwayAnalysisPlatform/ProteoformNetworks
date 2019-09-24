@@ -20,7 +20,7 @@ void doOverlapAnalysis(
     std::cout << "Loading proteins..." << std::endl;
     const bimap_str_int proteins = createBimap(path_file_reactome_proteins);
     std::cout << "Loading proteoforms..." << std::endl;
-    const bimap_str_int proteoforms = createBimap(path_file_reactome_proteoforms);
+    const bimap_str_int proteoforms = createBimap(path_file_reactome_proteoforms, true, 0, 6);
 
     // Read traits and genes in Phegeni file
     std::cout << "Loading PhegenI genes and traits." << std::endl;
@@ -39,7 +39,7 @@ void doOverlapAnalysis(
     bidirectional_mapping mapping_proteins_to_proteoforms = readMapping(path_file_mapping_proteins_to_proteoforms, true,
                                                                         true);
     const modules proteoform_modules = createPheGenIModules(protein_modules, proteins, proteoforms, traits,
-                                                            mapping_proteins_to_proteoforms.first_to_second,
+                                                            mapping_proteins_to_proteoforms.second_to_first,
                                                             path_file_proteoform_interactions);
 
     // Calculate overlap scores between all gene module pairs
