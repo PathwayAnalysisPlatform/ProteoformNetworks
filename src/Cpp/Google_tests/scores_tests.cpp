@@ -273,7 +273,7 @@ TEST_F(ScoresFixture, WriteScores) {
     // Check values are correct
     EXPECT_EQ("A\tB\t1", lines[1]);
     EXPECT_EQ("B\tC\t0", lines[4]);
-    EXPECT_EQ("B\tD\t0.666667", lines[5]);
+    EXPECT_EQ("B\tD\t0.66667", lines[5]);
     EXPECT_EQ("C\tD\t0.5", lines[6]);
 
     // Delete example file

@@ -31,12 +31,12 @@ vusi loadInteractionNetwork(std::string_view path_file_interactions,
             interactions[index_e1].insert(index_e2);
             interactions[index_e2].insert(index_e1);
         } else {
-            if (!hasKey(entities.str_to_int, e1)) {
-                std::cerr << "Not found entity: **" << e1 << "**" << std::endl;
-            }
-            if (!hasKey(entities.str_to_int, e2)) {
-                std::cerr << "Not found entity: **" << e2 << "**" << std::endl;
-            }
+//            if (!hasKey(entities.str_to_int, e1)) {
+//                std::cerr << "Not found entity: **" << e1 << "**" << std::endl;
+//            }
+//            if (!hasKey(entities.str_to_int, e2)) {
+//                std::cerr << "Not found entity: **" << e2 << "**" << std::endl;
+//            }
         }
     }
 

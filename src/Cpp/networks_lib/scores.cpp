@@ -1,4 +1,5 @@
 #include "scores.hpp"
+#include <iomanip>
 
 using namespace std;
 
@@ -137,7 +138,7 @@ void writeScores(const msb &sets, std::vector<double> scores, std::string_view p
     output << "SET1\tSET2\tSCORE\n";
     for (auto it1 = sets.begin(); it1 != sets.end(); it1++){
         for (auto it2 = next(it1, 1); it2 != sets.end(); it2++){
-            output << it1->first << "\t" << it2->first << "\t" << scores[score] << "\n";
+            output << it1->first << "\t" << it2->first << "\t" << std::setprecision(5) << scores[score] << "\n";
             score++;
         }
     }

@@ -1,8 +1,6 @@
 #include <string>
 #include <cstdio>
 #include <iostream>
-#include<experimental/filesystem>
-
 #include "overlap_analysis.hpp"
 
 // Input files
