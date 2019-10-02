@@ -4,6 +4,7 @@
 #include <iostream>
 #include <ctime>
 #include <sys/stat.h>
+#include <utility>
 
 #include "phegeni.hpp"
 #include "scores.hpp"
@@ -57,9 +58,9 @@ get_modules_result get_or_create_modules(std::string path_modules,
                                          const bimap_str_int &traits);
 
 struct get_scores_result {
-    std::vector<double> gene_scores;
-    std::vector<double> protein_scores;
-    std::vector<double> proteoform_scores;
+    um<std::string, double> gene_scores;
+    um<std::string, double> protein_scores;
+    um<std::string, double> proteoform_scores;
 };
 
 get_scores_result get_scores(std::string path_scores,
@@ -88,6 +89,8 @@ void doOverlapAnalysis(
 void report_module_size_variation(std::string_view path_reports, const modules &gene_modules,
                                   const modules &protein_modules, const modules &proteoform_modules,
                                   const bimap_str_int &traits);
+
+void report_score_variations(std::string basicString, std::string label, const get_scores_result &scores);
 
 // Version with set size and overlap size limits
 template<size_t total_num_entities>

@@ -43,9 +43,9 @@ double getOverlapSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> 
 // Calculate similarity score between al pairs of bitsets
 // The sets are the second value of each entry in the sets parameter.
 // The score is a function capable of calculating the overlap with bitsets.
-std::vector<double>
-getScores(const msb &sets, std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score);
+um<std::string, double> getScores(const msb &sets,
+                                  std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score);
 
-void writeScores(const msb &sets, std::vector<double> scores, std::string_view path_output);
+void writeScores(const msb &sets, um<std::string, double> scores, std::string_view path_output);
 
 #endif /* UTILITY_HPP_ */

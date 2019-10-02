@@ -228,7 +228,7 @@ TEST_F(ScoresFixture, AllPairsCorrectPairs) {
 
 // Get scores for pairs of sets: Correct values
 TEST_F(ScoresFixture, AllPairsCorrectValues) {
-    std::vector<double> scores = getScores(sets, getOverlapSimilarity);
+    um<std::string, double> scores = getScores(sets, getOverlapSimilarity);
 
     for (int I = 0; I < scores.size(); I++) {
         std::cout << "Score " << I << ": " << scores[I] << std::endl;

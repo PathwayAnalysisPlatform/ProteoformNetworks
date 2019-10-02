@@ -36,20 +36,45 @@ void doOverlapAnalysis(
     const auto scores_overlap_similarity = get_scores(path_scores, getOverlapSimilarity, "overlap_similarity",
                                                       gene_modules, protein_modules, proteoform_modules);
 
+    report_score_variations(path_scores, "overlap_similarity", scores_overlap_similarity);
+
+
     // Calculate scores with Jaccard index
     const auto scores_jaccard_index = get_scores(path_scores, getJaccardSimilarity, "jaccard_index",
                                                  gene_modules, protein_modules, proteoform_modules);
 
-    // Check if there are pairs of modules overlapping at one level but not in another
-    // If they had a positive overlap similarity score that became zero.
-    for () {
-
-    }
-
-
     // Check if there are modules overlapping at the proteoform level, only with modified proteins
 
     std::cout << "Finished with the Overlap analysis";
+}
+
+void report_score_variations(std::string path_reports, std::string label, const get_scores_result &scores) {
+    // Check if there are pairs of modules overlapping at one level but not in another
+    // If they had a positive overlap similarity score that became zero.
+
+    std::ofstream output(path_reports.data() + label + "_score_variation.tsv");
+
+    if (!output.is_open()) {
+        std::string message = "Cannot open report file at ";
+        std::string function = __FUNCTION__;
+        throw std::runtime_error(message + function);
+    }
+
+    output
+            << "TRAIT1\tTRAIT2\tSCORE_GENES\tSCORE_PROTEINS\tSCORE_PROTEOFORMS\tGENES_TO_PROTEINS\tPROTEINS_TO_PROTEOFORMS\n";
+    for (const auto &score_entry : scores.gene_scores) {
+        if (hasKey(scores.protein_scores, score_entry.first) && hasKey(scores.proteoform_scores, score_entry.first)) {
+            output << score_entry.first << "\t";
+            output << scores.gene_scores.at(score_entry.first) << "\t";
+            output << scores.protein_scores.at(score_entry.first) << "\t";
+            output << scores.proteoform_scores.at(score_entry.first) << "\t";
+            output << scores.protein_scores.at(score_entry.first) - scores.gene_scores.at(score_entry.first) << "\t";
+            output << scores.proteoform_scores.at(score_entry.first) - scores.protein_scores.at(score_entry.first)
+                   << "\n";
+        }
+    }
+
+    output.close();
 }
 
 get_modules_result get_or_create_modules(std::string path_modules,

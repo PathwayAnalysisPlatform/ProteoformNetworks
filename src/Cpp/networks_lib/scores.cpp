@@ -3,12 +3,12 @@
 
 using namespace std;
 
-const measures_result calculateMeasures(const ummss& mapping) {
+const measures_result calculateMeasures(const ummss &mapping) {
     double min = static_cast<double>(mapping.count(mapping.begin()->first));
     double max = static_cast<double>(mapping.count(mapping.begin()->first));
     double avg = 0.0;
     double sum = 0.0;
-    for (const auto& entry : mapping) {
+    for (const auto &entry : mapping) {
         double freq = static_cast<double>(mapping.count(entry.first));
         if (freq < min)
             min = freq;
@@ -21,14 +21,14 @@ const measures_result calculateMeasures(const ummss& mapping) {
 }
 
 // Calculate average numer of proteoforms for proteins with at least two proteoforms with at least one modification
-const measures_result calculateMeasuresWithSelectedKeys(const ummss& mapping,
-                                                        const vs& keys) {
+const measures_result calculateMeasuresWithSelectedKeys(const ummss &mapping,
+                                                        const vs &keys) {
     // Calculate averag proteoforms for all them
     double min = static_cast<double>(mapping.count(*keys.begin()));
     double max = static_cast<double>(mapping.count(*keys.begin()));
     double avg = 0.0;
     double sum = 0.0;
-    for (const auto& value : keys) {
+    for (const auto &value : keys) {
         double freq = static_cast<double>(mapping.count(value));
         if (freq < min)
             min = freq;
@@ -40,17 +40,17 @@ const measures_result calculateMeasuresWithSelectedKeys(const ummss& mapping,
     return {min, max, avg};
 }
 
-void writeFrequencies(ofstream& report, const ummss& mapping, string_view label) {
+void writeFrequencies(ofstream &report, const ummss &mapping, string_view label) {
     if (!report.is_open()) {
         throw runtime_error("Problem opening frequency file.\n");
     }
 
-    for (const auto& entry : mapping) {
+    for (const auto &entry : mapping) {
         report << entry.first << "\t" << mapping.count(entry.first);
     }
 }
 
-void writeFrequencies(string_view file_path, const ummss& mapping) {
+void writeFrequencies(string_view file_path, const ummss &mapping) {
     cerr << "Writing " << file_path << "\n";
     ofstream report(file_path.data());
 
@@ -59,12 +59,12 @@ void writeFrequencies(string_view file_path, const ummss& mapping) {
     }
 
     report << "OBJECT\tFREQUENCY\n";
-    for (const auto& entry : mapping) {
+    for (const auto &entry : mapping) {
         report << entry.first << "\t" << mapping.count(entry.first);
     }
 }
 
-void writeFrequencies(string_view file_path, const ummss& mapping, const vs& keys) {
+void writeFrequencies(string_view file_path, const ummss &mapping, const vs &keys) {
     cerr << "Writing " << file_path << "\n";
     ofstream report(file_path.data());
     uss unique_keys(keys.begin(), keys.end());
@@ -74,13 +74,13 @@ void writeFrequencies(string_view file_path, const ummss& mapping, const vs& key
     }
 
     report << "OBJECT\tFREQUENCY\n";
-    for (const auto& value : keys) {
+    for (const auto &value : keys) {
         report << value << "\t" << mapping.count(value);
     }
 }
 
 
-void writeMeasures(ofstream& report, const measures_result& measures, string_view label1, string_view label2) {
+void writeMeasures(ofstream &report, const measures_result &measures, string_view label1, string_view label2) {
     if (!report.is_open()) {
         throw runtime_error("Could not write measures to report.");
     }
@@ -89,7 +89,7 @@ void writeMeasures(ofstream& report, const measures_result& measures, string_vie
     report << "Max: " << measures.max << "\n";
 }
 
-void writeMeasures(ofstream& report, const ummss& mapping, string_view label1, string_view label2) {
+void writeMeasures(ofstream &report, const ummss &mapping, string_view label1, string_view label2) {
     if (!report.is_open()) {
         throw runtime_error("Could not write measures to report.");
     }
@@ -98,9 +98,9 @@ void writeMeasures(ofstream& report, const ummss& mapping, string_view label1, s
 }
 
 double getJaccardSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2) {
-    if(set1.count() == 0 && set2.count() == 0){
+    if (set1.count() == 0 && set2.count() == 0) {
         return 1.0;
-    } else{
+    } else {
         double intersection_size = (set1 & set2).count();
         double union_size = (set1 | set2).count();
         return intersection_size / union_size;
@@ -108,20 +108,21 @@ double getJaccardSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> 
 }
 
 double getOverlapSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2) {
-    if(set1.count() == 0 || set2.count() == 0){
+    if (set1.count() == 0 || set2.count() == 0) {
         return 1.0;
-    } else{
+    } else {
         double intersection_size = (set1 & set2).count();
         return intersection_size / min(set1.count(), set2.count());
     }
 }
 
-std::vector<double> getScores(const msb &sets, std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score) {
+um<std::string, double> getScores(const msb &sets,
+                                  std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score) {
 
-    std::vector<double> result;
-    for (auto it1 = sets.begin(); it1 != sets.end(); it1++){
-        for (auto it2 = next(it1, 1); it2 != sets.end(); it2++){
-            result.push_back(score(it1->second, it2->second));
+    um<std::string, double> result;
+    for (auto it1 = sets.begin(); it1 != sets.end(); it1++) {
+        for (auto it2 = next(it1, 1); it2 != sets.end(); it2++) {
+            result[it1->first + "\t" + it2->first] = score(it1->second, it2->second);
 //            std::cerr << "Score (" << it1->first << ", " << it2->first << ") : " << *result.rbegin() << "\n";
         }
     }
@@ -129,16 +130,17 @@ std::vector<double> getScores(const msb &sets, std::function<double(base::dynami
     return result;
 }
 
-void writeScores(const msb &sets, std::vector<double> scores, std::string_view path_output) {
+void writeScores(const msb &sets, um<std::string, double> scores, std::string_view path_output) {
     ofstream output(path_output.data());
     if (!output.is_open()) {
         throw runtime_error("Problem opening scores file.\n");
     }
     int score = 0;
     output << "SET1\tSET2\tSCORE\n";
-    for (auto it1 = sets.begin(); it1 != sets.end(); it1++){
-        for (auto it2 = next(it1, 1); it2 != sets.end(); it2++){
-            output << it1->first << "\t" << it2->first << "\t" << std::setprecision(5) << scores[score] << "\n";
+    for (auto it1 = sets.begin(); it1 != sets.end(); it1++) {
+        for (auto it2 = next(it1, 1); it2 != sets.end(); it2++) {
+            std::string pair_str = it1->first + "\t" + it2->first;
+            output << pair_str << "\t" << std::setprecision(5) << scores.at(pair_str) << "\n";
             score++;
         }
     }
