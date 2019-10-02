@@ -85,6 +85,10 @@ void doOverlapAnalysis(
         std::string path_scores,
         std::string_view path_modules);
 
+void report_module_size_variation(std::string_view path_reports, const modules &gene_modules,
+                                  const modules &protein_modules, const modules &proteoform_modules,
+                                  const bimap_str_int &traits);
+
 // Version with set size and overlap size limits
 template<size_t total_num_entities>
 std::map<std::pair<std::string, std::string>, std::bitset<total_num_entities>>

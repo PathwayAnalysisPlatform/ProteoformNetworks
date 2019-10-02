@@ -158,3 +158,23 @@ void writeModules(std::string_view path_file_modules, const modules &entity_modu
     }
     output.close();
 }
+
+um<std::string, int> report_module_sizes(std::string_view path_reports,
+                                         std::string entity_label, modules entity_modules) {
+    um<std::string, int> sizes;
+    std::ofstream output(path_reports.data() + entity_label + "_sizes.tsv");
+
+    if (!output.is_open()) {
+        std::string message = "Cannot open report file at ";
+        std::string function = __FUNCTION__;
+        throw std::runtime_error(message + function);
+    }
+
+    output << "MODULE\tSIZE\n";
+    for (const auto &module_entry : entity_modules.group_to_members) {
+        output << module_entry.first << "\t" << module_entry.second.count() << "\n";
+        sizes[module_entry.first] = module_entry.second.count();
+    }
+    output.close();
+    return sizes;
+}

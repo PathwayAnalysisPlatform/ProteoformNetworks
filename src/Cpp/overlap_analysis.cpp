@@ -1,7 +1,5 @@
 #include "overlap_analysis.hpp"
 
-void get_modules();
-
 using namespace std;
 
 void doOverlapAnalysis(
@@ -31,6 +29,9 @@ void doOverlapAnalysis(
             path_file_mapping_proteins_to_proteoforms, path_file_proteoform_interactions,
             genes, proteins, proteoforms, traits);
 
+    // Check variation in module sizes
+    report_module_size_variation(path_scores, gene_modules, protein_modules, proteoform_modules, traits);
+
     // Calculate scores with Overlap Similarity
     const auto scores_overlap_similarity = get_scores(path_scores, getOverlapSimilarity, "overlap_similarity",
                                                       gene_modules, protein_modules, proteoform_modules);
@@ -39,13 +40,12 @@ void doOverlapAnalysis(
     const auto scores_jaccard_index = get_scores(path_scores, getJaccardSimilarity, "jaccard_index",
                                                  gene_modules, protein_modules, proteoform_modules);
 
-    // Calculate how many empty modules exist, for genes, proteins and proteoforms
+    // Check if there are pairs of modules overlapping at one level but not in another
+    // If they had a positive overlap similarity score that became zero.
+    for () {
 
-    // Check if the overlap changed from genes to proteins to proteoforms, for non-empty module pairs
+    }
 
-    // Calculate the frequency of score values for non-empty module pairs
-
-    // Check if there are modules overlapping at one level but not in another
 
     // Check if there are modules overlapping at the proteoform level, only with modified proteins
 
@@ -159,15 +159,64 @@ get_scores_result get_scores(std::string path_scores,
     return {gene_scores, protein_scores, proteoform_scores};
 }
 
-void calculate_statistics() {
+void report_module_size_variation(std::string_view path_reports, const modules &gene_modules,
+                                  const modules &protein_modules, const modules &proteoform_modules,
+                                  const bimap_str_int &traits) {
+    const um<std::string, int> gene_module_sizes = report_module_sizes(path_reports, "genes_modules", gene_modules);
+    const auto protein_module_sizes = report_module_sizes(path_reports, "protein_modules", protein_modules);
+    const auto proteoform_module_sizes = report_module_sizes(path_reports, "proteoform_modules", proteoform_modules);
+
+    // Check sizes of modules
     // Calculate how many empty modules exist, for genes, proteins and proteoforms
+    std::cout << "Total number of possible modules is: " << traits.int_to_str.size() << std::endl;
+    std::cout << "Number of non-empty gene modules: " << gene_module_sizes.size() << std::endl;
+    std::cout << "Number of non-empty protein modules: " << protein_module_sizes.size() << std::endl;
+    std::cout << "Number of non-empty proteoform modules: " << proteoform_module_sizes.size() << std::endl;
 
-    // Check if the overlap changed from genes to proteins to proteoforms, for non-empty module pairs
+    std::ofstream output(path_reports.data() + static_cast<std::string>("sizes_variation.tsv"));
 
-    // Calculate the frequency of score values for non-empty module pairs
+    if (!output.is_open()) {
+        std::string message = "Cannot open report file at ";
+        std::string function = __FUNCTION__;
+        throw std::runtime_error(message + function);
+    }
 
-    // Check if there are modules overlapping at one level but not in another
+    output << "TRAIT\tGENES_TO_PROTEINS\tPROTEINS_TO_PROTEOFORMS\tGENES_TO_PROTEOFORMS\n";
+    for (const auto &module_entry : gene_module_sizes) {
+        output << module_entry.first << "\t";
 
-    // Check if there are modules overlapping at the proteoform level, only with modified proteins
+        // Difference genes --> proteins
+        if (hasKey(protein_module_sizes, module_entry.first)) {
+            output << protein_module_sizes.at(module_entry.first) - gene_module_sizes.at(module_entry.first);
+        } else {
+            output << -gene_module_sizes.at(module_entry.first);
+        }
+        output << "\t";
+
+        // Difference proteins --> proteoforms
+        if (hasKey(protein_module_sizes, module_entry.first)) {
+            if (hasKey(proteoform_module_sizes, module_entry.first)) {
+                output << proteoform_module_sizes.at(module_entry.first) - protein_module_sizes.at(module_entry.first);
+            } else {
+                output << -protein_module_sizes.at(module_entry.first);
+            }
+        } else {
+            if (hasKey(proteoform_module_sizes, module_entry.first)) {
+                output << proteoform_module_sizes.at(module_entry.first);
+            } else {
+                output << 0;
+            }
+        }
+        output << "\t";
+
+        // Difference genes --> proteoforms
+        if (hasKey(proteoform_module_sizes, module_entry.first)) {
+            output << proteoform_module_sizes.at(module_entry.first) - gene_module_sizes.at(module_entry.first);
+        } else {
+            output << -gene_module_sizes.at(module_entry.first);
+        }
+        output << "\n";
+    }
+    output.close();
 }
 

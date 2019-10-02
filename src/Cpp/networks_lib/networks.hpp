@@ -25,4 +25,7 @@ void writeModules(std::string_view path_file_modules,
 modules removeDisconnectedMembers(modules &modules, const bimap_str_int &groups, const bimap_str_int &members,
                                   const vusi &interactions);
 
+um<std::string, int> report_module_sizes(std::string_view path_reports,
+                                         std::string entity_label, modules entity_modules);
+
 #endif //PROTEOFORMNETWORKS_NETWORKS_HPP
