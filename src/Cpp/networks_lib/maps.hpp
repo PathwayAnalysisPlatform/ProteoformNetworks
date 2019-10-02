@@ -58,6 +58,11 @@ bool hasValue(const us<V> &s, V value) {
 }
 
 template<class V>
+bool hasValue(const std::set<V> &s, V value) {
+    return s.find(value) != s.end();
+}
+
+template<class V>
 bool hasValue(const std::vector<V> &v, V value) {
     for (const auto &element : v) {
         if (element == value)

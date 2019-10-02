@@ -121,12 +121,12 @@ TEST_F(LoadModulesFixture, CorrectModulesSizes) {
     EXPECT_EQ(3, example_modules.group_to_members.size());
     for (auto group_entry = example_modules.group_to_members.begin();
          group_entry != example_modules.group_to_members.end(); group_entry++) {
-        EXPECT_EQ(groups.int_to_str.size(), group_entry->second.size());
+        EXPECT_EQ(members.int_to_str.size(), group_entry->second.size());
     }
     EXPECT_EQ(5, example_modules.member_to_groups.size());
     for (auto member_entry = example_modules.member_to_groups.begin();
          member_entry != example_modules.member_to_groups.end(); member_entry++) {
-        EXPECT_EQ(members.int_to_str.size(), member_entry->second.size());
+        EXPECT_EQ(groups.int_to_str.size(), member_entry->second.size());
     }
 }
 
@@ -227,7 +227,7 @@ class WriteModulesFixture : public ::testing::Test {
         // TODO: Create artificial modules by hand
         std::string file_name_output = ::testing::UnitTest::GetInstance()->current_test_info()->name();
         file_name_output += "_modules.txt";
-        writeModules(file_name_output, ret.entity_modules, ret.groups, ret.members);
+//        writeModules(file_name_output, ret.entity_modules, ret.groups, ret.members);
         // read lines
 
     }

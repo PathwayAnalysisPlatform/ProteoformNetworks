@@ -124,19 +124,19 @@ load_modules_result loadModules(std::string_view path_file_modules, bool has_hea
     // ## Read modules
     // Initialize the modules to the correct sizes
     for (const auto &group : groups.int_to_str)
-        result_modules.group_to_members.emplace(group, base::dynamic_bitset<>(groups.int_to_str.size()));
+        result_modules.group_to_members.emplace(group, base::dynamic_bitset<>(members.int_to_str.size()));
     for (const auto &member : members.int_to_str)
-        result_modules.member_to_groups.emplace(member, base::dynamic_bitset<>(members.int_to_str.size()));
+        result_modules.member_to_groups.emplace(member, base::dynamic_bitset<>(groups.int_to_str.size()));
 
     // Set the members of each group and the owners of each member
-    if (has_header)
+    if (has_header) {
         std::getline(file_modules, line);
+    }
     while (std::getline(file_modules, group, '\t')) {
         std::getline(file_modules, member);
         result_modules.group_to_members[group][members.str_to_int[member]].set();
         result_modules.member_to_groups[member][groups.str_to_int[group]].set();
     }
-
     file_modules.close();
 
     return {result_modules, groups, members};
@@ -150,8 +150,8 @@ void writeModules(std::string_view path_file_modules, const modules &entity_modu
     }
     output << "TRAIT\tMEMBER\n";
     for (const auto &group_entry : entity_modules.group_to_members) {
-        for(int I = 0; I < members.int_to_str.size(); I++){
-            if(group_entry.second[I]){
+        for (int I = 0; I < members.int_to_str.size(); I++) {
+            if (group_entry.second[I]) {
                 output << group_entry.first << "\t" << members.int_to_str[I] << "\n";
             }
         }

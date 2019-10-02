@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <ctime>
+#include <sys/stat.h>
 
 #include "phegeni.hpp"
 #include "scores.hpp"
@@ -22,6 +23,52 @@ struct Frequencies {
     msi proteoforms;
 };
 
+struct get_entities_result {
+    bimap_str_int genes;
+    bimap_str_int proteins;
+    bimap_str_int proteoforms;
+};
+
+get_entities_result get_entities(std::string_view path_file_reactome_genes,
+                                 std::string_view path_file_reactome_proteins,
+                                 std::string_view path_file_reactome_proteoforms);
+
+inline bool file_exists(const std::string &name) {
+    struct stat buffer;
+    return (stat(name.c_str(), &buffer) == 0);
+}
+
+struct get_modules_result {
+    modules gene_modules;
+    modules protein_modules;
+    modules proteoform_modules;
+};
+
+get_modules_result get_or_create_modules(std::string path_modules,
+                                         std::string_view path_file_phegeni,
+                                         std::string_view path_file_gene_interactions,
+                                         std::string_view path_file_mapping_proteins_to_genes,
+                                         std::string_view path_file_protein_interactions,
+                                         std::string_view path_file_mapping_proteins_to_proteoforms,
+                                         std::string_view path_file_proteoform_interactions,
+                                         const bimap_str_int &genes,
+                                         const bimap_str_int &proteins,
+                                         const bimap_str_int &proteoforms,
+                                         const bimap_str_int &traits);
+
+struct get_scores_result {
+    std::vector<double> gene_scores;
+    std::vector<double> protein_scores;
+    std::vector<double> proteoform_scores;
+};
+
+get_scores_result get_scores(std::string path_scores,
+                             std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> scoring,
+                             std::string label,
+                             const modules &gene_modules,
+                             const modules &protein_modules,
+                             const modules &proteoform_modules);
+
 // Calculates differences in module overlap between gene and proteoform level networks_lib
 // It uses multiple scoring functions to calculate the overlap score between each pair of modules.
 // Creates a report for each scoring function. The report is a csv file with one row each module pair.
@@ -35,7 +82,7 @@ void doOverlapAnalysis(
         std::string_view path_file_gene_interactions,
         std::string_view path_file_protein_interactions,
         std::string_view path_file_proteoform_interactions,
-        std::string_view path_scores,
+        std::string path_scores,
         std::string_view path_modules);
 
 // Version with set size and overlap size limits

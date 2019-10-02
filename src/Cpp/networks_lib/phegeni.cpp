@@ -5,10 +5,11 @@ using namespace std;
 // Read the genes and traits of PheGenI data file.
 // Creates two bimaps: genes and traits
 // The gene list are those genes in the dataset that are also contained in the acceptable gene list.
-// TODO: Add disconnected members removal
 module_bimaps loadPheGenIGenesAndTraits(
         string_view path_file_phegeni,
         const bimap_str_int &acceptable_genes) {
+
+    std::cout << "Loading PhegenI genes and traits." << std::endl;
 
     ifstream file_PheGenI(path_file_phegeni.data());
     string line, field, trait, gene, gene2;
@@ -197,7 +198,7 @@ modules convertModulesWithMapping(
                         int trait_index = traits.str_to_int.at(trait_entry.first);
                         modules.member_to_groups[destination_entity][trait_index].set();
                     } else {
-                        std::cerr << original_entity << " --> ?" << std::endl;
+//                        std::cerr << original_entity << " --> ?" << std::endl;
                     }
                 }
             }

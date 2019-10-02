@@ -14,13 +14,11 @@ const std::string path_file_gene_interactions = "../../../resources/Reactome/v70
 const std::string path_file_protein_interactions = "../../../resources/Reactome/v70/Proteins/proteinEdges.tsv";
 const std::string path_file_proteoform_interactions = "../../../resources/Reactome/v70/Proteoforms/proteoformEdges.tsv";
 const std::string path_scores = "../../../reports/";
+const std::string path_modules = "../../../reports/modules/";
 
 int main() try {
 //	auto out = freopen("out.txt", "w", stdout);
 //	auto err = freopen("err.txt", "w", stderr);
-    // TODO: Write module sizes to file
-
-    // TODO: Calculate the difference between overlaps in genes, proteins and proteoforms
 
     doOverlapAnalysis(path_file_PheGenI,
                       path_file_reactome_genes,
@@ -31,7 +29,9 @@ int main() try {
                       path_file_gene_interactions,
                       path_file_protein_interactions,
                       path_file_proteoform_interactions,
-                      path_scores);
+                      path_scores,
+                      path_modules);
+
 }
 catch (const std::exception &ex) {
     std::cout << ex.what() << "\n";
