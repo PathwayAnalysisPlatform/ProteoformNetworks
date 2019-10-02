@@ -18,6 +18,9 @@ const std::string path_scores = "../../../reports/";
 int main() try {
 //	auto out = freopen("out.txt", "w", stdout);
 //	auto err = freopen("err.txt", "w", stderr);
+    // TODO: Write module sizes to file
+
+    // TODO: Calculate the difference between overlaps in genes, proteins and proteoforms
 
     doOverlapAnalysis(path_file_PheGenI,
                       path_file_reactome_genes,

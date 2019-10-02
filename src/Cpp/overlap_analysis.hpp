@@ -35,7 +35,8 @@ void doOverlapAnalysis(
         std::string_view path_file_gene_interactions,
         std::string_view path_file_protein_interactions,
         std::string_view path_file_proteoform_interactions,
-        std::string_view path_scores);
+        std::string_view path_scores,
+        std::string_view path_modules);
 
 // Version with set size and overlap size limits
 template<size_t total_num_entities>

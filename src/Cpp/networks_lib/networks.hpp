@@ -17,6 +17,11 @@ struct load_modules_result {
 
 load_modules_result loadModules(std::string_view path_file_modules, bool has_header = true);
 
+void writeModules(std::string_view path_file_modules,
+                  const modules &entity_modules,
+                  const bimap_str_int &groups,
+                  const bimap_str_int &members);
+
 modules removeDisconnectedMembers(modules &modules, const bimap_str_int &groups, const bimap_str_int &members,
                                   const vusi &interactions);
 

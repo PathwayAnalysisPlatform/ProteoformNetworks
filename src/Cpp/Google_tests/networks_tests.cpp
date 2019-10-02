@@ -220,3 +220,30 @@ TEST_F(RemoveDisconnectedMembersFixture, RemovesDisconnectedMember) {
     // In module C, should remove the only member 5
     EXPECT_FALSE(example_modules.group_to_members["C"][members.str_to_int["5"]]);
 }
+
+class WriteModulesFixture : public ::testing::Test {
+    virtual void SetUp() {
+        // TODO: Create groups and members bimaps by hand
+        // TODO: Create artificial modules by hand
+        std::string file_name_output = ::testing::UnitTest::GetInstance()->current_test_info()->name();
+        file_name_output += "_modules.txt";
+        writeModules(file_name_output, ret.entity_modules, ret.groups, ret.members);
+        // read lines
+
+    }
+
+    std::vector<std::string> lines;
+};
+
+TEST_F(WriteModulesFixture, CreatesFile) {
+
+}
+
+
+TEST_F(WriteModulesFixture, HasHeaderCorrect) {
+
+}
+
+TEST(SuiteName, LinesCorrect) {
+
+}

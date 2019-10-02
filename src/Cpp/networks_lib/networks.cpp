@@ -1,3 +1,4 @@
+#include <iomanip>
 #include "networks.hpp"
 #include "overlap_types.hpp"
 #include "maps.hpp"
@@ -139,4 +140,21 @@ load_modules_result loadModules(std::string_view path_file_modules, bool has_hea
     file_modules.close();
 
     return {result_modules, groups, members};
+}
+
+void writeModules(std::string_view path_file_modules, const modules &entity_modules, const bimap_str_int &groups,
+                  const bimap_str_int &members) {
+    std::ofstream output(path_file_modules.data());
+    if (!output.is_open()) {
+        throw std::runtime_error("Problem opening modules file fro writing.\n");
+    }
+    output << "TRAIT\tMEMBER\n";
+    for (const auto &group_entry : entity_modules.group_to_members) {
+        for(int I = 0; I < members.int_to_str.size(); I++){
+            if(group_entry.second[I]){
+                output << group_entry.first << "\t" << members.int_to_str[I] << "\n";
+            }
+        }
+    }
+    output.close();
 }
