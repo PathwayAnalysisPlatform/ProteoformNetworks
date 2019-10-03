@@ -52,7 +52,7 @@ void report_score_variations(std::string path_reports, std::string label, const 
     // Check if there are pairs of modules overlapping at one level but not in another
     // If they had a positive overlap similarity score that became zero.
 
-    std::ofstream output(path_reports.data() + label + "_score_variation.tsv");
+    std::ofstream output(path_reports.data() + label + "_score_variation_examples.tsv");
 
     if (!output.is_open()) {
         std::string message = "Cannot open report file at ";
@@ -60,17 +60,20 @@ void report_score_variations(std::string path_reports, std::string label, const 
         throw std::runtime_error(message + function);
     }
 
-    output
-            << "TRAIT1\tTRAIT2\tSCORE_GENES\tSCORE_PROTEINS\tSCORE_PROTEOFORMS\tGENES_TO_PROTEINS\tPROTEINS_TO_PROTEOFORMS\n";
+    output << "TRAIT1\tTRAIT2\tSCORE_GENES\tSCORE_PROTEINS\tSCORE_PROTEOFORMS\t"
+           << "GENES_TO_PROTEINS\tPROTEINS_TO_PROTEOFORMS\n";
     for (const auto &score_entry : scores.gene_scores) {
         if (hasKey(scores.protein_scores, score_entry.first) && hasKey(scores.proteoform_scores, score_entry.first)) {
-            output << score_entry.first << "\t";
-            output << scores.gene_scores.at(score_entry.first) << "\t";
-            output << scores.protein_scores.at(score_entry.first) << "\t";
-            output << scores.proteoform_scores.at(score_entry.first) << "\t";
-            output << scores.protein_scores.at(score_entry.first) - scores.gene_scores.at(score_entry.first) << "\t";
-            output << scores.proteoform_scores.at(score_entry.first) - scores.protein_scores.at(score_entry.first)
-                   << "\n";
+            if((scores.protein_scores.at(score_entry.first) < scores.gene_scores.at(score_entry.first))
+            || (scores.proteoform_scores.at(score_entry.first) < scores.gene_scores.at(score_entry.first))){
+                output << score_entry.first << "\t";
+                output << scores.gene_scores.at(score_entry.first) << "\t";
+                output << scores.protein_scores.at(score_entry.first) << "\t";
+                output << scores.proteoform_scores.at(score_entry.first) << "\t";
+                output << scores.protein_scores.at(score_entry.first) - scores.gene_scores.at(score_entry.first) << "\t";
+                output << scores.proteoform_scores.at(score_entry.first) - scores.protein_scores.at(score_entry.first)
+                       << "\n";
+            }
         }
     }
 

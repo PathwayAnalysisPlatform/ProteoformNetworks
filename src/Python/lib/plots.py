@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 # Plot the frequency of each overlap score
 # Only considers positive scores, where sets overlap.
 def plot(x, score_label='overlap'):
