@@ -230,8 +230,8 @@ TEST_F(ScoresFixture, AllPairsCorrectPairs) {
 TEST_F(ScoresFixture, AllPairsCorrectValues) {
     um<std::string, double> scores = getScores(sets, getOverlapSimilarity);
 
-    for (int I = 0; I < scores.size(); I++) {
-        std::cout << "Score " << I << ": " << scores[I] << std::endl;
+    for (const auto &score_entry : scores) {
+        std::cout << "Score " << score_entry.first << ": " << score_entry.second << std::endl;
     }
 
     // 0: (A, B)
@@ -241,10 +241,10 @@ TEST_F(ScoresFixture, AllPairsCorrectValues) {
     // 4: (B, D)
     // 5: (C, D)
 
-    EXPECT_EQ(1, scores[0]);    // A B
-    EXPECT_EQ(0, scores[3]);    // B C
-    EXPECT_NEAR(0.66, scores[4], 1e-1); // B D
-    EXPECT_EQ(0.5, scores[5]);  // C D
+    EXPECT_EQ(1, scores["A\tB"]);    // A B
+    EXPECT_EQ(0, scores["B\tC"]);    // B C
+    EXPECT_NEAR(0.66, scores["B\tD"], 1e-1); // B D
+    EXPECT_EQ(0.5, scores["C\tD"]);  // C D
 }
 
 
@@ -266,9 +266,9 @@ TEST_F(ScoresFixture, WriteScores) {
     EXPECT_EQ(7, lines.size()); // Check number of lines is correct
     EXPECT_EQ("SET1\tSET2\tSCORE", lines[0]); // Check header is there
     // Check every row has 3 columns
-    for(int I = 0; I < lines.size(); I++){
+    for (int I = 0; I < lines.size(); I++) {
         size_t appeareances = std::count(lines[I].begin(), lines[I].end(), '\t');
-        EXPECT_EQ(2, (int)appeareances );
+        EXPECT_EQ(2, (int) appeareances);
     }
     // Check values are correct
     EXPECT_EQ("A\tB\t1", lines[1]);
