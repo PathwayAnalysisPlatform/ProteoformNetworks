@@ -2,6 +2,8 @@ import argparse
 import os
 import numpy as np
 import pandas as pd
+from matplotlib.pyplot import plot
+
 import lib.plots
 import lib.read_write
 
@@ -17,8 +19,8 @@ args = parser.parse_args()
 for file_name in args.files:
     print(f"\n\nPlotting distribution of score file: {file_name}")
     print(f"Saving plot to: {args.path}")
-    x = read_scores(file_name)
-    score_label = getScoreLabel(file_name)
+    x = lib.read_scores(file_name)
+    score_label = lib.getScoreLabel(file_name)
     plot(x, score_label)
 
 

@@ -1,6 +1,6 @@
 import unittest
 
-from lib.plot_module_pair import get_graph
+from lib.plot_module_pair import get_graph, plot_module_pair
 
 
 class TestPlotModulePair(unittest.TestCase):
@@ -85,6 +85,9 @@ class TestPlotModulePair(unittest.TestCase):
         self.assertTrue(("Q6W4X9;00163:null", "Q9HC84;00163:null") in G.edges)
 
         self.assertTrue(("Q9HC84;", "Q9HC84;00163:null") in G.edges)
+
+    def test_plot_module_pair(self):
+        plot_module_pair("Corneal Topography", "Psoriasis", "gene")
 
     if __name__ == '__main__':
         unittest.main()
