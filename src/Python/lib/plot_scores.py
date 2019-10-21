@@ -5,7 +5,7 @@ import pandas as pd
 from matplotlib.pyplot import plot
 
 import lib.plots
-import lib.read_write
+import lib.data_read_write
 
 parser = argparse.ArgumentParser(description='Plot distribution of overlapping scores.')
 parser.add_argument('path', metavar="<path>", type=str, help='path to the directory for the plot files')

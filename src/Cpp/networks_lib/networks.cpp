@@ -1,4 +1,5 @@
 #include <iomanip>
+#include <list>
 #include "networks.hpp"
 #include "overlap_types.hpp"
 #include "maps.hpp"
@@ -142,27 +143,62 @@ load_modules_result loadModules(std::string_view path_file_modules, bool has_hea
     return {result_modules, groups, members};
 }
 
-void writeModules(std::string_view path_file_modules, const modules &entity_modules, const bimap_str_int &groups,
-                  const bimap_str_int &members) {
-    std::ofstream output(path_file_modules.data());
-    if (!output.is_open()) {
-        throw std::runtime_error("Problem opening modules file fro writing.\n");
-    }
-    output << "TRAIT\tMEMBER\n";
-    for (const auto &group_entry : entity_modules.group_to_members) {
-        for (int I = 0; I < members.int_to_str.size(); I++) {
-            if (group_entry.second[I]) {
-                output << group_entry.first << "\t" << members.int_to_str[I] << "\n";
+std::string get_file_name_for_module(std::string module_name) {
+    // Remove all quote ('"') occurrences
+    std::list<char> unwanted_chars = {'"', ' ', ','};
+    for (char c : unwanted_chars) {
+        size_t position = 0;
+        while (true) {
+            position = module_name.find(c, position);
+            if (position == std::string::npos) {
+                break;
             }
+            module_name.replace(position, 1, c == '"' ? "" : "_");
         }
     }
-    output.close();
+    return module_name;
 }
 
-um<std::string, int> report_module_sizes(std::string_view path_reports,
-                                         std::string entity_label, modules entity_modules) {
+// Creates a file with all the modules, and a file for every single module
+// The one to read all modules at once, and the others for fast access in other functions)
+void writeModules(std::string_view path_file_modules, std::string_view level, std::string_view suffix,
+                  const modules &entity_modules, const bimap_str_int &groups,
+                  const bimap_str_int &members) {
+    std::string all_traits_file_path = path_file_modules.data();
+    all_traits_file_path += level;
+    all_traits_file_path += suffix;
+
+    std::ofstream file_all_traits(all_traits_file_path); // File for all modules
+    if (!file_all_traits.is_open()) {
+        throw std::runtime_error("Problem opening modules file for writing.\n");
+    }
+    file_all_traits << "TRAIT\tMEMBER\n";
+    for (const auto &group_entry : entity_modules.group_to_members) {
+
+        std::string single_trait_file_path = path_file_modules.data();
+        single_trait_file_path += get_file_name_for_module(group_entry.first);
+        single_trait_file_path += "_";
+        single_trait_file_path += level.data();
+        single_trait_file_path += suffix;
+
+        std::ofstream file_single_trait(single_trait_file_path); // Stream for a single module
+
+        file_single_trait << "MEMBER\n";
+        for (int I = 0; I < members.int_to_str.size(); I++) {
+            if (group_entry.second[I]) {
+                file_all_traits << group_entry.first << "\t" << members.int_to_str[I] << "\n";
+                file_single_trait << members.int_to_str[I] << "\n";
+            }
+        }
+        file_single_trait.close();
+    }
+    file_all_traits.close();
+}
+
+// Calculates and create a file with the sizes of all trait modules at a level (genes, proteins or proteoforms)
+um<std::string, int> calculate_and_report_sizes(std::string_view path_reports, std::string level, modules entity_modules) {
     um<std::string, int> sizes;
-    std::ofstream output(path_reports.data() + entity_label + "_sizes.tsv");
+    std::ofstream output(path_reports.data() + static_cast<std::string>("module_sizes_") +  level + ".tsv");
 
     if (!output.is_open()) {
         std::string message = "Cannot open report file at ";

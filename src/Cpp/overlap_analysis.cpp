@@ -23,6 +23,7 @@ void doOverlapAnalysis(
     // the universe set of genes used is the one of Reactome
     const auto[traits, phegen_genes] = loadPheGenIGenesAndTraits(path_file_phegeni, genes);
 
+    // Create or read module files at the three levels: all in one, and single module files.
     const auto[gene_modules, protein_modules, proteoform_modules] = get_or_create_modules(
             path_modules.data(), path_file_phegeni, path_file_gene_interactions,
             path_file_mapping_proteins_to_genes, path_file_protein_interactions,
@@ -40,8 +41,8 @@ void doOverlapAnalysis(
 
 
     // Calculate scores with Jaccard index
-    const auto scores_jaccard_index = get_scores(path_scores, getJaccardSimilarity, "jaccard_index",
-                                                 gene_modules, protein_modules, proteoform_modules);
+//    const auto scores_jaccard_index = get_scores(path_scores, getJaccardSimilarity, "jaccard_index",
+//                                                 gene_modules, protein_modules, proteoform_modules);
 
     // Check if there are modules overlapping at the proteoform level, only with modified proteins
 
@@ -50,7 +51,7 @@ void doOverlapAnalysis(
 
 void report_score_variations(std::string path_reports, std::string label, const get_scores_result &scores) {
     // Check if there are pairs of modules overlapping at one level but not in another
-    // If they had a positive overlap similarity score that became zero.
+    // Selects the pair of modules that had a higher overlap score at gene level than at protein or proteoform level
 
     std::ofstream output(path_reports.data() + label + "_score_variation_examples.tsv");
 
@@ -64,13 +65,14 @@ void report_score_variations(std::string path_reports, std::string label, const 
            << "GENES_TO_PROTEINS\tPROTEINS_TO_PROTEOFORMS\n";
     for (const auto &score_entry : scores.gene_scores) {
         if (hasKey(scores.protein_scores, score_entry.first) && hasKey(scores.proteoform_scores, score_entry.first)) {
-            if((scores.protein_scores.at(score_entry.first) < scores.gene_scores.at(score_entry.first))
-            || (scores.proteoform_scores.at(score_entry.first) < scores.gene_scores.at(score_entry.first))){
+            if ((scores.protein_scores.at(score_entry.first) < scores.gene_scores.at(score_entry.first))
+                || (scores.proteoform_scores.at(score_entry.first) < scores.gene_scores.at(score_entry.first))) {
                 output << score_entry.first << "\t";
                 output << scores.gene_scores.at(score_entry.first) << "\t";
                 output << scores.protein_scores.at(score_entry.first) << "\t";
                 output << scores.proteoform_scores.at(score_entry.first) << "\t";
-                output << scores.protein_scores.at(score_entry.first) - scores.gene_scores.at(score_entry.first) << "\t";
+                output << scores.protein_scores.at(score_entry.first) - scores.gene_scores.at(score_entry.first)
+                       << "\t";
                 output << scores.proteoform_scores.at(score_entry.first) - scores.protein_scores.at(score_entry.first)
                        << "\n";
             }
@@ -80,6 +82,9 @@ void report_score_variations(std::string path_reports, std::string label, const 
     output.close();
 }
 
+// Create or read module files at the three levels: all in one, and single module files.
+// There should be three files with all modules, one for genes, one for proteins and one for protoeforms.
+// There should be three more files for each single trait in an individual file.
 get_modules_result get_or_create_modules(std::string path_modules,
                                          std::string_view path_file_phegeni,
                                          std::string_view path_file_gene_interactions,
@@ -94,18 +99,22 @@ get_modules_result get_or_create_modules(std::string path_modules,
     std::string suffix = "_modules.tsv";
     modules gene_modules, protein_modules, proteoform_modules;
 
-    if (file_exists(path_modules + "gene" + suffix)) {
+    std::string all_traits_genes_file_name = path_modules + "genes" + suffix;
+    std::string all_traits_proteins_file_name = path_modules + "proteins" + suffix;
+    std::string all_traits_proteoforms_file_name = path_modules + "proteoforms" + suffix;
+
+    if (file_exists(all_traits_genes_file_name)) {
         std::cout << "Reading gene modules." << std::endl;
-        gene_modules = loadModules(path_modules + "gene" + suffix).entity_modules;
+        gene_modules = loadModules(all_traits_genes_file_name).entity_modules;
     } else {
         std::cout << "Creating gene modules." << std::endl;
         gene_modules = loadPheGenIGeneModules(path_file_phegeni, genes, traits, path_file_gene_interactions);
-        writeModules(path_modules + "gene" + suffix, gene_modules, traits, genes);
+        writeModules(path_modules, "genes", suffix, gene_modules, traits, genes);
     }
 
-    if (file_exists(path_modules + "protein" + suffix)) {
+    if (file_exists(all_traits_proteins_file_name)) {
         std::cout << "Reading protein modules." << std::endl;
-        protein_modules = loadModules(path_modules + "protein" + suffix).entity_modules;
+        protein_modules = loadModules(all_traits_proteins_file_name).entity_modules;
     } else {
         std::cout << "Creating protein modules." << std::endl;
         bidirectional_mapping mapping_genes_to_proteins = readMapping(path_file_mapping_proteins_to_genes, true,
@@ -113,12 +122,12 @@ get_modules_result get_or_create_modules(std::string path_modules,
         protein_modules = createPheGenIModules(gene_modules, genes, proteins, traits,
                                                mapping_genes_to_proteins.second_to_first,
                                                path_file_protein_interactions);
-        writeModules(path_modules + "protein" + suffix, protein_modules, traits, proteins);
+        writeModules(path_modules, "proteins", suffix, protein_modules, traits, proteins);
     }
 
-    if (file_exists(path_modules + "proteoform" + suffix)) {
+    if (file_exists(all_traits_proteoforms_file_name)) {
         std::cout << "Reading proteoform modules." << std::endl;
-        proteoform_modules = loadModules(path_modules + "proteoform" + suffix).entity_modules;
+        proteoform_modules = loadModules(all_traits_proteoforms_file_name).entity_modules;
     } else {
         std::cout << "Creating proteoform modules." << std::endl;
         bidirectional_mapping mapping_proteins_to_proteoforms = readMapping(path_file_mapping_proteins_to_proteoforms,
@@ -128,7 +137,7 @@ get_modules_result get_or_create_modules(std::string path_modules,
                                                   mapping_proteins_to_proteoforms.second_to_first,
                                                   path_file_proteoform_interactions);
 
-        writeModules(path_modules + "proteoform" + suffix, proteoform_modules, traits, proteoforms);
+        writeModules(path_modules, "proteoforms", suffix, proteoform_modules, traits, proteoforms);
     }
 
     return {gene_modules, protein_modules, proteoform_modules};
@@ -190,16 +199,16 @@ get_scores_result get_scores(std::string path_scores,
 void report_module_size_variation(std::string_view path_reports, const modules &gene_modules,
                                   const modules &protein_modules, const modules &proteoform_modules,
                                   const bimap_str_int &traits) {
-    const um<std::string, int> gene_module_sizes = report_module_sizes(path_reports, "genes_modules", gene_modules);
-    const auto protein_module_sizes = report_module_sizes(path_reports, "protein_modules", protein_modules);
-    const auto proteoform_module_sizes = report_module_sizes(path_reports, "proteoform_modules", proteoform_modules);
+    const auto sizes_genes = calculate_and_report_sizes(path_reports, "genes", gene_modules);
+    const auto sizes_proteins = calculate_and_report_sizes(path_reports, "proteins", protein_modules);
+    const auto sizes_proteoforms = calculate_and_report_sizes(path_reports, "proteoforms", proteoform_modules);
 
     // Check sizes of modules
     // Calculate how many empty modules exist, for genes, proteins and proteoforms
     std::cout << "Total number of possible modules is: " << traits.int_to_str.size() << std::endl;
-    std::cout << "Number of non-empty gene modules: " << gene_module_sizes.size() << std::endl;
-    std::cout << "Number of non-empty protein modules: " << protein_module_sizes.size() << std::endl;
-    std::cout << "Number of non-empty proteoform modules: " << proteoform_module_sizes.size() << std::endl;
+    std::cout << "Number of non-empty gene modules: " << sizes_genes.size() << std::endl;
+    std::cout << "Number of non-empty protein modules: " << sizes_proteins.size() << std::endl;
+    std::cout << "Number of non-empty proteoform modules: " << sizes_proteoforms.size() << std::endl;
 
     std::ofstream output(path_reports.data() + static_cast<std::string>("sizes_variation.tsv"));
 
@@ -210,27 +219,27 @@ void report_module_size_variation(std::string_view path_reports, const modules &
     }
 
     output << "TRAIT\tGENES_TO_PROTEINS\tPROTEINS_TO_PROTEOFORMS\tGENES_TO_PROTEOFORMS\n";
-    for (const auto &module_entry : gene_module_sizes) {
+    for (const auto &module_entry : sizes_genes) {
         output << module_entry.first << "\t";
 
         // Difference genes --> proteins
-        if (hasKey(protein_module_sizes, module_entry.first)) {
-            output << protein_module_sizes.at(module_entry.first) - gene_module_sizes.at(module_entry.first);
+        if (hasKey(sizes_proteins, module_entry.first)) {
+            output << sizes_proteins.at(module_entry.first) - sizes_genes.at(module_entry.first);
         } else {
-            output << -gene_module_sizes.at(module_entry.first);
+            output << -sizes_genes.at(module_entry.first);
         }
         output << "\t";
 
         // Difference proteins --> proteoforms
-        if (hasKey(protein_module_sizes, module_entry.first)) {
-            if (hasKey(proteoform_module_sizes, module_entry.first)) {
-                output << proteoform_module_sizes.at(module_entry.first) - protein_module_sizes.at(module_entry.first);
+        if (hasKey(sizes_proteins, module_entry.first)) {
+            if (hasKey(sizes_proteoforms, module_entry.first)) {
+                output << sizes_proteoforms.at(module_entry.first) - sizes_proteins.at(module_entry.first);
             } else {
-                output << -protein_module_sizes.at(module_entry.first);
+                output << -sizes_proteins.at(module_entry.first);
             }
         } else {
-            if (hasKey(proteoform_module_sizes, module_entry.first)) {
-                output << proteoform_module_sizes.at(module_entry.first);
+            if (hasKey(sizes_proteoforms, module_entry.first)) {
+                output << sizes_proteoforms.at(module_entry.first);
             } else {
                 output << 0;
             }
@@ -238,10 +247,10 @@ void report_module_size_variation(std::string_view path_reports, const modules &
         output << "\t";
 
         // Difference genes --> proteoforms
-        if (hasKey(proteoform_module_sizes, module_entry.first)) {
-            output << proteoform_module_sizes.at(module_entry.first) - gene_module_sizes.at(module_entry.first);
+        if (hasKey(sizes_proteoforms, module_entry.first)) {
+            output << sizes_proteoforms.at(module_entry.first) - sizes_genes.at(module_entry.first);
         } else {
-            output << -gene_module_sizes.at(module_entry.first);
+            output << -sizes_genes.at(module_entry.first);
         }
         output << "\n";
     }

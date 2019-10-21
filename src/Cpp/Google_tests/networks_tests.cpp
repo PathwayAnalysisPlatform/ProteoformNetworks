@@ -244,6 +244,13 @@ TEST_F(WriteModulesFixture, HasHeaderCorrect) {
 
 }
 
-TEST(SuiteName, LinesCorrect) {
+TEST_F(WriteModulesFixture, LinesCorrect) {
 
+}
+
+TEST_F(WriteModulesFixture, CreateFileName){
+    ASSERT_EQ("apolipoprotein_A-IV", get_file_name_for_module("apolipoprotein A-IV"));
+    ASSERT_EQ("Anemia__Sickle_Cell", get_file_name_for_module("\"Anemia, Sickle Cell\""));
+    ASSERT_EQ("Arthritis__Psoriatic", get_file_name_for_module("\"Arthritis, Psoriatic\""));
+    ASSERT_EQ("Carcinoma__squamous_cell_of_head_and_neck", get_file_name_for_module("\"Carcinoma, squamous cell of head and neck\""));
 }

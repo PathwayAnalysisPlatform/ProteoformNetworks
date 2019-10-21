@@ -45,6 +45,7 @@ struct get_modules_result {
     modules proteoform_modules;
 };
 
+// Create or read module files at the three levels: all in one, and single module files.
 get_modules_result get_or_create_modules(std::string path_modules,
                                          std::string_view path_file_phegeni,
                                          std::string_view path_file_gene_interactions,

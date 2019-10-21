@@ -136,7 +136,7 @@ void writeScores(const msb &sets, um<std::string, double> scores, std::string_vi
         throw runtime_error("Problem opening scores file.\n");
     }
     int score = 0;
-    output << "SET1\tSET2\tSCORE\n";
+    output << "TRAIT1\tTRAIT2\tSCORE\n";
     for (auto it1 = sets.begin(); it1 != sets.end(); it1++) {
         for (auto it2 = next(it1, 1); it2 != sets.end(); it2++) {
             std::string pair_str = it1->first + "\t" + it2->first;

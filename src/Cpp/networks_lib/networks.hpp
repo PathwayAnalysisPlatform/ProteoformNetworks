@@ -17,7 +17,9 @@ struct load_modules_result {
 
 load_modules_result loadModules(std::string_view path_file_modules, bool has_header = true);
 
-void writeModules(std::string_view path_file_modules,
+std::string get_file_name_for_module(std::string module_name);
+
+void writeModules(std::string_view path_file_modules, std::string_view level, std::string_view suffix,
                   const modules &entity_modules,
                   const bimap_str_int &groups,
                   const bimap_str_int &members);
@@ -25,7 +27,8 @@ void writeModules(std::string_view path_file_modules,
 modules removeDisconnectedMembers(modules &modules, const bimap_str_int &groups, const bimap_str_int &members,
                                   const vusi &interactions);
 
-um<std::string, int> report_module_sizes(std::string_view path_reports,
-                                         std::string entity_label, modules entity_modules);
+// Create a file with the sizes of the modules for each trait at a single level (genes, proteins or proteoforms)
+um<std::string, int> calculate_and_report_sizes(std::string_view path_reports,
+                                                std::string level, modules entity_modules);
 
 #endif //PROTEOFORMNETWORKS_NETWORKS_HPP
