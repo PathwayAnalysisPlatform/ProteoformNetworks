@@ -219,7 +219,7 @@ void writeModulesManyFiles(std::string_view path_file_modules, std::string_view 
                 // Write the neighbours of each member.
                 // Writes only the edges which go from a lower index to a higher index
                 for (int neighbor : interactions[I]) {
-                    if (I < neighbor)
+                    if(group_entry.second[neighbor] && I < neighbor)    // If the neighbor is also in the module
                         file_single_trait_edges << members.int_to_str[I] << '\t'
                                                 << members.int_to_str[neighbor] << '\n';
                 }

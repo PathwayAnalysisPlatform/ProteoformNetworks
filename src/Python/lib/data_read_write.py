@@ -1,3 +1,5 @@
+import re
+
 import networkx as nx
 import pandas as pd
 
@@ -9,7 +11,12 @@ def read_scores(file_name):
     return data.SCORE
 
 
-def get_graph(trait, level, path_to_modules):
+def get_trait_file_name(trait):
+    return re.sub("[ ,]", "_", trait.replace("\"", ""))
+
+
+def get_graph(trait, level, path_to_root):
+    """ Create a networkx graph instance for a trait module at the level specified """
     if level not in LEVELS:
         raise ValueError("level must be one of %r." % LEVELS)
 
@@ -17,34 +24,26 @@ def get_graph(trait, level, path_to_modules):
 
     # Traverse file with module members. Get set of members for the trait
     print("Reading members of module ", trait)
-    path_file_modules = path_to_modules + level + '_modules.tsv'
-    with open(path_file_modules) as file_modules:
-        file_modules.readline()  # Read header
-        line = file_modules.readline()
+    prefix = path_to_root + "reports/modules/" + get_trait_file_name(trait) + "_" + level
+    path_file_module_vertices = prefix + "_vertices.tsv"
+
+    with open(path_file_module_vertices) as file_vertices:
+        file_vertices.readline()  # Read header
+        line = file_vertices.readline()
         while line:
-            columns = line.split("\t")
-            if columns[0] == trait:
-                G.add_node(columns[1].strip())
-            line = file_modules.readline()
+            G.add_node(line.strip())
+            line = file_vertices.readline()
 
     # Traverse file with interactions of the level. Get the set of edges for this trait
-    print("Reading edges in module ", trait)
-    path_file_interactions = path_to_modules
-    if level == "gene":
-        path_file_interactions += "Genes/geneEdges.tsv"
-    elif level == "protein":
-        path_file_interactions += "Proteins/proteinEdges.tsv"
-    else:
-        path_file_interactions += "Proteoforms/proteoformEdges.tsv"
+    print("Reading interactions in module ", trait)
+    path_file_module_edges = prefix + "_edges.tsv"
 
-    nodes = set(G.nodes)
-    with open(path_file_interactions) as file_interactions:
-        file_interactions.readline()  # Read header
-        line = file_interactions.readline()
+    with open(path_file_module_edges) as file_edges:
+        file_edges.readline()  # Read header
+        line = file_edges.readline()
         while line:
             columns = line.split("\t")
-            if columns[0] in nodes and columns[1] in nodes:
-                G.add_edge(columns[0], columns[1])
-            line = file_interactions.readline()
+            G.add_edge(columns[0], columns[1].strip())
+            line = file_edges.readline()
 
     return G

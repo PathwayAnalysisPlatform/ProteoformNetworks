@@ -3,6 +3,7 @@ import pandas as pd
 from lib.dictionaries import convert_tab_to_dict
 
 
+
 def map_ids(ids, from_database_name='GENENAME', to_database_name='ACC'):
     """Map id list using UniProt identifier mapping service (https://www.uniprot.org/help/api_idmapping)\n
     Returns dictionary with mapping."""
