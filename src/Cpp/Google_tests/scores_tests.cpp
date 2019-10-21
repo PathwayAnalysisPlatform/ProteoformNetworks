@@ -264,7 +264,7 @@ TEST_F(ScoresFixture, WriteScores) {
 
 
     EXPECT_EQ(7, lines.size()); // Check number of lines is correct
-    EXPECT_EQ("SET1\tSET2\tSCORE", lines[0]); // Check header is there
+    EXPECT_EQ("TRAIT1\tTRAIT2\tSCORE", lines[0]); // Check header is there
     // Check every row has 3 columns
     for (int I = 0; I < lines.size(); I++) {
         size_t appeareances = std::count(lines[I].begin(), lines[I].end(), '\t');
