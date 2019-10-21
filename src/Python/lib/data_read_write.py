@@ -15,7 +15,7 @@ def get_trait_file_name(trait):
     return re.sub("[ ,]", "_", trait.replace("\"", ""))
 
 
-def get_graph(trait, level, path_to_root):
+def get_graph(trait, level, path_to_modules):
     """ Create a networkx graph instance for a trait module at the level specified """
     if level not in LEVELS:
         raise ValueError("level must be one of %r." % LEVELS)
@@ -24,7 +24,7 @@ def get_graph(trait, level, path_to_root):
 
     # Traverse file with module members. Get set of members for the trait
     print("Reading members of module ", trait)
-    prefix = path_to_root + "reports/modules/" + get_trait_file_name(trait) + "_" + level
+    prefix = path_to_modules + get_trait_file_name(trait) + "_" + level
     path_file_module_vertices = prefix + "_vertices.tsv"
 
     with open(path_file_module_vertices) as file_vertices:

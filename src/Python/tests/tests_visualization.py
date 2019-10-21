@@ -45,7 +45,7 @@ class TestPlotModulePair(unittest.TestCase):
     def test_get_graph_correct_proteoform_level_graph(self):
         G = get_graph("\"Lung Diseases, Interstitial\"", "proteoforms", "../../../")
         self.assertEqual(8, len(G.nodes))
-        self.assertEqual(12, len(G.edges))
+        self.assertEqual(28, len(G.edges))
 
         self.assertTrue("P98088;" in G.nodes)
         self.assertTrue("P98088;00163:null" in G.nodes)

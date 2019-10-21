@@ -1,4 +1,5 @@
 # %%
+import bokeh
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -33,7 +34,7 @@ def getScoreLabel(file_name):
     return score_label
 
 
-def plot_module_pair(trait1, trait2, level, path_to_modules):
+def plot_module_pair(trait1, trait2, level, path_to_modules, path_to_figures):
     """Visualize the pair of modules in an interactive graph."""
     # Prepare the graph
     G = nx.Graph()
@@ -48,13 +49,18 @@ def plot_module_pair(trait1, trait2, level, path_to_modules):
     G.add_edges_from(g2.edges)
 
     region = {}
+    colors = {}
     for node in G.nodes:
         if node in g1.nodes and node in g2.nodes:
             region[node] = "OVERLAP"
+            colors[node] = "red"
         elif node in g1.nodes:
             region[node] = "1"
+            colors[node] = "blue"
         else:
             region[node] = "2"
+            colors[node] = "green"
+    nx.set_node_attributes(G, colors, "colors")
     nx.set_node_attributes(G, region, "region")
     print(region)
 
@@ -84,9 +90,9 @@ def plot_module_pair(trait1, trait2, level, path_to_modules):
 
     graph_renderer = from_networkx(G, nx.spring_layout, scale=1, center=(0, 0))
 
-    graph_renderer.node_renderer.glyph = Circle(size=15, fill_color="blue")
+    graph_renderer.node_renderer.glyph = Circle(size=15, fill_color="colors")
     graph_renderer.edge_renderer.glyph = MultiLine(line_color="edge_color", line_alpha=0.8, line_width=1)
     plot.renderers.append(graph_renderer)
 
-    output_file("interactive_graphs.html")
+    output_file(f"{path_to_figures}{trait1}_to_{trait2}_{level}.html")
     show(plot)
