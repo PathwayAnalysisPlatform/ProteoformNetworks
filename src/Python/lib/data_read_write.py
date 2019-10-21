@@ -1,7 +1,7 @@
 import networkx as nx
 import pandas as pd
 
-LEVELS = {"gene", "protein", "proteoform"}
+LEVELS = {"genes", "proteins", "proteoforms"}
 
 
 def read_scores(file_name):
@@ -9,7 +9,7 @@ def read_scores(file_name):
     return data.SCORE
 
 
-def get_graph(trait, level, path_to_root="../../../"):
+def get_graph(trait, level, path_to_modules):
     if level not in LEVELS:
         raise ValueError("level must be one of %r." % LEVELS)
 
@@ -17,7 +17,7 @@ def get_graph(trait, level, path_to_root="../../../"):
 
     # Traverse file with module members. Get set of members for the trait
     print("Reading members of module ", trait)
-    path_file_modules = path_to_root + "reports/modules/" + level + '_modules.tsv'
+    path_file_modules = path_to_modules + level + '_modules.tsv'
     with open(path_file_modules) as file_modules:
         file_modules.readline()  # Read header
         line = file_modules.readline()
@@ -29,7 +29,7 @@ def get_graph(trait, level, path_to_root="../../../"):
 
     # Traverse file with interactions of the level. Get the set of edges for this trait
     print("Reading edges in module ", trait)
-    path_file_interactions = path_to_root + "resources/Reactome/v70/"
+    path_file_interactions = path_to_modules
     if level == "gene":
         path_file_interactions += "Genes/geneEdges.tsv"
     elif level == "protein":

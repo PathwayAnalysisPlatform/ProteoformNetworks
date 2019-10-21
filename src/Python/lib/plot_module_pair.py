@@ -7,7 +7,7 @@ import pandas as pd
 # Creates an image of a visual representation of two modules
 # trait1, trait2: string values of the desired trait modules
 # level: gene, protein or proteoform
-def plot_module_pair(trait1, trait2, level, path_to_root="../../../"):
+def plot_module_pair_old(trait1, trait2, level, path_to_root="../../../"):
     # Build your graph
     G = nx.Graph()
     print("Creating graph 1")
@@ -86,11 +86,3 @@ def plot_module_pair(trait1, trait2, level, path_to_root="../../../"):
     file_name = file_name.replace("\"", "").replace(" ", "-")
     plt.savefig(file_name)
     plt.show()
-
-
-# import os
-#
-# print("WD: ", os.getcwd())
-# plot_module_pair("\"Anemia, Sickle Cell\"", "Bilirubin", "gene", path_to_root="../../../")
-# plot_module_pair("\"Anemia, Sickle Cell\"", "Bilirubin", "protein", path_to_root="../../../")
-# plot_module_pair("\"Anemia, Sickle Cell\"", "Bilirubin", "proteoform", path_to_root="../../../")

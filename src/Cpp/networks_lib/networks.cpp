@@ -159,13 +159,13 @@ std::string get_file_name_for_module(std::string module_name) {
     return module_name;
 }
 
-// Creates a file with all the modules, and a file for every single module
-// The one to read all modules at once, and the others for fast access in other functions)
-void writeModules(std::string_view path_file_modules, std::string_view level, std::string_view suffix,
-                  const modules &entity_modules, const bimap_str_int &groups,
-                  const bimap_str_int &members) {
+// Creates a file with all the modules: to read all modules at once
+void writeModulesSingleFile(std::string_view path_file_modules, std::string_view level, std::string_view suffix,
+                            const modules &entity_modules, const bimap_str_int &groups,
+                            const bimap_str_int &members) {
     std::string all_traits_file_path = path_file_modules.data();
     all_traits_file_path += level;
+    all_traits_file_path += "_modules";
     all_traits_file_path += suffix;
 
     std::ofstream file_all_traits(all_traits_file_path); // File for all modules
@@ -175,30 +175,66 @@ void writeModules(std::string_view path_file_modules, std::string_view level, st
     file_all_traits << "TRAIT\tMEMBER\n";
     for (const auto &group_entry : entity_modules.group_to_members) {
 
-        std::string single_trait_file_path = path_file_modules.data();
-        single_trait_file_path += get_file_name_for_module(group_entry.first);
-        single_trait_file_path += "_";
-        single_trait_file_path += level.data();
-        single_trait_file_path += suffix;
-
-        std::ofstream file_single_trait(single_trait_file_path); // Stream for a single module
-
-        file_single_trait << "MEMBER\n";
         for (int I = 0; I < members.int_to_str.size(); I++) {
             if (group_entry.second[I]) {
                 file_all_traits << group_entry.first << "\t" << members.int_to_str[I] << "\n";
-                file_single_trait << members.int_to_str[I] << "\n";
             }
         }
-        file_single_trait.close();
     }
     file_all_traits.close();
 }
 
+// Store modules of a level in files, one file for each. For fast access in other python functions.
+// For each Trait, it creates two files: vertices (member entities) and edges file (interactions)
+void writeModulesManyFiles(std::string_view path_file_modules, std::string_view level, std::string_view suffix,
+                           const modules &entity_modules,
+                           const bimap_str_int &groups,
+                           const bimap_str_int &members,
+                           const vusi &interactions) {
+    for (const auto &group_entry : entity_modules.group_to_members) {
+        std::string file_path_single_trait_vertices = path_file_modules.data();
+        std::string file_path_single_trait_edges;
+        file_path_single_trait_vertices += get_file_name_for_module(group_entry.first);
+        file_path_single_trait_vertices += "_";
+        file_path_single_trait_vertices += level.data();
+        file_path_single_trait_vertices += "_";
+
+        file_path_single_trait_edges = file_path_single_trait_vertices;
+
+        file_path_single_trait_vertices += "vertices";
+        file_path_single_trait_vertices += suffix;
+
+        file_path_single_trait_edges += "edges";
+        file_path_single_trait_edges += suffix;
+
+        std::ofstream file_single_trait_vertices(file_path_single_trait_vertices);
+        std::ofstream file_single_trait_edges(file_path_single_trait_edges);
+
+        file_single_trait_vertices << "MEMBER\n";
+        file_single_trait_edges << "MEMBER1\tMEMBER2\n";
+        for (int I = 0; I < members.int_to_str.size(); I++) {
+            if (group_entry.second[I]) {
+                file_single_trait_vertices << members.int_to_str[I] << '\n';
+
+                // Write the neighbours of each member.
+                // Writes only the edges which go from a lower index to a higher index
+                for (int neighbor : interactions[I]) {
+                    if (I < neighbor)
+                        file_single_trait_edges << members.int_to_str[I] << '\t'
+                                                << members.int_to_str[neighbor] << '\n';
+                }
+            }
+        }
+        file_single_trait_edges.close();
+        file_single_trait_vertices.close();
+    }
+}
+
 // Calculates and create a file with the sizes of all trait modules at a level (genes, proteins or proteoforms)
-um<std::string, int> calculate_and_report_sizes(std::string_view path_reports, std::string level, modules entity_modules) {
+um<std::string, int>
+calculate_and_report_sizes(std::string_view path_reports, std::string level, modules entity_modules) {
     um<std::string, int> sizes;
-    std::ofstream output(path_reports.data() + static_cast<std::string>("module_sizes_") +  level + ".tsv");
+    std::ofstream output(path_reports.data() + static_cast<std::string>("module_sizes_") + level + ".tsv");
 
     if (!output.is_open()) {
         std::string message = "Cannot open report file at ";

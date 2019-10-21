@@ -96,7 +96,7 @@ get_modules_result get_or_create_modules(std::string path_modules,
                                          const bimap_str_int &proteins,
                                          const bimap_str_int &proteoforms,
                                          const bimap_str_int &traits) {
-    std::string suffix = "_modules.tsv";
+    std::string suffix = ".tsv";
     modules gene_modules, protein_modules, proteoform_modules;
 
     std::string all_traits_genes_file_name = path_modules + "genes" + suffix;
@@ -108,8 +108,9 @@ get_modules_result get_or_create_modules(std::string path_modules,
         gene_modules = loadModules(all_traits_genes_file_name).entity_modules;
     } else {
         std::cout << "Creating gene modules." << std::endl;
-        gene_modules = loadPheGenIGeneModules(path_file_phegeni, genes, traits, path_file_gene_interactions);
-        writeModules(path_modules, "genes", suffix, gene_modules, traits, genes);
+        gene_modules = createAndLoadPheGenIGeneModules(path_file_phegeni, genes, traits,
+                                                       path_file_gene_interactions.data(),
+                                                       path_modules, suffix);
     }
 
     if (file_exists(all_traits_proteins_file_name)) {
@@ -117,12 +118,12 @@ get_modules_result get_or_create_modules(std::string path_modules,
         protein_modules = loadModules(all_traits_proteins_file_name).entity_modules;
     } else {
         std::cout << "Creating protein modules." << std::endl;
-        bidirectional_mapping mapping_genes_to_proteins = readMapping(path_file_mapping_proteins_to_genes, true,
-                                                                      false);
-        protein_modules = createPheGenIModules(gene_modules, genes, proteins, traits,
-                                               mapping_genes_to_proteins.second_to_first,
-                                               path_file_protein_interactions);
-        writeModules(path_modules, "proteins", suffix, protein_modules, traits, proteins);
+        bidirectional_mapping mapping_genes_to_proteins = readMapping(path_file_mapping_proteins_to_genes,
+                                                                      true, false);
+        protein_modules = createAndLoadPheGenIModules(gene_modules, genes, proteins, traits,
+                                                      mapping_genes_to_proteins.second_to_first,
+                                                      path_file_protein_interactions.data(),
+                                                      path_modules, "proteins", suffix);
     }
 
     if (file_exists(all_traits_proteoforms_file_name)) {
@@ -131,13 +132,11 @@ get_modules_result get_or_create_modules(std::string path_modules,
     } else {
         std::cout << "Creating proteoform modules." << std::endl;
         bidirectional_mapping mapping_proteins_to_proteoforms = readMapping(path_file_mapping_proteins_to_proteoforms,
-                                                                            true,
-                                                                            true);
-        proteoform_modules = createPheGenIModules(protein_modules, proteins, proteoforms, traits,
-                                                  mapping_proteins_to_proteoforms.second_to_first,
-                                                  path_file_proteoform_interactions);
-
-        writeModules(path_modules, "proteoforms", suffix, proteoform_modules, traits, proteoforms);
+                                                                            true, true);
+        proteoform_modules = createAndLoadPheGenIModules(protein_modules, proteins, proteoforms, traits,
+                                                         mapping_proteins_to_proteoforms.second_to_first,
+                                                         path_file_proteoform_interactions.data(),
+                                                         path_modules, "proteoforms", suffix);
     }
 
     return {gene_modules, protein_modules, proteoform_modules};

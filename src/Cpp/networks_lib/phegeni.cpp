@@ -62,11 +62,10 @@ module_bimaps loadPheGenIGenesAndTraits(
 // - trait strings to gene bitsets.
 // - gene strings to trait bitsets
 // The two mappings define the trait modules (also called, phenotype modules or disease modules)
-modules loadPheGenIGeneModules(
-        string_view path_file_phegeni,
-        const bimap_str_int &genes,
-        const bimap_str_int &traits,
-        std::string_view path_file_gene_interactions) {
+modules
+createAndLoadPheGenIGeneModules(string_view path_file_phegeni, const bimap_str_int &genes, const bimap_str_int &traits,
+                                const std::string &path_file_gene_interactions, const std::string &path_modules,
+                                const std::string &suffix) {
     ifstream file_phegen(path_file_phegeni.data());
     string line, field, trait, gene, gene2;
     string p_value_str;
@@ -134,6 +133,9 @@ modules loadPheGenIGeneModules(
     std::cout << "Removing disconnected genes from modules..." << std::endl;
     removeDisconnectedMembers(modules, traits, genes, interactions);
 
+    writeModulesSingleFile(path_modules, "genes", suffix, modules, traits, genes);
+    writeModulesManyFiles(path_modules, "genes", suffix, modules, traits, genes, interactions);
+
     cerr << "Number of traits with gene members as bitset: " << modules.group_to_members.size() << "\n";
     cerr << "Number of genes with traits they belong as bitset: " << modules.member_to_groups.size() << "\n";
 
@@ -143,12 +145,15 @@ modules loadPheGenIGeneModules(
 // Creates modules of proteins and proteoforms.
 // Converts the modules from gene --> protein or protein --> proteoform, and then removes the disconnected vertices
 // It applies the logic that, some nodes should not be in the network module, because there are no connection to others
-modules createPheGenIModules(const modules &prev_modules,
-                             const bimap_str_int &prev_entities,
-                             const bimap_str_int &entities,
-                             const bimap_str_int &traits,
-                             const ummss &mapping,
-                             std::string_view path_file_entity_interactions) {
+modules createAndLoadPheGenIModules(const modules &prev_modules,
+                                    const bimap_str_int &prev_entities,
+                                    const bimap_str_int &entities,
+                                    const bimap_str_int &traits,
+                                    const ummss &mapping,
+                                    const std::string &path_file_entity_interactions,
+                                    const std::string &path_modules,
+                                    const std::string &level,
+                                    const std::string &suffix) {
     // Convert gene modules to protein modules using the mapping from entities to genes
     modules result_modules = convertModulesWithMapping(prev_modules, prev_entities, entities, traits,
                                                        mapping);
@@ -156,6 +161,9 @@ modules createPheGenIModules(const modules &prev_modules,
     // Load interaction network
     auto interactions = loadInteractionNetwork(path_file_entity_interactions, entities, true);
     removeDisconnectedMembers(result_modules, traits, entities, interactions);
+
+    writeModulesSingleFile(path_modules, level, suffix, result_modules, traits, entities);
+    writeModulesManyFiles(path_modules, level, suffix, result_modules, traits, entities, interactions);
 
     return result_modules;
 }
