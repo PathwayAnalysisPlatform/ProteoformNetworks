@@ -1,5 +1,7 @@
 #include "overlap_analysis.hpp"
 
+void report_overlaps_with_ptms();
+
 using namespace std;
 
 void doOverlapAnalysis(
@@ -12,7 +14,7 @@ void doOverlapAnalysis(
         std::string_view path_file_gene_interactions,
         std::string_view path_file_protein_interactions,
         std::string_view path_file_proteoform_interactions,
-        std::string path_scores,
+        std::string path_reports,
         std::string_view path_modules) {
 
     const auto[genes, proteins, proteoforms] = get_entities(path_file_reactome_genes,
@@ -25,20 +27,32 @@ void doOverlapAnalysis(
 
     // Create or read module files at the three levels: all in one, and single module files.
     const auto[gene_modules, protein_modules, proteoform_modules] = get_or_create_modules(
-            path_modules.data(), path_file_phegeni, path_file_gene_interactions,
-            path_file_mapping_proteins_to_genes, path_file_protein_interactions,
-            path_file_mapping_proteins_to_proteoforms, path_file_proteoform_interactions,
-            genes, proteins, proteoforms, traits);
+            path_modules.data(),
+            path_file_phegeni,
+            path_file_gene_interactions,
+            path_file_mapping_proteins_to_genes,
+            path_file_protein_interactions,
+            path_file_mapping_proteins_to_proteoforms,
+            path_file_proteoform_interactions,
+            genes, proteins, proteoforms,
+            traits);
+
+    std::cerr << "Gene level: " << gene_modules.group_to_members.size() << " traits\n";
+    std::cerr << "Protein level: " << protein_modules.group_to_members.size() << " traits\n";
+    std::cerr << "Proteoform level: " << proteoform_modules.group_to_members.size() << " traits\n";
 
     // Check variation in module sizes
-    report_module_size_variation(path_scores, gene_modules, protein_modules, proteoform_modules, traits);
+    report_module_size_variation(path_reports, gene_modules, protein_modules, proteoform_modules, traits);
 
     // Calculate scores with Overlap Similarity
-    const auto scores_overlap_similarity = get_scores(path_scores, getOverlapSimilarity, "overlap_similarity",
-                                                      gene_modules, protein_modules, proteoform_modules);
+    const auto scores_overlap_similarity = get_scores(path_reports, getOverlapSimilarity, "overlap_similarity",
+                                                      gene_modules, protein_modules, proteoform_modules, traits);
 
-    report_score_variations(path_scores, "overlap_similarity", scores_overlap_similarity);
+    report_node_overlap_reduction_examples(path_reports, "overlap_similarity", scores_overlap_similarity, traits);
 
+    report_connecting_edges_variation_examples(path_reports, scores_overlap_similarity);
+
+    report_overlap_only_ptms(path_reports, scores_overlap_similarity, traits);
 
     // Calculate scores with Jaccard index
 //    const auto scores_jaccard_index = get_scores(path_scores, getJaccardSimilarity, "jaccard_index",
@@ -49,11 +63,14 @@ void doOverlapAnalysis(
     std::cout << "Finished with the Overlap analysis";
 }
 
-void report_score_variations(std::string path_reports, std::string label, const get_scores_result &scores) {
-    // Check if there are pairs of modules overlapping at one level but not in another
-    // Selects the pair of modules that had a higher overlap score at gene level than at protein or proteoform level
+// Check if there are pairs of modules overlapping at one level but not in another
+// Selects the pair of modules that had a higher overlap score at gene level than at protein or proteoform level
+// Precondition: The modules for genes, proteins and proteoforms, must be the same, even when at some level there
+// are empty modules. This allows comparing module indexes faster.
+void report_node_overlap_reduction_examples(std::string path_scores, std::string label, const score_maps &scores,
+                                            const bimap_str_int &traits) {
 
-    std::ofstream output(path_reports.data() + label + "_score_variation_examples.tsv");
+    std::ofstream output(path_scores.data() + label + "_score_variation_examples.tsv");
 
     if (!output.is_open()) {
         std::string message = "Cannot open report file at ";
@@ -64,18 +81,18 @@ void report_score_variations(std::string path_reports, std::string label, const 
     output << "TRAIT1\tTRAIT2\tSCORE_GENES\tSCORE_PROTEINS\tSCORE_PROTEOFORMS\t"
            << "GENES_TO_PROTEINS\tPROTEINS_TO_PROTEOFORMS\n";
     for (const auto &score_entry : scores.gene_scores) {
-        if (hasKey(scores.protein_scores, score_entry.first) && hasKey(scores.proteoform_scores, score_entry.first)) {
-            if ((scores.protein_scores.at(score_entry.first) < scores.gene_scores.at(score_entry.first))
-                || (scores.proteoform_scores.at(score_entry.first) < scores.gene_scores.at(score_entry.first))) {
-                output << score_entry.first << "\t";
-                output << scores.gene_scores.at(score_entry.first) << "\t";
-                output << scores.protein_scores.at(score_entry.first) << "\t";
-                output << scores.proteoform_scores.at(score_entry.first) << "\t";
-                output << scores.protein_scores.at(score_entry.first) - scores.gene_scores.at(score_entry.first)
-                       << "\t";
-                output << scores.proteoform_scores.at(score_entry.first) - scores.protein_scores.at(score_entry.first)
-                       << "\n";
-            }
+        // The score maps use the indexes of the traits, then
+        if ((scores.protein_scores.at(score_entry.first) < scores.gene_scores.at(score_entry.first))
+            || (scores.proteoform_scores.at(score_entry.first) < scores.gene_scores.at(score_entry.first))) {
+            auto trait_index_pair = score_entry.first;
+            output << traits.int_to_str[trait_index_pair.first] << '\t'
+                   << traits.int_to_str[trait_index_pair.second] << "\t"
+                   << scores.gene_scores.at(trait_index_pair) << "\t"
+                   << scores.protein_scores.at(trait_index_pair) << "\t"
+                   << scores.proteoform_scores.at(trait_index_pair) << "\t"
+                   << scores.protein_scores.at(trait_index_pair) - scores.gene_scores.at(trait_index_pair) << "\t"
+                   << scores.proteoform_scores.at(trait_index_pair) - scores.protein_scores.at(trait_index_pair)
+                   << "\n";
         }
     }
 
@@ -105,7 +122,7 @@ get_modules_result get_or_create_modules(std::string path_modules,
 
     if (file_exists(all_traits_genes_file_name)) {
         std::cout << "Reading gene modules." << std::endl;
-        gene_modules = loadModules(all_traits_genes_file_name).entity_modules;
+        gene_modules = loadModules(all_traits_genes_file_name, traits, genes).entity_modules;
     } else {
         std::cout << "Creating gene modules." << std::endl;
         gene_modules = createAndLoadPheGenIGeneModules(path_file_phegeni, genes, traits,
@@ -115,7 +132,7 @@ get_modules_result get_or_create_modules(std::string path_modules,
 
     if (file_exists(all_traits_proteins_file_name)) {
         std::cout << "Reading protein modules." << std::endl;
-        protein_modules = loadModules(all_traits_proteins_file_name).entity_modules;
+        protein_modules = loadModules(all_traits_proteins_file_name, traits, proteins).entity_modules;
     } else {
         std::cout << "Creating protein modules." << std::endl;
         bidirectional_mapping mapping_genes_to_proteins = readMapping(path_file_mapping_proteins_to_genes,
@@ -128,7 +145,7 @@ get_modules_result get_or_create_modules(std::string path_modules,
 
     if (file_exists(all_traits_proteoforms_file_name)) {
         std::cout << "Reading proteoform modules." << std::endl;
-        proteoform_modules = loadModules(all_traits_proteoforms_file_name).entity_modules;
+        proteoform_modules = loadModules(all_traits_proteoforms_file_name, traits, proteoforms).entity_modules;
     } else {
         std::cout << "Creating proteoform modules." << std::endl;
         bidirectional_mapping mapping_proteins_to_proteoforms = readMapping(path_file_mapping_proteins_to_proteoforms,
@@ -170,27 +187,25 @@ get_entities_result get_entities(std::string_view path_file_reactome_genes,
     return {genes, proteins, proteoforms};
 }
 
-get_scores_result get_scores(std::string path_scores,
-                             std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> scoring,
-                             std::string label,
-                             const modules &gene_modules,
-                             const modules &protein_modules,
-                             const modules &proteoform_modules) {
+score_maps get_scores(std::string path_scores,
+                      std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> scoring,
+                      std::string label,
+                      const modules &gene_modules,
+                      const modules &protein_modules,
+                      const modules &proteoform_modules,
+                      const bimap_str_int &traits) {
 
     std::cout << "Calculating overlap similarity for Genes." << std::endl;
     auto gene_scores = getScores(gene_modules.group_to_members, scoring);
-    writeScores(gene_modules.group_to_members, gene_scores,
-                path_scores + "scores_genes_" + label + ".tsv");
+    writeScores(traits, gene_modules, gene_scores, path_scores + "scores_genes_" + label + ".tsv");
 
     std::cout << "Calculating overlap similarity for Proteins." << std::endl;
     auto protein_scores = getScores(protein_modules.group_to_members, scoring);
-    writeScores(protein_modules.group_to_members, protein_scores,
-                path_scores + "scores_proteins_" + label + ".tsv");
+    writeScores(traits, protein_modules, protein_scores, path_scores + "scores_proteins_" + label + ".tsv");
 
     std::cout << "Calculating overlap similarity for Proteoforms." << std::endl;
     auto proteoform_scores = getScores(proteoform_modules.group_to_members, scoring);
-    writeScores(proteoform_modules.group_to_members, proteoform_scores,
-                path_scores + "scores_proteoforms_" + label + ".tsv");
+    writeScores(traits, proteoform_modules, proteoform_scores, path_scores + "scores_proteoforms_" + label + ".tsv");
 
     return {gene_scores, protein_scores, proteoform_scores};
 }
@@ -198,9 +213,9 @@ get_scores_result get_scores(std::string path_scores,
 void report_module_size_variation(std::string_view path_reports, const modules &gene_modules,
                                   const modules &protein_modules, const modules &proteoform_modules,
                                   const bimap_str_int &traits) {
-    const auto sizes_genes = calculate_and_report_sizes(path_reports, "genes", gene_modules);
-    const auto sizes_proteins = calculate_and_report_sizes(path_reports, "proteins", protein_modules);
-    const auto sizes_proteoforms = calculate_and_report_sizes(path_reports, "proteoforms", proteoform_modules);
+    const auto sizes_genes = calculate_and_report_sizes(path_reports, "genes", gene_modules, traits);
+    const auto sizes_proteins = calculate_and_report_sizes(path_reports, "proteins", protein_modules, traits);
+    const auto sizes_proteoforms = calculate_and_report_sizes(path_reports, "proteoforms", proteoform_modules, traits);
 
     // Check sizes of modules
     // Calculate how many empty modules exist, for genes, proteins and proteoforms
@@ -254,5 +269,36 @@ void report_module_size_variation(std::string_view path_reports, const modules &
         output << "\n";
     }
     output.close();
+}
+
+void report_connecting_edges_variation_examples(std::string path_reports, const score_maps scores) {
+
+    std::ofstream output(path_reports.data() + static_cast<std::string>("bridges_variation.tsv"));
+
+    if (!output.is_open()) {
+        std::string message = "Cannot open report file at ";
+        std::string function = __FUNCTION__;
+        throw std::runtime_error(message + function);
+    }
+
+    // Check those pairs of modules which overlap at the gene level
+    for (const auto &pair_entry : scores.gene_scores) {
+        std::pair<int, int> pair_names = pair_entry.first;
+        double pair_score = pair_entry.second;
+        if (pair_score > 0) {
+            // Given two modules m1 and m2, and vertices v1 in m1 only, and v2 in m2 only.
+            // A bridge edge is an edge connecting v1 and v2. An edge connecting the two modules.
+            // Count the number of bridge edges at each level
+
+
+            // Calculate the ratio of change between each level
+        }
+    }
+
+
+}
+
+void report_overlap_only_ptms(std::string string, const score_maps maps, const bimap_str_int anInt) {
+    //TODO: Implement this function
 }
 

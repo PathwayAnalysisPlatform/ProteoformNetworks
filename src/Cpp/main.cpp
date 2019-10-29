@@ -13,7 +13,7 @@ const std::string path_file_mapping_proteins_to_proteoforms = "../../../resource
 const std::string path_file_gene_interactions = "../../../resources/Reactome/v70/Genes/geneEdges.tsv";
 const std::string path_file_protein_interactions = "../../../resources/Reactome/v70/Proteins/proteinEdges.tsv";
 const std::string path_file_proteoform_interactions = "../../../resources/Reactome/v70/Proteoforms/proteoformEdges.tsv";
-const std::string path_scores = "../../../reports/";
+const std::string path_reports = "../../../reports/";
 const std::string path_modules = "../../../reports/modules/";
 
 int main() try {
@@ -29,7 +29,7 @@ int main() try {
                       path_file_gene_interactions,
                       path_file_protein_interactions,
                       path_file_proteoform_interactions,
-                      path_scores,
+                      path_reports,
                       path_modules);
 
 }

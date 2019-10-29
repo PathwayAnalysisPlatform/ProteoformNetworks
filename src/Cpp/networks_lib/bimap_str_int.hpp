@@ -6,19 +6,7 @@
 #include <string_view>
 #include <cstring>
 #include <set>
-
-#include "types.hpp"
 #include "conversions.hpp"
-
-struct bimap_str_int {
-    vs int_to_str;
-    umsi str_to_int;
-};
-
-struct module_bimaps {
-    bimap_str_int groups;
-    bimap_str_int members;
-};
 
 // Create bimap from element to index in a unique sorted array.
 // Creates a bimap of the elements in the selected column.

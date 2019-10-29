@@ -121,61 +121,64 @@ TEST_F(LoadModulesFixture, CorrectModulesSizes) {
     EXPECT_EQ(3, example_modules.group_to_members.size());
     for (auto group_entry = example_modules.group_to_members.begin();
          group_entry != example_modules.group_to_members.end(); group_entry++) {
-        EXPECT_EQ(members.int_to_str.size(), group_entry->second.size());
+        EXPECT_EQ(members.int_to_str.size(), group_entry->size());
     }
     EXPECT_EQ(5, example_modules.member_to_groups.size());
     for (auto member_entry = example_modules.member_to_groups.begin();
          member_entry != example_modules.member_to_groups.end(); member_entry++) {
-        EXPECT_EQ(groups.int_to_str.size(), member_entry->second.size());
+        EXPECT_EQ(groups.int_to_str.size(), member_entry->size());
     }
 }
 
 // Check modules group --> members
 TEST_F(LoadModulesFixture, CorrectGroupToMembers) {
     // Correct number of members
-    EXPECT_EQ(3, example_modules.group_to_members["A"].count());
-    EXPECT_EQ(2, example_modules.group_to_members["B"].count());
-    EXPECT_EQ(1, example_modules.group_to_members["C"].count());
+    EXPECT_EQ(3, example_modules.group_to_members[groups.str_to_int["A"]].count());
+    EXPECT_EQ(2, example_modules.group_to_members[groups.str_to_int["B"]].count());
+    EXPECT_EQ(1, example_modules.group_to_members[groups.str_to_int["C"]].count());
     // Correct members
-    EXPECT_TRUE(example_modules.group_to_members["A"][members.str_to_int["1"]]);
-    EXPECT_TRUE(example_modules.group_to_members["A"][members.str_to_int["2"]]);
-    EXPECT_TRUE(example_modules.group_to_members["A"][members.str_to_int["3"]]);
+    EXPECT_TRUE(example_modules.group_to_members[groups.str_to_int["A"]][members.str_to_int["1"]]);
+    EXPECT_TRUE(example_modules.group_to_members[groups.str_to_int["A"]][members.str_to_int["2"]]);
+    EXPECT_TRUE(example_modules.group_to_members[groups.str_to_int["A"]][members.str_to_int["3"]]);
 
-    EXPECT_TRUE(example_modules.group_to_members["B"][members.str_to_int["3"]]);
-    EXPECT_TRUE(example_modules.group_to_members["B"][members.str_to_int["4"]]);
+    EXPECT_TRUE(example_modules.group_to_members[groups.str_to_int["B"]][members.str_to_int["3"]]);
+    EXPECT_TRUE(example_modules.group_to_members[groups.str_to_int["B"]][members.str_to_int["4"]]);
 
-    EXPECT_TRUE(example_modules.group_to_members["C"][members.str_to_int["5"]]);
+    EXPECT_TRUE(example_modules.group_to_members[groups.str_to_int["C"]][members.str_to_int["5"]]);
 }
 
 // Check modules member --> groups
 TEST_F(LoadModulesFixture, CorrectMemberToGroups) {
     // Correct number of owners
-    EXPECT_EQ(1, example_modules.member_to_groups["1"].count());
-    EXPECT_EQ(1, example_modules.member_to_groups["2"].count());
-    EXPECT_EQ(2, example_modules.member_to_groups["3"].count());
-    EXPECT_EQ(1, example_modules.member_to_groups["4"].count());
-    EXPECT_EQ(1, example_modules.member_to_groups["5"].count());
+    EXPECT_EQ(1, example_modules.member_to_groups[members.str_to_int["1"]].count());
+    EXPECT_EQ(1, example_modules.member_to_groups[members.str_to_int["2"]].count());
+    EXPECT_EQ(2, example_modules.member_to_groups[members.str_to_int["3"]].count());
+    EXPECT_EQ(1, example_modules.member_to_groups[members.str_to_int["4"]].count());
+    EXPECT_EQ(1, example_modules.member_to_groups[members.str_to_int["5"]].count());
 
     // Correct owners
-    EXPECT_TRUE(example_modules.member_to_groups["1"][groups.str_to_int["A"]]);
-    EXPECT_TRUE(example_modules.member_to_groups["2"][groups.str_to_int["A"]]);
-    EXPECT_TRUE(example_modules.member_to_groups["3"][groups.str_to_int["A"]]);
-    EXPECT_TRUE(example_modules.member_to_groups["3"][groups.str_to_int["B"]]);
-    EXPECT_TRUE(example_modules.member_to_groups["4"][groups.str_to_int["B"]]);
-    EXPECT_TRUE(example_modules.member_to_groups["5"][groups.str_to_int["C"]]);
+    EXPECT_TRUE(example_modules.member_to_groups[members.str_to_int["1"]][groups.str_to_int["A"]]);
+    EXPECT_TRUE(example_modules.member_to_groups[members.str_to_int["2"]][groups.str_to_int["A"]]);
+    EXPECT_TRUE(example_modules.member_to_groups[members.str_to_int["3"]][groups.str_to_int["A"]]);
+    EXPECT_TRUE(example_modules.member_to_groups[members.str_to_int["3"]][groups.str_to_int["B"]]);
+    EXPECT_TRUE(example_modules.member_to_groups[members.str_to_int["4"]][groups.str_to_int["B"]]);
+    EXPECT_TRUE(example_modules.member_to_groups[members.str_to_int["5"]][groups.str_to_int["C"]]);
 }
 
 class RemoveDisconnectedMembersFixture : public ::testing::Test {
 
 protected:
     virtual void SetUp() {
-        auto[example_modules, groups, members] = loadModules(path_file_modules);
-        interactions = loadInteractionNetwork(path_file_interactions, members, true);
+        auto ret = loadModules(path_file_modules);
+        interactions = loadInteractionNetwork(path_file_interactions, ret.members, true);
+        groups = ret.groups;
+        members = ret.members;
     }
 
     std::string path_file_modules = "../../Google_tests/resources/example_modules.csv";
     std::string path_file_interactions = "../../Google_tests/resources/example_interactions.csv";
     vusi interactions;
+    bimap_str_int groups, members;
 
 };
 
@@ -184,41 +187,41 @@ TEST_F(RemoveDisconnectedMembersFixture, KeepsConnectedMembers) {
     auto[example_modules, groups, members] = loadModules(path_file_modules);
 
     // Check vertices are members
-    ASSERT_TRUE(example_modules.group_to_members["A"][members.str_to_int["1"]]);
-    ASSERT_TRUE(example_modules.group_to_members["A"][members.str_to_int["2"]]);
-    ASSERT_TRUE(example_modules.group_to_members["A"][members.str_to_int["3"]]);
+    ASSERT_TRUE(example_modules.group_to_members[groups.str_to_int["A"]][members.str_to_int["1"]]);
+    ASSERT_TRUE(example_modules.group_to_members[groups.str_to_int["A"]][members.str_to_int["2"]]);
+    ASSERT_TRUE(example_modules.group_to_members[groups.str_to_int["A"]][members.str_to_int["3"]]);
 
-    ASSERT_TRUE(example_modules.group_to_members["B"][members.str_to_int["3"]]);
-    ASSERT_TRUE(example_modules.group_to_members["B"][members.str_to_int["4"]]);
+    ASSERT_TRUE(example_modules.group_to_members[groups.str_to_int["B"]][members.str_to_int["3"]]);
+    ASSERT_TRUE(example_modules.group_to_members[groups.str_to_int["B"]][members.str_to_int["4"]]);
 
     removeDisconnectedMembers(example_modules, groups, members, interactions);
 
     // In module A, should keep 1 and 2. But delete vertex 3, because it is disconnected
-    EXPECT_TRUE(example_modules.group_to_members["A"][members.str_to_int["1"]]);
-    EXPECT_TRUE(example_modules.group_to_members["A"][members.str_to_int["2"]]);
+    EXPECT_TRUE(example_modules.group_to_members[groups.str_to_int["A"]][members.str_to_int["1"]]);
+    EXPECT_TRUE(example_modules.group_to_members[groups.str_to_int["A"]][members.str_to_int["2"]]);
 
     // In module B, should keep 3 and 4
-    EXPECT_TRUE(example_modules.group_to_members["B"][members.str_to_int["3"]]);
-    EXPECT_TRUE(example_modules.group_to_members["B"][members.str_to_int["4"]]);
+    EXPECT_TRUE(example_modules.group_to_members[groups.str_to_int["B"]][members.str_to_int["3"]]);
+    EXPECT_TRUE(example_modules.group_to_members[groups.str_to_int["B"]][members.str_to_int["4"]]);
 }
 
 TEST_F(RemoveDisconnectedMembersFixture, RemovesDisconnectedMember) {
     auto[example_modules, groups, members] = loadModules(path_file_modules);
 
     // Check vertices are members
-    ASSERT_TRUE(example_modules.group_to_members["A"][members.str_to_int["3"]]);
+    ASSERT_TRUE(example_modules.group_to_members[groups.str_to_int["A"]][members.str_to_int["3"]]);
 
-    ASSERT_TRUE(example_modules.group_to_members["C"][members.str_to_int["5"]]);
+    ASSERT_TRUE(example_modules.group_to_members[groups.str_to_int["C"]][members.str_to_int["5"]]);
 
     auto ret = removeDisconnectedMembers(example_modules, groups, members, interactions);
 
     // In module A, should keep 1 and 2. But delete vertex 3, because it is disconnected
     // Removes vertex 3 from module A
-    EXPECT_FALSE(example_modules.group_to_members["A"][members.str_to_int["3"]]);
+    EXPECT_FALSE(example_modules.group_to_members[groups.str_to_int["A"]][members.str_to_int["3"]]);
 
     // Removes vertex 5 from module C
     // In module C, should remove the only member 5
-    EXPECT_FALSE(example_modules.group_to_members["C"][members.str_to_int["5"]]);
+    EXPECT_FALSE(example_modules.group_to_members[groups.str_to_int["C"] ][members.str_to_int["5"]]);
 }
 
 class WriteModulesFixture : public ::testing::Test {

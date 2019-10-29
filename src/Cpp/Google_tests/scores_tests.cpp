@@ -1,5 +1,6 @@
 #include <bitset>
 #include <algorithm>
+#include <utility>
 #include "gtest/gtest.h"
 #include "scores.hpp"
 
@@ -7,23 +8,29 @@ class ScoresFixture : public ::testing::Test {
 
 protected:
     virtual void SetUp() {
+        groups = createBimap({"A", "B", "C", "D"});
+
         // Create 4 sets of 5 members.
-        sets["A"] = base::dynamic_bitset<>(5);  // 0, 1, 2, 3, 4
-        sets["B"] = base::dynamic_bitset<>(5);  // 0, 1, 2
-        sets["C"] = base::dynamic_bitset<>(5);  // 3, 4
-        sets["D"] = base::dynamic_bitset<>(5);  // 1, 2, 3
+        sets.push_back(base::dynamic_bitset<>(5));  // 0, 1, 2, 3, 4
+        sets.push_back(base::dynamic_bitset<>(5));  // 0, 1, 2
+        sets.push_back(base::dynamic_bitset<>(5));  // 3, 4
+        sets.push_back(base::dynamic_bitset<>(5));  // 1, 2, 3
 
         for (int I = 0; I <= 4; I++)
-            sets["A"][I].set();
+            sets[groups.str_to_int["A"]][I].set();
         for (int I = 0; I <= 2; I++)
-            sets["B"][I].set();
+            sets[groups.str_to_int["B"]][I].set();
         for (int I = 3; I <= 4; I++)
-            sets["C"][I].set();
+            sets[groups.str_to_int["C"]][I].set();
         for (int I = 1; I <= 3; I++)
-            sets["D"][I].set();
+            sets[groups.str_to_int["D"]][I].set();
+
+        the_modules.group_to_members = sets;
     }
 
-    msb sets;
+    vb sets;
+    modules the_modules;
+    bimap_str_int groups, members;
 };
 
 // Jaccard similarity when both sets are empty
@@ -215,11 +222,11 @@ TEST_F(ScoresFixture, ShareSmallSet) {
 // Get scores for pairs of sets: Correct number of pairs
 TEST_F(ScoresFixture, AllPairsCorrectPairs) {
     // Create 4 sets of 5 members.
-    msb sets;
-    sets["A"] = base::dynamic_bitset<>(5);
-    sets["B"] = base::dynamic_bitset<>(5);
-    sets["C"] = base::dynamic_bitset<>(5);
-    sets["D"] = base::dynamic_bitset<>(5);
+    vb sets;
+    sets.push_back(base::dynamic_bitset<>(5));
+    sets.push_back(base::dynamic_bitset<>(5));
+    sets.push_back(base::dynamic_bitset<>(5));
+    sets.push_back(base::dynamic_bitset<>(5));
 
     auto scores = getScores(sets, getOverlapSimilarity);
 
@@ -228,10 +235,11 @@ TEST_F(ScoresFixture, AllPairsCorrectPairs) {
 
 // Get scores for pairs of sets: Correct values
 TEST_F(ScoresFixture, AllPairsCorrectValues) {
-    um<std::string, double> scores = getScores(sets, getOverlapSimilarity);
+    pair_map<double> scores = getScores(sets, getOverlapSimilarity);
 
     for (const auto &score_entry : scores) {
-        std::cout << "Score " << score_entry.first << ": " << score_entry.second << std::endl;
+        std::cout << "Score " << groups.int_to_str[score_entry.first.first] << '\t'
+                  << groups.int_to_str[score_entry.first.second] << ": " << score_entry.second << std::endl;
     }
 
     // 0: (A, B)
@@ -241,10 +249,10 @@ TEST_F(ScoresFixture, AllPairsCorrectValues) {
     // 4: (B, D)
     // 5: (C, D)
 
-    EXPECT_EQ(1, scores["A\tB"]);    // A B
-    EXPECT_EQ(0, scores["B\tC"]);    // B C
-    EXPECT_NEAR(0.66, scores["B\tD"], 1e-1); // B D
-    EXPECT_EQ(0.5, scores["C\tD"]);  // C D
+    EXPECT_EQ(1, scores[std::make_pair(groups.str_to_int["A"], groups.str_to_int["B"])]);    // A B
+    EXPECT_EQ(0, scores[std::make_pair(groups.str_to_int["B"], groups.str_to_int["C"])]);    // B C
+    EXPECT_NEAR(0.66, scores[std::make_pair(groups.str_to_int["B"], groups.str_to_int["D"])], 1e-1); // B D
+    EXPECT_EQ(0.5, scores[std::make_pair(groups.str_to_int["C"], groups.str_to_int["D"])]);  // C D
 }
 
 
@@ -252,7 +260,7 @@ TEST_F(ScoresFixture, WriteScores) {
     // Create example file
     std::string file_name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
     file_name += "_scores.txt";
-    writeScores(sets, getScores(sets, getOverlapSimilarity), file_name);
+    writeScores(groups, the_modules, getScores(sets, getOverlapSimilarity), file_name);
 
     // Open file
     std::ifstream scores_file(file_name);

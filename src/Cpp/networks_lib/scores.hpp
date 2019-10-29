@@ -11,6 +11,7 @@
 #include <bitset.h>
 #include <bitset>
 #include <unordered_map>
+#include <utility>
 
 #include "types.hpp"
 #include "phegeni.hpp"
@@ -43,9 +44,10 @@ double getOverlapSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> 
 // Calculate similarity score between al pairs of bitsets
 // The sets are the second value of each entry in the sets parameter.
 // The score is a function capable of calculating the overlap with bitsets.
-um<std::string, double> getScores(const msb &sets,
-                                  std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score);
+pair_map<double>
+getScores(const vb &sets, std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score_function);
 
-void writeScores(const msb &sets, um<std::string, double> scores, std::string_view path_output);
+void writeScores(const bimap_str_int &groups, const modules &entity_modules,
+                 const pair_map<double> &scores, std::string_view path_output);
 
 #endif /* UTILITY_HPP_ */

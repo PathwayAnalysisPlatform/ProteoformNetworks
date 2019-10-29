@@ -45,18 +45,17 @@ vusi loadInteractionNetwork(std::string_view path_file_interactions,
     return interactions;
 }
 
-modules removeDisconnectedMembers(modules &modules, const bimap_str_int &groups, const bimap_str_int &members,
+modules removeDisconnectedMembers(modules &modules,
+                                  const bimap_str_int &groups, const bimap_str_int &members,
                                   const vusi &interactions) {
     // For each module:
-    for (auto group_entry = modules.group_to_members.begin();
-         group_entry != modules.group_to_members.end(); group_entry++) {
+    for (int group_index = 0; group_index < modules.group_to_members.size(); group_index++) {
         // Get module members
-        int group_index = groups.str_to_int.at(group_entry->first);
         std::unordered_set<int> member_indexes;
 
-        for (int I = 0; I < members.int_to_str.size(); I++)
-            if (group_entry->second[I])
-                member_indexes.insert(I);
+        for (int member_index = 0; member_index < members.int_to_str.size(); member_index++)
+            if (modules.group_to_members[group_index][member_index])
+                member_indexes.insert(member_index);
 
         // For each member, iterate over its interactors, check if any is also member of the group
         for (int member_index : member_indexes) {
@@ -72,11 +71,10 @@ modules removeDisconnectedMembers(modules &modules, const bimap_str_int &groups,
 
             if (!isConnected) {
                 // Remove vertex from the group
-                group_entry->second[member_index].reset();
+                modules.group_to_members[group_index][member_index].reset();
 
                 // Remove owner from vertex owners
-                std::string member = members.int_to_str[member_index];
-                modules.member_to_groups[member][group_index].reset();
+                modules.member_to_groups[member_index][group_index].reset();
             }
         }
 
@@ -85,13 +83,52 @@ modules removeDisconnectedMembers(modules &modules, const bimap_str_int &groups,
     return modules;
 }
 
-// Reads groups from files. It creates the bimap structures for the groups and the members
+// Reads groups from files.
+// The file should follow the format convention: two colums, no extra spaces at the end of each row.
+// Columns separated by a '\t' (tab) character.
+load_modules_result loadModules(std::string_view path_file_modules,
+                                const bimap_str_int &groups, const bimap_str_int &members,
+                                bool has_header) {
+    modules result_modules;
+    std::string line, group, member;
+
+    // # Read the file to create the modules with its members
+    std::ifstream file_modules(path_file_modules.data());
+    if (!file_modules.is_open()) {
+        std::string message = "Cannot open path_file_modules at ";
+        std::string function = __FUNCTION__;
+        throw std::runtime_error(message + function);
+    }
+
+    // ## Read modules
+    // Initialize the modules to the correct sizes
+    for (int group_index = 0; group_index < groups.int_to_str.size(); group_index++)
+        result_modules.group_to_members.push_back(base::dynamic_bitset<>(members.int_to_str.size()));
+    for (int member_index = 0; member_index < members.int_to_str.size(); member_index++)
+        result_modules.member_to_groups.push_back(base::dynamic_bitset<>(groups.int_to_str.size()));
+
+    // Set the members of each group and the owners of each member
+    if (has_header) {
+        std::getline(file_modules, line);
+    }
+    while (std::getline(file_modules, group, '\t')) {
+        std::getline(file_modules, member);
+        int group_index = groups.str_to_int.at(group);
+        int member_index = members.str_to_int.at(member);
+        result_modules.group_to_members[group_index][member_index].set();
+        result_modules.member_to_groups[member_index][group_index].set();
+    }
+    file_modules.close();
+
+    return {result_modules, groups, members};
+}
+
+// Reads groups from files. It creates the bimap structures for the groups and the members from the file.
 // The file should follow the format convention: two colums, no extra spaces at the end of each row.
 // Columns separated by a '\t' (tab) character.
 load_modules_result loadModules(std::string_view path_file_modules, bool has_header) {
     modules result_modules;
-    bimap_str_int groups;
-    bimap_str_int members;
+    bimap_str_int groups, members;
 
     std::ifstream file_modules(path_file_modules.data());
     if (!file_modules.is_open()) {
@@ -114,33 +151,7 @@ load_modules_result loadModules(std::string_view path_file_modules, bool has_hea
     members = createBimap(vs(unique_members.begin(), unique_members.end()));
     file_modules.close();
 
-    // # Read the file to create the modules
-    file_modules.open(path_file_modules.data());
-    if (!file_modules.is_open()) {
-        std::string message = "Cannot open path_file_modules at ";
-        std::string function = __FUNCTION__;
-        throw std::runtime_error(message + function);
-    }
-
-    // ## Read modules
-    // Initialize the modules to the correct sizes
-    for (const auto &group : groups.int_to_str)
-        result_modules.group_to_members.emplace(group, base::dynamic_bitset<>(members.int_to_str.size()));
-    for (const auto &member : members.int_to_str)
-        result_modules.member_to_groups.emplace(member, base::dynamic_bitset<>(groups.int_to_str.size()));
-
-    // Set the members of each group and the owners of each member
-    if (has_header) {
-        std::getline(file_modules, line);
-    }
-    while (std::getline(file_modules, group, '\t')) {
-        std::getline(file_modules, member);
-        result_modules.group_to_members[group][members.str_to_int[member]].set();
-        result_modules.member_to_groups[member][groups.str_to_int[group]].set();
-    }
-    file_modules.close();
-
-    return {result_modules, groups, members};
+    return loadModules(path_file_modules, groups, members, has_header);
 }
 
 std::string get_file_name_for_module(std::string module_name) {
@@ -173,11 +184,10 @@ void writeModulesSingleFile(std::string_view path_file_modules, std::string_view
         throw std::runtime_error("Problem opening modules file for writing.\n");
     }
     file_all_traits << "TRAIT\tMEMBER\n";
-    for (const auto &group_entry : entity_modules.group_to_members) {
-
-        for (int I = 0; I < members.int_to_str.size(); I++) {
-            if (group_entry.second[I]) {
-                file_all_traits << group_entry.first << "\t" << members.int_to_str[I] << "\n";
+    for (int group_index = 0; group_index < groups.int_to_str.size(); group_index++) {
+        for (int member_index = 0; member_index < members.int_to_str.size(); member_index++) {
+            if (entity_modules.group_to_members[group_index][member_index]) {
+                file_all_traits << groups.int_to_str[group_index] << "\t" << members.int_to_str[member_index] << "\n";
             }
         }
     }
@@ -191,10 +201,10 @@ void writeModulesManyFiles(std::string_view path_file_modules, std::string_view 
                            const bimap_str_int &groups,
                            const bimap_str_int &members,
                            const vusi &interactions) {
-    for (const auto &group_entry : entity_modules.group_to_members) {
+    for (int group_index = 0; group_index < groups.int_to_str.size(); group_index++) {
         std::string file_path_single_trait_vertices = path_file_modules.data();
         std::string file_path_single_trait_edges;
-        file_path_single_trait_vertices += get_file_name_for_module(group_entry.first);
+        file_path_single_trait_vertices += get_file_name_for_module(groups.int_to_str[group_index]);
         file_path_single_trait_vertices += "_";
         file_path_single_trait_vertices += level.data();
         file_path_single_trait_vertices += "_";
@@ -212,15 +222,16 @@ void writeModulesManyFiles(std::string_view path_file_modules, std::string_view 
 
         file_single_trait_vertices << "MEMBER\n";
         file_single_trait_edges << "MEMBER1\tMEMBER2\n";
-        for (int I = 0; I < members.int_to_str.size(); I++) {
-            if (group_entry.second[I]) {
-                file_single_trait_vertices << members.int_to_str[I] << '\n';
+        for (int member_index = 0; member_index < members.int_to_str.size(); member_index++) {
+            if (entity_modules.group_to_members[group_index][member_index]) {
+                file_single_trait_vertices << members.int_to_str[member_index] << '\n';
 
                 // Write the neighbours of each member.
                 // Writes only the edges which go from a lower index to a higher index
-                for (int neighbor : interactions[I]) {
-                    if(group_entry.second[neighbor] && I < neighbor)    // If the neighbor is also in the module
-                        file_single_trait_edges << members.int_to_str[I] << '\t'
+                for (int neighbor : interactions[member_index]) {
+                    // If the neighbor is also in the module
+                    if (entity_modules.group_to_members[group_index][neighbor] && member_index < neighbor)
+                        file_single_trait_edges << members.int_to_str[member_index] << '\t'
                                                 << members.int_to_str[neighbor] << '\n';
                 }
             }
@@ -231,9 +242,9 @@ void writeModulesManyFiles(std::string_view path_file_modules, std::string_view 
 }
 
 // Calculates and create a file with the sizes of all trait modules at a level (genes, proteins or proteoforms)
-um<std::string, int>
-calculate_and_report_sizes(std::string_view path_reports, std::string level, modules entity_modules) {
-    um<std::string, int> sizes;
+um<int, int> calculate_and_report_sizes(std::string_view path_reports, const std::string &level,
+                                        const modules &entity_modules, const bimap_str_int &groups) {
+    um<int, int> sizes;
     std::ofstream output(path_reports.data() + static_cast<std::string>("module_sizes_") + level + ".tsv");
 
     if (!output.is_open()) {
@@ -243,9 +254,9 @@ calculate_and_report_sizes(std::string_view path_reports, std::string level, mod
     }
 
     output << "MODULE\tSIZE\n";
-    for (const auto &module_entry : entity_modules.group_to_members) {
-        output << module_entry.first << "\t" << module_entry.second.count() << "\n";
-        sizes[module_entry.first] = module_entry.second.count();
+    for (int group_index = 0; group_index < entity_modules.group_to_members.size(); group_index++) {
+        output << groups.int_to_str[group_index] << "\t" << entity_modules.group_to_members[group_index].count() << "\n";
+        sizes[group_index] = entity_modules.group_to_members[group_index].count();
     }
     output.close();
     return sizes;

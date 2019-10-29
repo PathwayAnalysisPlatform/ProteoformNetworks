@@ -15,7 +15,13 @@ struct load_modules_result {
     bimap_str_int members;
 };
 
-load_modules_result loadModules(std::string_view path_file_modules, bool has_header = true);
+load_modules_result loadModules(std::string_view path_file_modules,
+                                const bimap_str_int &groups, const bimap_str_int &members,
+                                bool has_header = true);
+
+load_modules_result loadModules(std::string_view path_file_modules,
+                                bool has_header = true);
+
 
 std::string get_file_name_for_module(std::string module_name);
 
@@ -37,7 +43,11 @@ modules removeDisconnectedMembers(modules &modules, const bimap_str_int &groups,
                                   const vusi &interactions);
 
 // Create a file with the sizes of the modules for each trait at a single level (genes, proteins or proteoforms)
-um<std::string, int> calculate_and_report_sizes(std::string_view path_reports,
-                                                std::string level, modules entity_modules);
+um<int, int> calculate_and_report_sizes(std::string_view path_reports, const std::string &level,
+                                        const modules &entity_modules, const bimap_str_int &groups);
+
+// Counts the number of edges crossing from one module to the other.
+// This function requires that the modules vertices and edges files are created
+int countCrossingEdges(const std::string &trait1, const std::string &trait2);
 
 #endif //PROTEOFORMNETWORKS_NETWORKS_HPP

@@ -58,18 +58,19 @@ get_modules_result get_or_create_modules(std::string path_modules,
                                          const bimap_str_int &proteoforms,
                                          const bimap_str_int &traits);
 
-struct get_scores_result {
-    um<std::string, double> gene_scores;
-    um<std::string, double> protein_scores;
-    um<std::string, double> proteoform_scores;
+struct score_maps {
+    pair_map<double> gene_scores;
+    pair_map<double> protein_scores;
+    pair_map<double> proteoform_scores;
 };
 
-get_scores_result get_scores(std::string path_scores,
-                             std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> scoring,
-                             std::string label,
-                             const modules &gene_modules,
-                             const modules &protein_modules,
-                             const modules &proteoform_modules);
+score_maps get_scores(std::string path_scores,
+                      std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> scoring,
+                      std::string label,
+                      const modules &gene_modules,
+                      const modules &protein_modules,
+                      const modules &proteoform_modules,
+                      const bimap_str_int &traits);
 
 // Calculates differences in module overlap between gene and proteoform level networks_lib
 // It uses multiple scoring functions to calculate the overlap score between each pair of modules.
@@ -84,14 +85,21 @@ void doOverlapAnalysis(
         std::string_view path_file_gene_interactions,
         std::string_view path_file_protein_interactions,
         std::string_view path_file_proteoform_interactions,
-        std::string path_scores,
+        std::string path_reports,
         std::string_view path_modules);
 
 void report_module_size_variation(std::string_view path_reports, const modules &gene_modules,
                                   const modules &protein_modules, const modules &proteoform_modules,
                                   const bimap_str_int &traits);
 
-void report_score_variations(std::string basicString, std::string label, const get_scores_result &scores);
+// Check if there are pairs of modules sharing nodes at one level but not in another
+void report_node_overlap_reduction_examples(std::string path_scores, std::string label, const score_maps &scores,
+                                            const bimap_str_int &traits);
+
+// Check if there are pairs of modules which are have variations in level, for the number of edges connecting them
+void report_connecting_edges_variation_examples(std::string path_reports, const score_maps scores);
+
+void report_overlap_only_ptms(std::string string, const score_maps maps, const bimap_str_int anInt);
 
 // Version with set size and overlap size limits
 template<size_t total_num_entities>
@@ -199,5 +207,7 @@ uss getStringSetFromEntityBitset(const std::bitset<total_num_entities> &entity_s
     }
     return result;
 }
+
+void report_overlaps_with_ptms();
 
 #endif /* OVERLAP_H_ */

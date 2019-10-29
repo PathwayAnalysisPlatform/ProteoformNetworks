@@ -66,48 +66,59 @@ TEST_F(PhegeniLoadPheGenISetsFixture, TraitKeys) {
 // Test the trait to gene bitset contains the correct number of bits in the bitsets
 // Test the gene to trait bitsets contain the correct number of bits in the bitsets
 TEST_F(PhegeniLoadPheGenISetsFixture, BitsetSizes) {
-    EXPECT_EQ(25, gene_modules.group_to_members["Bilirubin"].size()) << "The bitsets size are not the number of genes.";
-    EXPECT_EQ(8, gene_modules.member_to_groups["UGT1A1"].size()) << "The bitsets size are not the number of traits.";
+    int trait_index = traits.str_to_int["Bilirubin"];
+    EXPECT_EQ(25, gene_modules.group_to_members[trait_index].size()) << "The bitsets size are not the number of genes.";
+
+    int gene_index = genes.str_to_int["UGT1A1"];
+    EXPECT_EQ(8, gene_modules.member_to_groups[gene_index].size()) << "The bitsets size are not the number of traits.";
 }
 
 // Check a trait has the right number of genes as members
 TEST_F(PhegeniLoadPheGenISetsFixture, CorrectGeneMembers) {
-    EXPECT_EQ(9, gene_modules.group_to_members["Bilirubin"].count());
-    EXPECT_TRUE(gene_modules.group_to_members["Bilirubin"][genes.str_to_int["UGT1A1"]]); // From column GENE ID
-    EXPECT_TRUE(gene_modules.group_to_members["Bilirubin"][genes.str_to_int["UGT1A4"]]); // From column GENE ID 2
-    EXPECT_FALSE(gene_modules.group_to_members["Bilirubin"][genes.str_to_int["AAAA"]]);  // From column GENE ID
-    EXPECT_FALSE(gene_modules.group_to_members["Bilirubin"][genes.str_to_int["DDDD"]]);  // From column GENE ID 2
+    int gene_index, trait_index;
 
-    EXPECT_EQ(2, gene_modules.group_to_members["\"Cholesterol, HDL\""].count());
-    EXPECT_TRUE(
-            gene_modules.group_to_members["\"Cholesterol, HDL\""][genes.str_to_int["HERPUD1"]]); // From column GENE ID
-    EXPECT_TRUE(
-            gene_modules.group_to_members["\"Cholesterol, HDL\""][genes.str_to_int["CETP"]]); // From column GENE ID 2
-    EXPECT_FALSE(gene_modules.group_to_members["\"Cholesterol, HDL\""][genes.str_to_int["APOE"]]);
+    trait_index = traits.str_to_int["Bilirubin"];
+    EXPECT_EQ(9, gene_modules.group_to_members[trait_index].count());
+    EXPECT_TRUE(gene_modules.group_to_members[trait_index][genes.str_to_int["UGT1A1"]]); // From column GENE ID
+    EXPECT_TRUE(gene_modules.group_to_members[trait_index][genes.str_to_int["UGT1A4"]]); // From column GENE ID 2
+    EXPECT_FALSE(gene_modules.group_to_members[trait_index][genes.str_to_int["AAAA"]]);  // From column GENE ID
+    EXPECT_FALSE(gene_modules.group_to_members[trait_index][genes.str_to_int["DDDD"]]);  // From column GENE ID 2
 
-    EXPECT_EQ(9, gene_modules.group_to_members["Bilirubin"].count());
-    EXPECT_TRUE(gene_modules.group_to_members["Bilirubin"][genes.str_to_int["UGT1A1"]]); // From column GENE ID
-    EXPECT_TRUE(gene_modules.group_to_members["Bilirubin"][genes.str_to_int["UGT1A4"]]); // From column GENE ID 2
-    EXPECT_FALSE(gene_modules.group_to_members["Bilirubin"][genes.str_to_int["AAAA"]]);  // From column GENE ID
-    EXPECT_FALSE(gene_modules.group_to_members["Bilirubin"][genes.str_to_int["DDDD"]]);  // From column GENE ID 2
+    trait_index = traits.str_to_int["\"Cholesterol, HDL\""];
+    EXPECT_EQ(2, gene_modules.group_to_members[trait_index].count());
+    EXPECT_TRUE(gene_modules.group_to_members[trait_index][genes.str_to_int["HERPUD1"]]); // From column GENE ID
+    EXPECT_TRUE(gene_modules.group_to_members[trait_index][genes.str_to_int["CETP"]]); // From column GENE ID 2
+    EXPECT_FALSE(gene_modules.group_to_members[trait_index][genes.str_to_int["APOE"]]);
+
+    trait_index = traits.str_to_int["Bilirubin"];
+    EXPECT_EQ(9, gene_modules.group_to_members[trait_index].count());
+    EXPECT_TRUE(gene_modules.group_to_members[trait_index][genes.str_to_int["UGT1A1"]]); // From column GENE ID
+    EXPECT_TRUE(gene_modules.group_to_members[trait_index][genes.str_to_int["UGT1A4"]]); // From column GENE ID 2
+    EXPECT_FALSE(gene_modules.group_to_members[trait_index][genes.str_to_int["AAAA"]]);  // From column GENE ID
+    EXPECT_FALSE(gene_modules.group_to_members[trait_index][genes.str_to_int["DDDD"]]);  // From column GENE ID 2
 }
 
 // Check a gene is member of the right number of trait modules
 TEST_F(PhegeniLoadPheGenISetsFixture, CorrectTraitOwners) {
+    int gene_index = genes.str_to_int["CFH"];
     std::cout << "[ ";
-    for (int I = 0; I < gene_modules.member_to_groups["CFH"].size(); I++) {
-        if (gene_modules.member_to_groups["CFH"][I]) {
-            std::cout << traits.int_to_str[I] << ", ";
+    for (int trait_index = 0; trait_index < gene_modules.member_to_groups[gene_index].size(); trait_index++) {
+        if (gene_modules.member_to_groups[gene_index][trait_index]) {
+            std::cout << traits.int_to_str[trait_index] << ", ";
         }
     }
     std::cout << "]\n" << std::endl;
 
-    EXPECT_EQ(2, gene_modules.member_to_groups["CFH"].count()) << "The gene is member of the wrong number of traits.";
-    EXPECT_TRUE(gene_modules.member_to_groups["CFH"][traits.str_to_int["Macular Degeneration"]]);
-    EXPECT_TRUE(gene_modules.member_to_groups["CFH"][traits.str_to_int["Wet Macular Degeneration"]]);
+    gene_index = genes.str_to_int["CFH"];
+    EXPECT_EQ(2, gene_modules.member_to_groups[gene_index].count())
+                        << "The gene is member of the wrong number of traits.";
+    EXPECT_TRUE(gene_modules.member_to_groups[gene_index][traits.str_to_int["Macular Degeneration"]]);
+    EXPECT_TRUE(gene_modules.member_to_groups[gene_index][traits.str_to_int["Wet Macular Degeneration"]]);
 
-    EXPECT_EQ(1, gene_modules.member_to_groups["FADS1"].count()) << "The gene is member of the wrong number of traits.";
-    EXPECT_TRUE(gene_modules.member_to_groups["FADS1"][traits.str_to_int["Metabolism"]]);
+    gene_index = genes.str_to_int["FADS1"];
+    EXPECT_EQ(1, gene_modules.member_to_groups[gene_index].count())
+                        << "The gene is member of the wrong number of traits.";
+    EXPECT_TRUE(gene_modules.member_to_groups[gene_index][traits.str_to_int["Metabolism"]]);
 }
 
 class PhegeniConvertModulesWithMapping : public ::testing::Test {
@@ -126,6 +137,7 @@ protected:
                                                     proteins,
                                                     traits,
                                                     mapping.second_to_first);
+        writeModulesSingleFile("../../../../reports/modules/", "proteins", ".tsv", protein_modules, traits, proteins);
     }
 
     std::string path_file_phegeni = "../../Google_tests/resources/PheGenI_Association_genome_wide_significant_slice.txt";
@@ -142,50 +154,63 @@ protected:
 TEST_F(PhegeniConvertModulesWithMapping, ModuleTraitNamesCorrect) {
     EXPECT_EQ(gene_modules.group_to_members.size(), protein_modules.group_to_members.size())
                         << "The gene modules should be the same number of protein modules.";
-    EXPECT_TRUE(protein_modules.group_to_members.find("Metabolism") != protein_modules.group_to_members.end());
-    EXPECT_TRUE(protein_modules.group_to_members.find("Vascular Endothelial Growth Factors") !=
-                protein_modules.group_to_members.end());
-    EXPECT_TRUE(protein_modules.group_to_members.find("Bilirubin") != protein_modules.group_to_members.end());
+    EXPECT_EQ(protein_modules.group_to_members.size(), traits.int_to_str.size());
 }
 
 // Check module members are correct
 TEST_F(PhegeniConvertModulesWithMapping, ModuleTraitSetMembersCorrect) {
-    EXPECT_EQ(2, protein_modules.group_to_members["\"Cholesterol, HDL\""].count());
+    int trait_index = traits.str_to_int["\"Cholesterol, HDL\""];
+    EXPECT_EQ(2, protein_modules.group_to_members[trait_index].count());
     EXPECT_TRUE(
-            protein_modules.group_to_members["\"Cholesterol, HDL\""][proteins.str_to_int["Q15011"]]); // From gene HERPUD1
+            protein_modules.group_to_members[trait_index][proteins.str_to_int["Q15011"]]); // From gene HERPUD1
     EXPECT_TRUE(
-            protein_modules.group_to_members["\"Cholesterol, HDL\""][proteins.str_to_int["P11597"]]); // From gene CETP
+            protein_modules.group_to_members[trait_index][proteins.str_to_int["P11597"]]); // From gene CETP
     EXPECT_FALSE(
-            protein_modules.group_to_members["\"Cholesterol, HDL\""][proteins.str_to_int["P02649"]]); // From gene APOE
+            protein_modules.group_to_members[trait_index][proteins.str_to_int["P02649"]]); // From gene APOE
 
-    EXPECT_EQ(9, protein_modules.group_to_members["Bilirubin"].count());
-    EXPECT_TRUE(protein_modules.group_to_members["Bilirubin"][proteins.str_to_int["P22309"]]); // From gene UGT1A1
-    EXPECT_TRUE(protein_modules.group_to_members["Bilirubin"][proteins.str_to_int["P22310"]]); // From gene UGT1A4
+    trait_index = traits.str_to_int["Bilirubin"];
+    std::cout << "There are " << gene_modules.group_to_members.size() << " gene modules.\n";
+    EXPECT_EQ(9, gene_modules.group_to_members[trait_index].count());
+    for (int member_index = 0; member_index < genes.str_to_int.size(); member_index++) {
+        if (gene_modules.group_to_members[trait_index][member_index])
+            std::cout << genes.int_to_str[member_index] << ", ";
+    }
+    std::cout << std::endl;
+    std::cout << "There are " << gene_modules.group_to_members.size() << " protein modules.\n";
+    EXPECT_EQ(9, protein_modules.group_to_members[trait_index].count());
+    for (int member_index = 0; member_index < proteins.str_to_int.size(); member_index++) {
+        if (protein_modules.group_to_members[trait_index][member_index])
+            std::cout << genes.int_to_str[member_index] << ", ";
+    }
+    std::cout << std::endl;
+    EXPECT_TRUE(protein_modules.group_to_members[trait_index][proteins.str_to_int["P22309"]]); // From gene UGT1A1
+    EXPECT_TRUE(protein_modules.group_to_members[trait_index][proteins.str_to_int["P22310"]]); // From gene UGT1A4
 }
 
 // Return correct protein set names
 TEST_F(PhegeniConvertModulesWithMapping, ModuleProteinNamesCorrect) {
     EXPECT_EQ(19, protein_modules.member_to_groups.size()) << "The proteins in the modules should be 19.";
-    EXPECT_TRUE(protein_modules.member_to_groups.find("P22309") !=
-                protein_modules.member_to_groups.end()); // Comming from gene UGT1A1
-    EXPECT_TRUE(protein_modules.member_to_groups.find("O60427") !=
-                protein_modules.member_to_groups.end()); // Comming from gene FADS1
-    EXPECT_TRUE(protein_modules.member_to_groups.find("Q15011") !=
-                protein_modules.member_to_groups.end());   // Comming from gene HERPUD1
-    EXPECT_FALSE(protein_modules.member_to_groups.find("ALMS1P") !=
-                 protein_modules.member_to_groups.end());    // There is no mapping for gene
+    EXPECT_TRUE(hasKey(proteins.str_to_int, static_cast<std::string>("P22309"))); // Comming from gene UGT1A1
+    EXPECT_TRUE(hasKey(proteins.str_to_int, static_cast<std::string>("Q15011")));   // Comming from gene FADS1
+    EXPECT_FALSE(hasKey(proteins.str_to_int, static_cast<std::string>("ALMS1P")));    // There is no mapping for gene
 }
 
 // Check protein owners are correct
 TEST_F(PhegeniConvertModulesWithMapping, ModuleProteinOwnerSetCorrect) {
-    EXPECT_EQ(traits.int_to_str.size(), protein_modules.member_to_groups.begin()->second.size())
+    EXPECT_EQ(traits.int_to_str.size(), protein_modules.member_to_groups[0].size())
                         << "The bitset size should be the number of traits.";
 
-    EXPECT_EQ(1, protein_modules.member_to_groups["P11597"].count());
-    EXPECT_TRUE(protein_modules.member_to_groups["Q15011"][traits.str_to_int["\"Cholesterol, HDL\""]]);
+    int protein_index = proteins.str_to_int["P11597"];
+    EXPECT_EQ(1, protein_modules.member_to_groups[protein_index].count());
 
-    EXPECT_EQ(1, protein_modules.member_to_groups["P22309"].count());
-    EXPECT_TRUE(protein_modules.member_to_groups["P22309"][traits.str_to_int["Bilirubin"]]);
+    protein_index = proteins.str_to_int["Q15011"];
+    int trait_index = traits.str_to_int["\"Cholesterol, HDL\""];
+    EXPECT_TRUE(protein_modules.member_to_groups[protein_index][trait_index]);
+
+    protein_index = proteins.str_to_int["P22309"];
+    trait_index = traits.str_to_int["Bilirubin"];
+    EXPECT_EQ(1, protein_modules.member_to_groups[protein_index].count());
+    EXPECT_TRUE(protein_modules.member_to_groups[protein_index][trait_index]);
 }
 
 class CreatePheGenIModulesFixture : public ::testing::Test {
@@ -308,35 +333,46 @@ TEST_F(CreatePheGenIModulesFixture, CorrectProteoforms) {
 // Check gene modules are correct
 TEST_F(CreatePheGenIModulesFixture, CorrectGeneModules) {
     // Check there are 2 modules
-    EXPECT_EQ(2, getKeys(gene_modules.group_to_members).size());
-    EXPECT_EQ(2, gene_modules.member_to_groups.begin()->second.size());
+    EXPECT_EQ(2, gene_modules.group_to_members.size());
+    EXPECT_EQ(2, gene_modules.member_to_groups[0].size());
 
     // Check there are 10 genes
-    EXPECT_EQ(10, getKeys(gene_modules.member_to_groups).size());
-    EXPECT_EQ(10, gene_modules.group_to_members.begin()->second.size());
+    EXPECT_EQ(10, gene_modules.member_to_groups.size());
+    EXPECT_EQ(10, gene_modules.group_to_members[0].size());
 
     // Check correct members
-    EXPECT_EQ(3, gene_modules.group_to_members.at("GROUP1").count());
-    EXPECT_TRUE(gene_modules.group_to_members.at("GROUP1")[genes.str_to_int["A"]]);
-    EXPECT_TRUE(gene_modules.group_to_members.at("GROUP1")[genes.str_to_int["C"]]);
+    // GROUP1
+    EXPECT_EQ(3, gene_modules.group_to_members[0].count());
+    EXPECT_TRUE(gene_modules.group_to_members[0][genes.str_to_int["A"]]);
+    EXPECT_TRUE(gene_modules.group_to_members[0][genes.str_to_int["C"]]);
 
-    EXPECT_EQ(4, gene_modules.group_to_members.at("GROUP2").count());
-    EXPECT_TRUE(gene_modules.group_to_members.at("GROUP2")[genes.str_to_int["D"]]);
-    EXPECT_TRUE(gene_modules.group_to_members.at("GROUP2")[genes.str_to_int["E"]]);
-    EXPECT_TRUE(gene_modules.group_to_members.at("GROUP2")[genes.str_to_int["F"]]);
-    EXPECT_TRUE(gene_modules.group_to_members.at("GROUP2")[genes.str_to_int["G"]]);
+    // GROUP2
+    EXPECT_EQ(4, gene_modules.group_to_members[1].count());
+    EXPECT_TRUE(gene_modules.group_to_members[1][genes.str_to_int["D"]]);
+    EXPECT_TRUE(gene_modules.group_to_members[1][genes.str_to_int["E"]]);
+    EXPECT_TRUE(gene_modules.group_to_members[1][genes.str_to_int["F"]]);
+    EXPECT_TRUE(gene_modules.group_to_members[1][genes.str_to_int["G"]]);
 
     // Check correct owners
-    EXPECT_EQ(1, gene_modules.member_to_groups.at("A").count());
-    EXPECT_EQ(1, gene_modules.member_to_groups.at("C").count());
-    EXPECT_EQ(1, gene_modules.member_to_groups.at("E").count());
-    EXPECT_EQ(1, gene_modules.member_to_groups.at("G").count());
-    EXPECT_EQ(0, gene_modules.member_to_groups.at("H").count());
-    EXPECT_EQ(0, gene_modules.member_to_groups.at("J").count());
+    int gene_index = genes.str_to_int["A"];
+    EXPECT_EQ(1, gene_modules.member_to_groups[gene_index].count());
+    gene_index = genes.str_to_int["C"];
+    EXPECT_EQ(1, gene_modules.member_to_groups[gene_index].count());
+    gene_index = genes.str_to_int["E"];
+    EXPECT_EQ(1, gene_modules.member_to_groups[gene_index].count());
+    gene_index = genes.str_to_int["G"];
+    EXPECT_EQ(1, gene_modules.member_to_groups[gene_index].count());
+    gene_index = genes.str_to_int["H"];
+    EXPECT_EQ(0, gene_modules.member_to_groups[gene_index].count());
+    gene_index = genes.str_to_int["J"];
+    EXPECT_EQ(0, gene_modules.member_to_groups[gene_index].count());
 
-    EXPECT_TRUE(gene_modules.member_to_groups.at("B")[traits.str_to_int["GROUP1"]]);
-    EXPECT_TRUE(gene_modules.member_to_groups.at("F")[traits.str_to_int["GROUP2"]]);
-    EXPECT_FALSE(gene_modules.member_to_groups.at("I")[traits.str_to_int["GROUP1"]]);
+    gene_index = genes.str_to_int["B"];
+    EXPECT_TRUE(gene_modules.member_to_groups[gene_index][traits.str_to_int["GROUP1"]]);
+    gene_index = genes.str_to_int["F"];
+    EXPECT_TRUE(gene_modules.member_to_groups[gene_index][traits.str_to_int["GROUP2"]]);
+    gene_index = genes.str_to_int["I"];
+    EXPECT_FALSE(gene_modules.member_to_groups[gene_index][traits.str_to_int["GROUP1"]]);
 }
 
 // Check protein modules are correct
@@ -344,77 +380,77 @@ TEST_F(CreatePheGenIModulesFixture, CorrectProteinModulesSizes) {
 
     // -- Check the number of modules is the same
     // Check there are still 2 modules
-    EXPECT_EQ(2, getKeys(protein_modules.group_to_members).size());
-    EXPECT_EQ(2, protein_modules.member_to_groups.begin()->second.size());
+    EXPECT_EQ(2, protein_modules.group_to_members.size());
+    EXPECT_EQ(2, protein_modules.member_to_groups[0].size());
 
     // Check there are 20 proteins
-    EXPECT_EQ(20, getKeys(protein_modules.member_to_groups).size());
-    EXPECT_EQ(20, protein_modules.group_to_members.begin()->second.size());
+    EXPECT_EQ(20, protein_modules.member_to_groups.size());
+    EXPECT_EQ(20, protein_modules.group_to_members[0].size());
 }
 
 TEST_F(CreatePheGenIModulesFixture, CorrectProteinModulesMembers) {
     // Check correct members
-    EXPECT_EQ(4, protein_modules.group_to_members["GROUP1"].count());
+    EXPECT_EQ(4, protein_modules.group_to_members[traits.str_to_int["GROUP1"]].count());
     // -- Check a gene with two protein products appears in the new modules
-    EXPECT_TRUE(protein_modules.group_to_members["GROUP1"][proteins.str_to_int["A1"]]);
+    EXPECT_TRUE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["A1"]]);
     // -- Check that one of the protein products of a gene gets removed of the modules, because that one does not interact with other members
-    EXPECT_FALSE(protein_modules.group_to_members["GROUP1"][proteins.str_to_int["A2"]]);
+    EXPECT_FALSE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["A2"]]);
     // -- Check that one of the protein products of a gene gets removed of the modules, because that one does not interact with other members
-    EXPECT_FALSE(protein_modules.group_to_members["GROUP1"][proteins.str_to_int["A3"]]);
-    EXPECT_TRUE(protein_modules.group_to_members["GROUP1"][proteins.str_to_int["B1"]]);
+    EXPECT_FALSE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["A3"]]);
+    EXPECT_TRUE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["B1"]]);
     // -- Check a gene with two protein products appears in the new modules
-    EXPECT_TRUE(protein_modules.group_to_members["GROUP1"][proteins.str_to_int["C1"]]);
+    EXPECT_TRUE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["C1"]]);
     // -- Check that one of the protein products of a gene gets removed of the modules, because that one does not interact with other members
-    EXPECT_FALSE(protein_modules.group_to_members["GROUP1"][proteins.str_to_int["C2"]]);
-    EXPECT_TRUE(protein_modules.group_to_members["GROUP1"][proteins.str_to_int["C3"]]);
-    EXPECT_FALSE(protein_modules.group_to_members["GROUP1"][proteins.str_to_int["F1"]]);
+    EXPECT_FALSE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["C2"]]);
+    EXPECT_TRUE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["C3"]]);
+    EXPECT_FALSE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["F1"]]);
 
-    EXPECT_EQ(6, protein_modules.group_to_members["GROUP2"].count());
-    EXPECT_TRUE(protein_modules.group_to_members["GROUP2"][proteins.str_to_int["D1"]]);
-    EXPECT_TRUE(protein_modules.group_to_members["GROUP2"][proteins.str_to_int["D2"]]);
-    EXPECT_TRUE(protein_modules.group_to_members["GROUP2"][proteins.str_to_int["E1"]]);
-    EXPECT_TRUE(protein_modules.group_to_members["GROUP2"][proteins.str_to_int["F1"]]);
-    EXPECT_FALSE(protein_modules.group_to_members["GROUP2"][proteins.str_to_int["F2"]]);
-    EXPECT_TRUE(protein_modules.group_to_members["GROUP2"][proteins.str_to_int["G1"]]);
-    EXPECT_TRUE(protein_modules.group_to_members["GROUP2"][proteins.str_to_int["G2"]]);
+    EXPECT_EQ(6, protein_modules.group_to_members[traits.str_to_int["GROUP2"]].count());
+    EXPECT_TRUE(protein_modules.group_to_members[traits.str_to_int["GROUP2"]][proteins.str_to_int["D1"]]);
+    EXPECT_TRUE(protein_modules.group_to_members[traits.str_to_int["GROUP2"]][proteins.str_to_int["D2"]]);
+    EXPECT_TRUE(protein_modules.group_to_members[traits.str_to_int["GROUP2"]][proteins.str_to_int["E1"]]);
+    EXPECT_TRUE(protein_modules.group_to_members[traits.str_to_int["GROUP2"]][proteins.str_to_int["F1"]]);
+    EXPECT_FALSE(protein_modules.group_to_members[traits.str_to_int["GROUP2"]][proteins.str_to_int["F2"]]);
+    EXPECT_TRUE(protein_modules.group_to_members[traits.str_to_int["GROUP2"]][proteins.str_to_int["G1"]]);
+    EXPECT_TRUE(protein_modules.group_to_members[traits.str_to_int["GROUP2"]][proteins.str_to_int["G2"]]);
 }
 
 TEST_F(CreatePheGenIModulesFixture, CorrectProteinModulesOwners) {
     // -- -- Check the proteins have/do not have ownership of the traits
-    EXPECT_EQ(1, protein_modules.member_to_groups["A1"].count());
-    EXPECT_EQ(0, protein_modules.member_to_groups["A2"].count());
-    EXPECT_EQ(0, protein_modules.member_to_groups["A3"].count());
-    EXPECT_EQ(1, protein_modules.member_to_groups["B1"].count());
-    EXPECT_EQ(1, protein_modules.member_to_groups["C1"].count());
-    EXPECT_EQ(0, protein_modules.member_to_groups["C2"].count());
-    EXPECT_EQ(1, protein_modules.member_to_groups["C3"].count());
+    EXPECT_EQ(1, protein_modules.member_to_groups[proteins.str_to_int["A1"]].count());
+    EXPECT_EQ(0, protein_modules.member_to_groups[proteins.str_to_int["A2"]].count());
+    EXPECT_EQ(0, protein_modules.member_to_groups[proteins.str_to_int["A3"]].count());
+    EXPECT_EQ(1, protein_modules.member_to_groups[proteins.str_to_int["B1"]].count());
+    EXPECT_EQ(1, protein_modules.member_to_groups[proteins.str_to_int["C1"]].count());
+    EXPECT_EQ(0, protein_modules.member_to_groups[proteins.str_to_int["C2"]].count());
+    EXPECT_EQ(1, protein_modules.member_to_groups[proteins.str_to_int["C3"]].count());
 
-    EXPECT_TRUE(protein_modules.member_to_groups["A1"][traits.str_to_int["GROUP1"]]);
-    EXPECT_TRUE(protein_modules.member_to_groups["B1"][traits.str_to_int["GROUP1"]]);
-    EXPECT_TRUE(protein_modules.member_to_groups["C1"][traits.str_to_int["GROUP1"]]);
-    EXPECT_TRUE(protein_modules.member_to_groups["C3"][traits.str_to_int["GROUP1"]]);
+    EXPECT_TRUE(protein_modules.member_to_groups[proteins.str_to_int["A1"]][traits.str_to_int["GROUP1"]]);
+    EXPECT_TRUE(protein_modules.member_to_groups[proteins.str_to_int["B1"]][traits.str_to_int["GROUP1"]]);
+    EXPECT_TRUE(protein_modules.member_to_groups[proteins.str_to_int["C1"]][traits.str_to_int["GROUP1"]]);
+    EXPECT_TRUE(protein_modules.member_to_groups[proteins.str_to_int["C3"]][traits.str_to_int["GROUP1"]]);
 
-    EXPECT_EQ(1, protein_modules.member_to_groups["D1"].count());
-    EXPECT_EQ(1, protein_modules.member_to_groups["D2"].count());
-    EXPECT_EQ(1, protein_modules.member_to_groups["E1"].count());
-    EXPECT_EQ(1, protein_modules.member_to_groups["F1"].count());
-    EXPECT_EQ(0, protein_modules.member_to_groups["F2"].count());
-    EXPECT_EQ(1, protein_modules.member_to_groups["G1"].count());
-    EXPECT_EQ(1, protein_modules.member_to_groups["G2"].count());
+    EXPECT_EQ(1, protein_modules.member_to_groups[proteins.str_to_int["D1"]].count());
+    EXPECT_EQ(1, protein_modules.member_to_groups[proteins.str_to_int["D2"]].count());
+    EXPECT_EQ(1, protein_modules.member_to_groups[proteins.str_to_int["E1"]].count());
+    EXPECT_EQ(1, protein_modules.member_to_groups[proteins.str_to_int["F1"]].count());
+    EXPECT_EQ(0, protein_modules.member_to_groups[proteins.str_to_int["F2"]].count());
+    EXPECT_EQ(1, protein_modules.member_to_groups[proteins.str_to_int["G1"]].count());
+    EXPECT_EQ(1, protein_modules.member_to_groups[proteins.str_to_int["G2"]].count());
 
-    EXPECT_TRUE(protein_modules.member_to_groups["D1"][traits.str_to_int["GROUP2"]]);
-    EXPECT_TRUE(protein_modules.member_to_groups["D2"][traits.str_to_int["GROUP2"]]);
-    EXPECT_TRUE(protein_modules.member_to_groups["E1"][traits.str_to_int["GROUP2"]]);
-    EXPECT_TRUE(protein_modules.member_to_groups["F1"][traits.str_to_int["GROUP2"]]);
-    EXPECT_TRUE(protein_modules.member_to_groups["G1"][traits.str_to_int["GROUP2"]]);
-    EXPECT_TRUE(protein_modules.member_to_groups["G2"][traits.str_to_int["GROUP2"]]);
+    EXPECT_TRUE(protein_modules.member_to_groups[proteins.str_to_int["D1"]][traits.str_to_int["GROUP2"]]);
+    EXPECT_TRUE(protein_modules.member_to_groups[proteins.str_to_int["D2"]][traits.str_to_int["GROUP2"]]);
+    EXPECT_TRUE(protein_modules.member_to_groups[proteins.str_to_int["E1"]][traits.str_to_int["GROUP2"]]);
+    EXPECT_TRUE(protein_modules.member_to_groups[proteins.str_to_int["F1"]][traits.str_to_int["GROUP2"]]);
+    EXPECT_TRUE(protein_modules.member_to_groups[proteins.str_to_int["G1"]][traits.str_to_int["GROUP2"]]);
+    EXPECT_TRUE(protein_modules.member_to_groups[proteins.str_to_int["G2"]][traits.str_to_int["GROUP2"]]);
 
-    EXPECT_EQ(0, protein_modules.member_to_groups["H1"].count());
-    EXPECT_EQ(0, protein_modules.member_to_groups["H2"].count());
-    EXPECT_EQ(0, protein_modules.member_to_groups["I1"].count());
-    EXPECT_EQ(0, protein_modules.member_to_groups["J1"].count());
-    EXPECT_EQ(0, protein_modules.member_to_groups["J2"].count());
-    EXPECT_EQ(0, protein_modules.member_to_groups["J3"].count());
+    EXPECT_EQ(0, protein_modules.member_to_groups[proteins.str_to_int["H1"]].count());
+    EXPECT_EQ(0, protein_modules.member_to_groups[proteins.str_to_int["H2"]].count());
+    EXPECT_EQ(0, protein_modules.member_to_groups[proteins.str_to_int["I1"]].count());
+    EXPECT_EQ(0, protein_modules.member_to_groups[proteins.str_to_int["J1"]].count());
+    EXPECT_EQ(0, protein_modules.member_to_groups[proteins.str_to_int["J2"]].count());
+    EXPECT_EQ(0, protein_modules.member_to_groups[proteins.str_to_int["J3"]].count());
 }
 
 // Check proteoform modules are correct
@@ -429,84 +465,84 @@ TEST_F(CreatePheGenIModulesFixture, CorrectProteoformModulesSizes) {
 
     // -- Check the number of modules is the same
     // Check there are still 2 modules
-    EXPECT_EQ(2, getKeys(proteoform_modules.group_to_members).size());
-    EXPECT_EQ(2, proteoform_modules.member_to_groups.begin()->second.size());
+    EXPECT_EQ(2, proteoform_modules.group_to_members.size());
+    EXPECT_EQ(2, proteoform_modules.member_to_groups[0].size());
 
     // Check there are 20 proteins
-    EXPECT_EQ(26, getKeys(proteoform_modules.member_to_groups).size());
-    EXPECT_EQ(26, proteoform_modules.group_to_members.begin()->second.size());
+    EXPECT_EQ(26, proteoform_modules.member_to_groups.size());
+    EXPECT_EQ(26, proteoform_modules.group_to_members[0].size());
 }
 
 TEST_F(CreatePheGenIModulesFixture, CorrectProteoformModulesMembers) {
 
-    EXPECT_EQ(5, proteoform_modules.group_to_members["GROUP1"].count());
-    EXPECT_FALSE(proteoform_modules.group_to_members["GROUP1"][proteoforms.str_to_int["A1_1"]]);
-    EXPECT_TRUE(proteoform_modules.group_to_members["GROUP1"][proteoforms.str_to_int["A1_2"]]);
-    EXPECT_FALSE(proteoform_modules.group_to_members["GROUP1"][proteoforms.str_to_int["A1_3"]]);
-    EXPECT_TRUE(proteoform_modules.group_to_members["GROUP1"][proteoforms.str_to_int["B1_1"]]);
-    EXPECT_TRUE(proteoform_modules.group_to_members["GROUP1"][proteoforms.str_to_int["B1_2"]]);
-    EXPECT_FALSE(proteoform_modules.group_to_members["GROUP1"][proteoforms.str_to_int["C1_1"]]);
-    EXPECT_TRUE(proteoform_modules.group_to_members["GROUP1"][proteoforms.str_to_int["C1_2"]]);
-    EXPECT_FALSE(proteoform_modules.group_to_members["GROUP1"][proteoforms.str_to_int["C2_1"]]);
-    EXPECT_TRUE(proteoform_modules.group_to_members["GROUP1"][proteoforms.str_to_int["C3_1"]]);
+    EXPECT_EQ(5, proteoform_modules.group_to_members[traits.str_to_int["GROUP1"]].count());
+    EXPECT_FALSE(proteoform_modules.group_to_members[traits.str_to_int["GROUP1"]][proteoforms.str_to_int["A1_1"]]);
+    EXPECT_TRUE(proteoform_modules.group_to_members[traits.str_to_int["GROUP1"]][proteoforms.str_to_int["A1_2"]]);
+    EXPECT_FALSE(proteoform_modules.group_to_members[traits.str_to_int["GROUP1"]][proteoforms.str_to_int["A1_3"]]);
+    EXPECT_TRUE(proteoform_modules.group_to_members[traits.str_to_int["GROUP1"]][proteoforms.str_to_int["B1_1"]]);
+    EXPECT_TRUE(proteoform_modules.group_to_members[traits.str_to_int["GROUP1"]][proteoforms.str_to_int["B1_2"]]);
+    EXPECT_FALSE(proteoform_modules.group_to_members[traits.str_to_int["GROUP1"]][proteoforms.str_to_int["C1_1"]]);
+    EXPECT_TRUE(proteoform_modules.group_to_members[traits.str_to_int["GROUP1"]][proteoforms.str_to_int["C1_2"]]);
+    EXPECT_FALSE(proteoform_modules.group_to_members[traits.str_to_int["GROUP1"]][proteoforms.str_to_int["C2_1"]]);
+    EXPECT_TRUE(proteoform_modules.group_to_members[traits.str_to_int["GROUP1"]][proteoforms.str_to_int["C3_1"]]);
 
-    EXPECT_EQ(8, proteoform_modules.group_to_members["GROUP2"].count());
-    EXPECT_TRUE(proteoform_modules.group_to_members["GROUP2"][proteoforms.str_to_int["D1_1"]]);
-    EXPECT_TRUE(proteoform_modules.group_to_members["GROUP2"][proteoforms.str_to_int["D1_2"]]);
-    EXPECT_TRUE(proteoform_modules.group_to_members["GROUP2"][proteoforms.str_to_int["D2_1"]]);
-    EXPECT_FALSE(proteoform_modules.group_to_members["GROUP2"][proteoforms.str_to_int["E1_1"]]);
-    EXPECT_TRUE(proteoform_modules.group_to_members["GROUP2"][proteoforms.str_to_int["E1_2"]]);
-    EXPECT_TRUE(proteoform_modules.group_to_members["GROUP2"][proteoforms.str_to_int["F1_1"]]);
-    EXPECT_FALSE(proteoform_modules.group_to_members["GROUP2"][proteoforms.str_to_int["F2_1"]]);
-    EXPECT_FALSE(proteoform_modules.group_to_members["GROUP2"][proteoforms.str_to_int["F2_2"]]);
-    EXPECT_TRUE(proteoform_modules.group_to_members["GROUP2"][proteoforms.str_to_int["G1_1"]]);
-    EXPECT_TRUE(proteoform_modules.group_to_members["GROUP2"][proteoforms.str_to_int["G1_2"]]);
-    EXPECT_TRUE(proteoform_modules.group_to_members["GROUP2"][proteoforms.str_to_int["G2_1"]]);
+    EXPECT_EQ(8, proteoform_modules.group_to_members[traits.str_to_int["GROUP2"]].count());
+    EXPECT_TRUE(proteoform_modules.group_to_members[traits.str_to_int["GROUP2"]][proteoforms.str_to_int["D1_1"]]);
+    EXPECT_TRUE(proteoform_modules.group_to_members[traits.str_to_int["GROUP2"]][proteoforms.str_to_int["D1_2"]]);
+    EXPECT_TRUE(proteoform_modules.group_to_members[traits.str_to_int["GROUP2"]][proteoforms.str_to_int["D2_1"]]);
+    EXPECT_FALSE(proteoform_modules.group_to_members[traits.str_to_int["GROUP2"]][proteoforms.str_to_int["E1_1"]]);
+    EXPECT_TRUE(proteoform_modules.group_to_members[traits.str_to_int["GROUP2"]][proteoforms.str_to_int["E1_2"]]);
+    EXPECT_TRUE(proteoform_modules.group_to_members[traits.str_to_int["GROUP2"]][proteoforms.str_to_int["F1_1"]]);
+    EXPECT_FALSE(proteoform_modules.group_to_members[traits.str_to_int["GROUP2"]][proteoforms.str_to_int["F2_1"]]);
+    EXPECT_FALSE(proteoform_modules.group_to_members[traits.str_to_int["GROUP2"]][proteoforms.str_to_int["F2_2"]]);
+    EXPECT_TRUE(proteoform_modules.group_to_members[traits.str_to_int["GROUP2"]][proteoforms.str_to_int["G1_1"]]);
+    EXPECT_TRUE(proteoform_modules.group_to_members[traits.str_to_int["GROUP2"]][proteoforms.str_to_int["G1_2"]]);
+    EXPECT_TRUE(proteoform_modules.group_to_members[traits.str_to_int["GROUP2"]][proteoforms.str_to_int["G2_1"]]);
 }
 
 TEST_F(CreatePheGenIModulesFixture, CorrectProtoformModulesOwners) {
-    EXPECT_EQ(0, proteoform_modules.member_to_groups["A1_1"].count());
-    EXPECT_EQ(1, proteoform_modules.member_to_groups["A1_2"].count());
-    EXPECT_EQ(0, proteoform_modules.member_to_groups["A1_3"].count());
-    EXPECT_EQ(1, proteoform_modules.member_to_groups["B1_1"].count());
-    EXPECT_EQ(1, proteoform_modules.member_to_groups["B1_2"].count());
-    EXPECT_EQ(0, proteoform_modules.member_to_groups["C1_1"].count());
-    EXPECT_EQ(1, proteoform_modules.member_to_groups["C1_2"].count());
-    EXPECT_EQ(0, proteoform_modules.member_to_groups["C2_1"].count());
-    EXPECT_EQ(1, proteoform_modules.member_to_groups["C3_1"].count());
+    EXPECT_EQ(0, proteoform_modules.member_to_groups[proteoforms.str_to_int["A1_1"]].count());
+    EXPECT_EQ(1, proteoform_modules.member_to_groups[proteoforms.str_to_int["A1_2"]].count());
+    EXPECT_EQ(0, proteoform_modules.member_to_groups[proteoforms.str_to_int["A1_3"]].count());
+    EXPECT_EQ(1, proteoform_modules.member_to_groups[proteoforms.str_to_int["B1_1"]].count());
+    EXPECT_EQ(1, proteoform_modules.member_to_groups[proteoforms.str_to_int["B1_2"]].count());
+    EXPECT_EQ(0, proteoform_modules.member_to_groups[proteoforms.str_to_int["C1_1"]].count());
+    EXPECT_EQ(1, proteoform_modules.member_to_groups[proteoforms.str_to_int["C1_2"]].count());
+    EXPECT_EQ(0, proteoform_modules.member_to_groups[proteoforms.str_to_int["C2_1"]].count());
+    EXPECT_EQ(1, proteoform_modules.member_to_groups[proteoforms.str_to_int["C3_1"]].count());
 
-    EXPECT_TRUE(proteoform_modules.member_to_groups["A1_2"][traits.str_to_int["GROUP1"]]);
-    EXPECT_TRUE(proteoform_modules.member_to_groups["B1_1"][traits.str_to_int["GROUP1"]]);
-    EXPECT_TRUE(proteoform_modules.member_to_groups["B1_2"][traits.str_to_int["GROUP1"]]);
-    EXPECT_TRUE(proteoform_modules.member_to_groups["C1_2"][traits.str_to_int["GROUP1"]]);
-    EXPECT_TRUE(proteoform_modules.member_to_groups["C3_1"][traits.str_to_int["GROUP1"]]);
+    EXPECT_TRUE(proteoform_modules.member_to_groups[proteoforms.str_to_int["A1_2"]][traits.str_to_int["GROUP1"]]);
+    EXPECT_TRUE(proteoform_modules.member_to_groups[proteoforms.str_to_int["B1_1"]][traits.str_to_int["GROUP1"]]);
+    EXPECT_TRUE(proteoform_modules.member_to_groups[proteoforms.str_to_int["B1_2"]][traits.str_to_int["GROUP1"]]);
+    EXPECT_TRUE(proteoform_modules.member_to_groups[proteoforms.str_to_int["C1_2"]][traits.str_to_int["GROUP1"]]);
+    EXPECT_TRUE(proteoform_modules.member_to_groups[proteoforms.str_to_int["C3_1"]][traits.str_to_int["GROUP1"]]);
 
-    EXPECT_EQ(1, proteoform_modules.member_to_groups["D1_1"].count());
-    EXPECT_EQ(1, proteoform_modules.member_to_groups["D1_2"].count());
-    EXPECT_EQ(1, proteoform_modules.member_to_groups["D2_1"].count());
-    EXPECT_EQ(0, proteoform_modules.member_to_groups["E1_1"].count());
-    EXPECT_EQ(1, proteoform_modules.member_to_groups["E1_2"].count());
-    EXPECT_EQ(1, proteoform_modules.member_to_groups["F1_1"].count());
-    EXPECT_EQ(0, proteoform_modules.member_to_groups["F2_1"].count());
-    EXPECT_EQ(0, proteoform_modules.member_to_groups["F2_2"].count());
-    EXPECT_EQ(1, proteoform_modules.member_to_groups["G1_1"].count());
-    EXPECT_EQ(1, proteoform_modules.member_to_groups["G1_2"].count());
-    EXPECT_EQ(1, proteoform_modules.member_to_groups["G2_1"].count());
+    EXPECT_EQ(1, proteoform_modules.member_to_groups[proteoforms.str_to_int["D1_1"]].count());
+    EXPECT_EQ(1, proteoform_modules.member_to_groups[proteoforms.str_to_int["D1_2"]].count());
+    EXPECT_EQ(1, proteoform_modules.member_to_groups[proteoforms.str_to_int["D2_1"]].count());
+    EXPECT_EQ(0, proteoform_modules.member_to_groups[proteoforms.str_to_int["E1_1"]].count());
+    EXPECT_EQ(1, proteoform_modules.member_to_groups[proteoforms.str_to_int["E1_2"]].count());
+    EXPECT_EQ(1, proteoform_modules.member_to_groups[proteoforms.str_to_int["F1_1"]].count());
+    EXPECT_EQ(0, proteoform_modules.member_to_groups[proteoforms.str_to_int["F2_1"]].count());
+    EXPECT_EQ(0, proteoform_modules.member_to_groups[proteoforms.str_to_int["F2_2"]].count());
+    EXPECT_EQ(1, proteoform_modules.member_to_groups[proteoforms.str_to_int["G1_1"]].count());
+    EXPECT_EQ(1, proteoform_modules.member_to_groups[proteoforms.str_to_int["G1_2"]].count());
+    EXPECT_EQ(1, proteoform_modules.member_to_groups[proteoforms.str_to_int["G2_1"]].count());
 
-    EXPECT_TRUE(proteoform_modules.member_to_groups["D1_1"][traits.str_to_int["GROUP2"]]);
-    EXPECT_TRUE(proteoform_modules.member_to_groups["D1_2"][traits.str_to_int["GROUP2"]]);
-    EXPECT_TRUE(proteoform_modules.member_to_groups["D2_1"][traits.str_to_int["GROUP2"]]);
-    EXPECT_TRUE(proteoform_modules.member_to_groups["E1_2"][traits.str_to_int["GROUP2"]]);
-    EXPECT_TRUE(proteoform_modules.member_to_groups["F1_1"][traits.str_to_int["GROUP2"]]);
-    EXPECT_TRUE(proteoform_modules.member_to_groups["G1_1"][traits.str_to_int["GROUP2"]]);
-    EXPECT_TRUE(proteoform_modules.member_to_groups["G1_2"][traits.str_to_int["GROUP2"]]);
-    EXPECT_TRUE(proteoform_modules.member_to_groups["G2_1"][traits.str_to_int["GROUP2"]]);
+    EXPECT_TRUE(proteoform_modules.member_to_groups[proteoforms.str_to_int["D1_1"]][traits.str_to_int["GROUP2"]]);
+    EXPECT_TRUE(proteoform_modules.member_to_groups[proteoforms.str_to_int["D1_2"]][traits.str_to_int["GROUP2"]]);
+    EXPECT_TRUE(proteoform_modules.member_to_groups[proteoforms.str_to_int["D2_1"]][traits.str_to_int["GROUP2"]]);
+    EXPECT_TRUE(proteoform_modules.member_to_groups[proteoforms.str_to_int["E1_2"]][traits.str_to_int["GROUP2"]]);
+    EXPECT_TRUE(proteoform_modules.member_to_groups[proteoforms.str_to_int["F1_1"]][traits.str_to_int["GROUP2"]]);
+    EXPECT_TRUE(proteoform_modules.member_to_groups[proteoforms.str_to_int["G1_1"]][traits.str_to_int["GROUP2"]]);
+    EXPECT_TRUE(proteoform_modules.member_to_groups[proteoforms.str_to_int["G1_2"]][traits.str_to_int["GROUP2"]]);
+    EXPECT_TRUE(proteoform_modules.member_to_groups[proteoforms.str_to_int["G2_1"]][traits.str_to_int["GROUP2"]]);
 
-    EXPECT_EQ(0, proteoform_modules.member_to_groups["H1_1"].count());
-    EXPECT_EQ(0, proteoform_modules.member_to_groups["H2_1"].count());
-    EXPECT_EQ(0, proteoform_modules.member_to_groups["I1_1"].count());
-    EXPECT_EQ(0, proteoform_modules.member_to_groups["J1_1"].count());
-    EXPECT_EQ(0, proteoform_modules.member_to_groups["J2_1"].count());
-    EXPECT_EQ(0, proteoform_modules.member_to_groups["J3_1"].count());
+    EXPECT_EQ(0, proteoform_modules.member_to_groups[proteoforms.str_to_int["H1_1"]].count());
+    EXPECT_EQ(0, proteoform_modules.member_to_groups[proteoforms.str_to_int["H2_1"]].count());
+    EXPECT_EQ(0, proteoform_modules.member_to_groups[proteoforms.str_to_int["I1_1"]].count());
+    EXPECT_EQ(0, proteoform_modules.member_to_groups[proteoforms.str_to_int["J1_1"]].count());
+    EXPECT_EQ(0, proteoform_modules.member_to_groups[proteoforms.str_to_int["J2_1"]].count());
+    EXPECT_EQ(0, proteoform_modules.member_to_groups[proteoforms.str_to_int["J3_1"]].count());
 }
 

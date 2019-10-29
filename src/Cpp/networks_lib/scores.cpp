@@ -116,13 +116,13 @@ double getOverlapSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> 
     }
 }
 
-um<std::string, double> getScores(const msb &sets,
-                                  std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score) {
+pair_map<double> getScores(const vb &sets,
+                           std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score_function) {
 
-    um<std::string, double> result;
-    for (auto it1 = sets.begin(); it1 != sets.end(); it1++) {
-        for (auto it2 = next(it1, 1); it2 != sets.end(); it2++) {
-            result[it1->first + "\t" + it2->first] = score(it1->second, it2->second);
+    pair_map<double> result;
+    for (int I1 = 0; I1 < sets.size(); I1++) {
+        for (int I2 = I1 + 1; I2 < sets.size(); I2++) {
+            result[make_pair(I1, I2)] = score_function(sets[I1], sets[I2]);
 //            std::cerr << "Score (" << it1->first << ", " << it2->first << ") : " << *result.rbegin() << "\n";
         }
     }
@@ -130,17 +130,19 @@ um<std::string, double> getScores(const msb &sets,
     return result;
 }
 
-void writeScores(const msb &sets, um<std::string, double> scores, std::string_view path_output) {
+void writeScores(const bimap_str_int &groups, const modules &entity_modules,
+                 const pair_map<double> &scores, std::string_view path_output) {
     ofstream output(path_output.data());
     if (!output.is_open()) {
         throw runtime_error("Problem opening scores file.\n");
     }
     int score = 0;
     output << "TRAIT1\tTRAIT2\tSCORE\n";
-    for (auto it1 = sets.begin(); it1 != sets.end(); it1++) {
-        for (auto it2 = next(it1, 1); it2 != sets.end(); it2++) {
-            std::string pair_str = it1->first + "\t" + it2->first;
-            output << pair_str << "\t" << std::setprecision(5) << scores.at(pair_str) << "\n";
+    for (int I1 = 0; I1 < entity_modules.group_to_members.size(); I1++) {
+        for (int I2 = I1 + 1; I2 < entity_modules.group_to_members.size(); I2++) {
+            const std::pair<int, int> index_pair = make_pair(I1, I2);
+            output << groups.int_to_str[I1] << "\t" << groups.int_to_str[I2] << "\t"
+                   << std::setprecision(5) << scores.at(index_pair) << "\n";
             score++;
         }
     }

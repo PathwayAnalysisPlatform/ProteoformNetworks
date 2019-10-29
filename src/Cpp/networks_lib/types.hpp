@@ -9,7 +9,7 @@
 #include <bitset.h>
 #include <exception>
 #include <set>
-
+#include <utility>
 
 using msi = std::map<std::string, int>;
 using msb = std::map<std::string, base::dynamic_bitset<>>;
@@ -30,13 +30,14 @@ using ummsi = std::unordered_multimap<std::string, int>;
 using ummii = std::unordered_multimap<int, int>;
 
 using vs = std::vector<std::string>;
+using vb = std::vector<base::dynamic_bitset<>>;
 using vusi = std::vector<std::unordered_set<int>>;
 
 using umsb = um<std::string, base::dynamic_bitset<>>;
 
-struct bidirectional_mapping {
-    ummss first_to_second;
-    ummss second_to_first;
+struct bimap_str_int {
+    vs int_to_str;
+    umsi str_to_int;
 };
 
 #endif // ! TYPES_HPP
