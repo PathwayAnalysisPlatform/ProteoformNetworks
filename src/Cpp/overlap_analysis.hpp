@@ -76,17 +76,16 @@ score_maps get_scores(std::string path_scores,
 // It uses multiple scoring functions to calculate the overlap score between each pair of modules.
 // Creates a report for each scoring function. The report is a csv file with one row each module pair.
 void doOverlapAnalysis(
-        std::string_view path_file_phegeni,
-        std::string_view path_file_reactome_genes,
-        std::string_view path_file_reactome_proteins,
-        std::string_view path_file_reactome_proteoforms,
-        std::string_view path_file_mapping_proteins_to_genes,
-        std::string_view path_file_mapping_proteins_to_proteoforms,
+        std::string_view path_file_modules,
+        std::string_view path_file_genes,
+        std::string_view path_file_proteins,
+        std::string_view path_file_proteoforms,
         std::string_view path_file_gene_interactions,
         std::string_view path_file_protein_interactions,
         std::string_view path_file_proteoform_interactions,
-        std::string path_reports,
-        std::string_view path_modules);
+        std::string_view path_file_mapping_proteins_to_genes,
+        std::string_view path_file_mapping_proteins_to_proteoforms,
+        std::string path_reports);
 
 void report_module_size_variation(std::string_view path_reports, const modules &gene_modules,
                                   const modules &protein_modules, const modules &proteoform_modules,

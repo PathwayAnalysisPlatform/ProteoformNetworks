@@ -58,6 +58,8 @@ src/Cpp/cmake-build-debug/
 *.csv
 *.txt
 resources/
+reports/
+figures/
 
 #R
 .Rhistory
@@ -67,3 +69,5 @@ resources/
 #Python
 venv/
 *.pyc
+
+!.idea/runConfigurations/

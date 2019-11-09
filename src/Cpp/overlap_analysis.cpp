@@ -5,30 +5,34 @@ void report_overlaps_with_ptms();
 using namespace std;
 
 void doOverlapAnalysis(
-        std::string_view path_file_phegeni,
-        std::string_view path_file_reactome_genes,
-        std::string_view path_file_reactome_proteins,
-        std::string_view path_file_reactome_proteoforms,
-        std::string_view path_file_mapping_proteins_to_genes,
-        std::string_view path_file_mapping_proteins_to_proteoforms,
+        std::string_view path_file_modules,
+        std::string_view path_file_genes,
+        std::string_view path_file_proteins,
+        std::string_view path_file_proteoforms,
         std::string_view path_file_gene_interactions,
         std::string_view path_file_protein_interactions,
         std::string_view path_file_proteoform_interactions,
-        std::string path_reports,
-        std::string_view path_modules) {
+        std::string_view path_file_mapping_proteins_to_genes,
+        std::string_view path_file_mapping_proteins_to_proteoforms,
+        std::string path_reports) {
 
-    const auto[genes, proteins, proteoforms] = get_entities(path_file_reactome_genes,
-                                                            path_file_reactome_proteins,
-                                                            path_file_reactome_proteoforms);
+    std::cout << "Reading genes, proteins and proteoforms.\n\n";
+    const auto[genes, proteins, proteoforms] = get_entities(path_file_genes,
+                                                            path_file_proteins,
+                                                            path_file_proteoforms);
 
     // Read traits and genes in Phegeni file. The genes in the PhegenI file are ignored,
     // the universe set of genes used is the one of Reactome
-    const auto[traits, phegen_genes] = loadPheGenIGenesAndTraits(path_file_phegeni, genes);
+    std::cout << "Reading gene modules.\n\n";
+    const auto[traits, phegen_genes] = loadPheGenIGenesAndTraits(path_file_modules, genes);
 
     // Create or read module files at the three levels: all in one, and single module files.
+    std::cout << "Creating protein and proetoform modules.\n\n";
+    std::string path_modules = path_reports;
+    path_modules += "modules/";
     const auto[gene_modules, protein_modules, proteoform_modules] = get_or_create_modules(
-            path_modules.data(),
-            path_file_phegeni,
+            path_modules,
+            path_file_modules,
             path_file_gene_interactions,
             path_file_mapping_proteins_to_genes,
             path_file_protein_interactions,
@@ -42,16 +46,22 @@ void doOverlapAnalysis(
     std::cerr << "Proteoform level: " << proteoform_modules.group_to_members.size() << " traits\n";
 
     // Check variation in module sizes
+    std::cout<< "Calculating module size variation.\n\n";
     report_module_size_variation(path_reports, gene_modules, protein_modules, proteoform_modules, traits);
 
     // Calculate scores with Overlap Similarity
+    std::cout << "Calculating module pairs overlap.\n\n";
     const auto scores_overlap_similarity = get_scores(path_reports, getOverlapSimilarity, "overlap_similarity",
                                                       gene_modules, protein_modules, proteoform_modules, traits);
 
+
+    std::cout << "Finding overlap reduction examples. \n\n";
     report_node_overlap_reduction_examples(path_reports, "overlap_similarity", scores_overlap_similarity, traits);
 
+    std::cout << "Counting connecting interactions and calculating variation...\n\n";
     report_connecting_edges_variation_examples(path_reports, scores_overlap_similarity);
 
+    std::cout << "Finding examples of overlap with only modified proteoforms...\n\n";
     report_overlap_only_ptms(path_reports, scores_overlap_similarity, traits);
 
     // Calculate scores with Jaccard index
@@ -178,12 +188,13 @@ get_entities_result get_entities(std::string_view path_file_reactome_genes,
                                  std::string_view path_file_reactome_proteoforms) {
 
     std::cout << "Loading genes..." << std::endl;
-    const bimap_str_int genes = createBimap(path_file_reactome_genes);
+    const bimap_str_int genes = createBimap(path_file_reactome_genes, true);
     std::cout << "Loading proteins..." << std::endl;
-    const bimap_str_int proteins = createBimap(path_file_reactome_proteins);
+    const bimap_str_int proteins = createBimap(path_file_reactome_proteins, true);
     std::cout << "Loading proteoforms..." << std::endl;
-    const bimap_str_int proteoforms = createBimap(path_file_reactome_proteoforms, true, 0, 6);
+    const bimap_str_int proteoforms = createBimap(path_file_reactome_proteoforms, false);
 
+    std::cout << "Entities loaded.\n";
     return {genes, proteins, proteoforms};
 }
 
@@ -294,11 +305,15 @@ void report_connecting_edges_variation_examples(std::string path_reports, const 
             // Calculate the ratio of change between each level
         }
     }
-
-
 }
 
 void report_overlap_only_ptms(std::string string, const score_maps maps, const bimap_str_int anInt) {
     //TODO: Implement this function
+    // For all the pairs of traits that overlap at the proteoform level
+
+    // If overlapping proteoforms are modified
+
+    // Report that pair of modules with the modifications of the proteins
 }
 
+// TODO: Test example of overlap pairs Adiponectin and Glomerular Filtration Rate. Check why the protein P15692 is not in the proteoform module of Glomerular Filtration Rate.

@@ -38,9 +38,11 @@ vs createIntToStr(std::string_view path_file, bool has_header, int selected_colu
     int current_column;
 
     if (!map_file.is_open()) {
-        std::string message = "Could not open file at ";
-        std::string function = __FUNCTION__;
-        throw std::runtime_error(message + function);
+        std::string message = "Could not open file ";
+        message += path_file;
+        message += " at ";
+        message += __FUNCTION__;
+        throw std::runtime_error(message);
     }
 
     if (selected_column >= total_num_columns || selected_column < 0) {

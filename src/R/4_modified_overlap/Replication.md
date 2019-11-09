@@ -39,8 +39,9 @@ WITH DISTINCT physicalEntity,
 
 Then convert the proteoform format from NEO4J to SIMPLE. Use PathwayMatcher class called ProteoformFormatConverter.
 ~~~~
-java -cp PathwayMatcher.jar no.uib.pap.pathwaymatcher.tools.ProteoformFormatConverter reactome/ all_proteoforms_neo4j.csv all_proteoforms.csv
+java -cp PathwayMatcher.jar matcher.tools.ProteoformFormatConverter Reactome/v70/Proteoforms/ all_proteoforms_v70_neo4j.csv all_proteoforms_v70_simple.csv
 ~~~~
+
 
 * Find out the gene, protein and proteoform members of each pathway. For this we execute PathwayMatcher and get the whole search result.
 

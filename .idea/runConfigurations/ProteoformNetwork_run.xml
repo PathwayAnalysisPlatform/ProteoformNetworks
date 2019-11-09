@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="ProteoformNetwork_run" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="../../../resources/PheGenI/PheGenI_Association_genome_wide_significant.txt ../../../resources/Reactome/v70/Genes/all_genes_v70.csv ../../../resources/Reactome/v70/Proteins/all_proteins_v70.csv ../../../resources/Reactome/v70/Proteoforms/all_proteoforms_v70_simple.csv ../../../resources/Reactome/v70/Genes/geneInternalEdges.tsv ../../../resources/Reactome/v70/Proteins/proteinInternalEdges.tsv ../../../resources/Reactome/v70/Proteoforms/proteoformInternalEdges.tsv ../../../resources/UniProt/mapping_proteins_to_genes_v70.tab ../../../resources/Reactome/v70/Proteoforms/proteoformSearch.tsv ../../../reports/" PASS_PARENT_ENVS_2="true" PROJECT_NAME="ProteoformNetworks" TARGET_NAME="ProteoformNetwork_run" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="ProteoformNetworks" RUN_TARGET_NAME="ProteoformNetwork_run">
+    <method v="2">
+      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+</component>

@@ -55,11 +55,11 @@ def plot_module_pair(trait1, trait2, level, path_to_modules, path_to_figures):
             region[node] = "OVERLAP"
             colors[node] = "red"
         elif node in g1.nodes:
-            region[node] = "1"
-            colors[node] = "blue"
-        else:
-            region[node] = "2"
+            region[node] = trait1
             colors[node] = "green"
+        else:
+            region[node] = trait2
+            colors[node] = "yellow"
     nx.set_node_attributes(G, colors, "colors")
     nx.set_node_attributes(G, region, "region")
     print(region)
@@ -81,17 +81,28 @@ def plot_module_pair(trait1, trait2, level, path_to_modules, path_to_figures):
     nx.set_edge_attributes(G, edge_attrs, "edge_color")
     # %%
     # Show with Bokeh
-    plot = Plot(plot_width=1500, plot_height=1000,
+    plot = Plot(plot_width=1800, plot_height=900,
                 x_range=Range1d(-1.1, 1.1), y_range=Range1d(-1.1, 1.1))
-    plot.title.text = "Modules for " + trait1 + " and " + trait2
+    plot.title.text = "Modules for \"" + trait1 + "\" and \"" + trait2 + "\""
+    plot.title.text_font_size = '24pt'
 
-    node_hover_tool = HoverTool(tooltips=[("name", "@index"), ("region", "@region")])
+    TOOLTIPS = """
+        <div>
+            <span style="font-size: 18px; font-weight: bold;">Name: @index</span>
+        </div>
+        <div>
+            <span style="font-size: 18px; font-weight: bold; color: @colors;">Region: @region</span>
+        </div>
+    """
+
+    # node_hover_tool = HoverTool(tooltips=[("name", "@index"), ("region", "@region")])
+    node_hover_tool = HoverTool(tooltips=TOOLTIPS)
     plot.add_tools(node_hover_tool, BoxZoomTool(), ResetTool())
 
     graph_renderer = from_networkx(G, nx.spring_layout, scale=1, center=(0, 0))
 
-    graph_renderer.node_renderer.glyph = Circle(size=15, fill_color="colors")
-    graph_renderer.edge_renderer.glyph = MultiLine(line_color="edge_color", line_alpha=0.8, line_width=1)
+    graph_renderer.node_renderer.glyph = Circle(size=20, fill_color="colors")
+    graph_renderer.edge_renderer.glyph = MultiLine(line_color="edge_color", line_alpha=0.8, line_width=2)
     plot.renderers.append(graph_renderer)
 
     output_file(f"{path_to_figures}{trait1}_to_{trait2}_{level}.html")

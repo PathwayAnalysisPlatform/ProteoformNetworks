@@ -3,34 +3,52 @@
 #include <iostream>
 #include "overlap_analysis.hpp"
 
-// Input files
-const std::string path_file_PheGenI = "../../../resources/PheGenI/PheGenI_Association_genome_wide_significant.txt";
-const std::string path_file_reactome_genes = "../../../resources/Reactome/v70/Genes/all_genes_v70.csv";
-const std::string path_file_reactome_proteins = "../../../resources/Reactome/v70/Proteins/all_proteins_v70.csv";
-const std::string path_file_reactome_proteoforms = "../../../resources/Reactome/v70/Proteoforms/proteoformSearch.tsv";  // Uses this file so that PathwayMatcher has sorted the PTMs in each proteoform.
-const std::string path_file_mapping_proteins_to_genes = "../../../resources/UniProt/mapping_proteins_to_genes_v70.tab";
-const std::string path_file_mapping_proteins_to_proteoforms = "../../../resources/Reactome/v70/Proteoforms/proteoformSearch.tsv";
-const std::string path_file_gene_interactions = "../../../resources/Reactome/v70/Genes/geneEdges.tsv";
-const std::string path_file_protein_interactions = "../../../resources/Reactome/v70/Proteins/proteinEdges.tsv";
-const std::string path_file_proteoform_interactions = "../../../resources/Reactome/v70/Proteoforms/proteoformEdges.tsv";
-const std::string path_reports = "../../../reports/";
-const std::string path_modules = "../../../reports/modules/";
 
-int main() try {
+/*Performs the Overlap analysis calculations and creates files with the results.
+ *
+ * INPUT:
+ * - [1] Modules file
+ * - [2] Gene list (has header row)
+ * - [3] Proteins list (has header row)
+ * - [4] Proteoform list (does NOT have header row)
+ * - [5] Gene interactions
+ * - [6] Protein interactions
+ * - [7] Proteoform interactions
+ * - [8] Mapping from proteins to genes
+ * - [9] Mapping from proteins to proteoforms
+ * - [10] Output path
+ *
+ * */
+int main(int argc, char *argv[]) try {
 //	auto out = freopen("out.txt", "w", stdout);
 //	auto err = freopen("err.txt", "w", stderr);
 
-    doOverlapAnalysis(path_file_PheGenI,
-                      path_file_reactome_genes,
-                      path_file_reactome_proteins,
-                      path_file_reactome_proteoforms,
-                      path_file_mapping_proteins_to_genes,
-                      path_file_mapping_proteins_to_proteoforms,
-                      path_file_gene_interactions,
-                      path_file_protein_interactions,
-                      path_file_proteoform_interactions,
-                      path_reports,
-                      path_modules);
+    if (argc < 11) {
+        std::cerr << "Missing arguments. Expected: 10 arguments:\n\n"
+                  << " * - [1] Modules file\n"
+                  << " * - [2] Gene list\n"
+                  << " * - [3] Proteins list\n"
+                  << " * - [4] Proteoform list\n"
+                  << " * - [5] Gene interactions\n"
+                  << " * - [6] Protein interactions\n"
+                  << " * - [7] Proteoform interactions\n"
+                  << " * - [8] Mapping from proteins to genes\n"
+                  << " * - [9] Mapping from proteins to proteoforms\n"
+                  << " * - [10] Output path";
+        throw std::runtime_error("Missing arguments.");
+        return 0;
+    }
+
+    doOverlapAnalysis(argv[1],
+                      argv[2],
+                      argv[3],
+                      argv[4],
+                      argv[5],
+                      argv[6],
+                      argv[7],
+                      argv[8],
+                      argv[9],
+                      argv[10]);
 
 }
 catch (const std::exception &ex) {
