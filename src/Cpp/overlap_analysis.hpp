@@ -18,6 +18,8 @@ const int MAX_OVERLAP_SIZE = 100;
 const int MIN_SET_SIZE = 1;
 const int MAX_SET_SIZE = 200;
 
+const std::vector<std::string> levels = {"genes", "proteins", "proteoforms"};
+
 struct Frequencies {
     msi modifications;
     msi proteins;
@@ -39,24 +41,19 @@ inline bool file_exists(const std::string &name) {
     return (stat(name.c_str(), &buffer) == 0);
 }
 
-struct get_modules_result {
-    modules gene_modules;
-    modules protein_modules;
-    modules proteoform_modules;
-};
-
 // Create or read module files at the three levels: all in one, and single module files.
-get_modules_result get_or_create_modules(std::string path_modules,
-                                         std::string_view path_file_phegeni,
-                                         std::string_view path_file_gene_interactions,
-                                         std::string_view path_file_mapping_proteins_to_genes,
-                                         std::string_view path_file_protein_interactions,
-                                         std::string_view path_file_mapping_proteins_to_proteoforms,
-                                         std::string_view path_file_proteoform_interactions,
-                                         const bimap_str_int &genes,
-                                         const bimap_str_int &proteins,
-                                         const bimap_str_int &proteoforms,
-                                         const bimap_str_int &traits);
+const std::map<const std::string, const modules>
+get_or_create_modules(const std::string &path_modules,
+                      std::string_view path_file_phegeni,
+                      std::string_view path_file_gene_interactions,
+                      std::string_view path_file_mapping_proteins_to_genes,
+                      std::string_view path_file_protein_interactions,
+                      std::string_view path_file_mapping_proteins_to_proteoforms,
+                      std::string_view path_file_proteoform_interactions,
+                      const bimap_str_int &genes,
+                      const bimap_str_int &proteins,
+                      const bimap_str_int &proteoforms,
+                      const bimap_str_int &traits);
 
 struct score_maps {
     pair_map<double> gene_scores;
@@ -64,13 +61,9 @@ struct score_maps {
     pair_map<double> proteoform_scores;
 };
 
-score_maps get_scores(std::string path_scores,
-                      std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> scoring,
-                      std::string label,
-                      const modules &gene_modules,
-                      const modules &protein_modules,
-                      const modules &proteoform_modules,
-                      const bimap_str_int &traits);
+void report_pairs_overlap_data(const std::string &path_out,
+                               const std::map<const std::string, const modules> &all_modules,
+                               const bimap_str_int &traits);
 
 // Calculates differences in module overlap between gene and proteoform level networks_lib
 // It uses multiple scoring functions to calculate the overlap score between each pair of modules.
@@ -87,8 +80,7 @@ void doOverlapAnalysis(
         std::string_view path_file_mapping_proteins_to_proteoforms,
         std::string path_reports);
 
-void report_module_size_variation(std::string_view path_reports, const modules &gene_modules,
-                                  const modules &protein_modules, const modules &proteoform_modules,
+void report_module_size_variation(std::string_view path_reports, const std::map<const std::string, const modules> &,
                                   const bimap_str_int &traits);
 
 // Check if there are pairs of modules sharing nodes at one level but not in another

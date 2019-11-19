@@ -26,6 +26,7 @@ protected:
             sets[groups.str_to_int["D"]][I].set();
 
         the_modules.group_to_members = sets;
+
     }
 
     vb sets;
@@ -260,7 +261,10 @@ TEST_F(ScoresFixture, WriteScores) {
     // Create example file
     std::string file_name = ::testing::UnitTest::GetInstance()->current_test_info()->name();
     file_name += "_scores.txt";
-    writeScores(groups, the_modules, getScores(sets, getOverlapSimilarity), file_name);
+
+    std::vector<std::string> features_labels = {"SCORE"};
+    std::vector<pair_map<double>> features = {getScores(sets, getOverlapSimilarity)};
+    writeScores(groups, the_modules, features_labels, features, file_name);
 
     // Open file
     std::ifstream scores_file(file_name);

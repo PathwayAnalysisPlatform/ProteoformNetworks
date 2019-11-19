@@ -49,7 +49,10 @@ double getOverlapSize(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2);
 pair_map<double>
 getScores(const vb &sets, std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score_function);
 
-void writeScores(const bimap_str_int &groups, const modules &entity_modules,
-                 const pair_map<double> &scores, const pair_map<double> &overlap_sizes, std::string_view path_output);
+void writeScores(const bimap_str_int &groups,
+                 const modules &entity_modules,
+                 const std::vector<std::string> &features_labels,
+                 const std::vector<pair_map<double>> &features,
+                 std::string_view file_output);
 
 #endif /* UTILITY_HPP_ */
