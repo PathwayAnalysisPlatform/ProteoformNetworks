@@ -208,15 +208,18 @@ score_maps get_scores(std::string path_scores,
 
     std::cout << "Calculating overlap similarity for Genes." << std::endl;
     auto gene_scores = getScores(gene_modules.group_to_members, scoring);
-    writeScores(traits, gene_modules, gene_scores, path_scores + "scores_genes_" + label + ".tsv");
+    auto gene_overlap_sizes = getScores(gene_modules.group_to_members, getOverlapSize);
+    writeScores(traits, gene_modules, gene_scores, gene_overlap_sizes, path_scores + "scores_genes_" + label + ".tsv");
 
     std::cout << "Calculating overlap similarity for Proteins." << std::endl;
     auto protein_scores = getScores(protein_modules.group_to_members, scoring);
-    writeScores(traits, protein_modules, protein_scores, path_scores + "scores_proteins_" + label + ".tsv");
+    auto protein_overlap_sizes = getScores(protein_modules.group_to_members, getOverlapSize);
+    writeScores(traits, protein_modules, protein_scores, protein_overlap_sizes, path_scores + "scores_proteins_" + label + ".tsv");
 
     std::cout << "Calculating overlap similarity for Proteoforms." << std::endl;
     auto proteoform_scores = getScores(proteoform_modules.group_to_members, scoring);
-    writeScores(traits, proteoform_modules, proteoform_scores, path_scores + "scores_proteoforms_" + label + ".tsv");
+    auto proteoform_overlap_sizes = getScores(proteoform_modules.group_to_members, getOverlapSize);
+    writeScores(traits, proteoform_modules, proteoform_scores, proteoform_overlap_sizes, path_scores + "scores_proteoforms_" + label + ".tsv");
 
     return {gene_scores, protein_scores, proteoform_scores};
 }

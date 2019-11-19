@@ -49,6 +49,7 @@ src/Cpp/lib/
 ## Not used Libraries
 src/Cpp/lib/
 src/Cpp/cmake-build-debug/
+src/Cpp/cmake-build-release
 
 # Java
 *.jar

@@ -41,6 +41,8 @@ double getJaccardSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> 
 
 double getOverlapSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2);
 
+double getOverlapSize(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2);
+
 // Calculate similarity score between al pairs of bitsets
 // The sets are the second value of each entry in the sets parameter.
 // The score is a function capable of calculating the overlap with bitsets.
@@ -48,6 +50,6 @@ pair_map<double>
 getScores(const vb &sets, std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score_function);
 
 void writeScores(const bimap_str_int &groups, const modules &entity_modules,
-                 const pair_map<double> &scores, std::string_view path_output);
+                 const pair_map<double> &scores, const pair_map<double> &overlap_sizes, std::string_view path_output);
 
 #endif /* UTILITY_HPP_ */

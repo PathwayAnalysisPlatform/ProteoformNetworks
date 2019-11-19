@@ -20,7 +20,9 @@ readMapping(std::string_view path_file_mapping, bool has_header_row, bool has_ad
     std::string source, destination, destinations, leftover;
 
     if (!file_mapping.is_open()) {
-        std::string message = "Error reading file at: ";
+        std::string message = "Error reading file ";
+        message += path_file_mapping;
+        message += " at: ";
         message += __FUNCTION__;
         throw std::runtime_error(message);
     }

@@ -57,6 +57,7 @@ def create_pathwaymatcher_files(path_reactome,
                                 file_reactome_gene_interactions,
                                 file_reactome_protein_interactions,
                                 file_reactome_proteoform_interactions,
+                                file_proteoform_search,
                                 path_pathwaymatcher, file_pathwaymatcher, url_pathwaymatcher):
     """Create protein interaction network of all Reactome by mapping with PathwayMatcher.
     Also, creates the search files for genes, proteins and proteoforms, to be used as the sets to create the modules."""
@@ -69,23 +70,25 @@ def create_pathwaymatcher_files(path_reactome,
 
     if not os.path.exists(path_reactome + file_reactome_gene_interactions) \
             or not os.path.exists(path_reactome + file_reactome_protein_interactions) \
-            or not os.path.exists(path_reactome + file_reactome_proteoform_interactions):
+            or not os.path.exists(path_reactome + file_reactome_proteoform_interactions) \
+            or not os.path.exists(path_reactome + file_proteoform_search):
 
         # Download PathwayMatcher executable
         download_if_not_exists(path_pathwaymatcher, file_pathwaymatcher, url_pathwaymatcher, 'PathwayMatcher')
 
-        print("Creating gene interaction file...")
         if not os.path.exists(path_reactome + file_reactome_gene_interactions):
+            print("Creating gene interaction file...")
             command = f"java -jar {path_pathwaymatcher}{file_pathwaymatcher} match-genes -i {path_reactome}{file_reactome_genes} -o {path_reactome}Genes/ -g"
             os.system(command)
 
-        print("Creating protein interaction file...")
         if not os.path.exists(path_reactome + file_reactome_protein_interactions):
+            print("Creating protein interaction file...")
             command = f"java -jar {path_pathwaymatcher}{file_pathwaymatcher} match-uniprot -i {path_reactome}{file_reactome_proteins} -o {path_reactome}Proteins/ -g"
             os.system(command)
 
-        print("Creating proteoform interaction file...")
-        if not os.path.exists(path_reactome + file_reactome_proteoform_interactions):
+        if not os.path.exists(path_reactome + file_reactome_proteoform_interactions) \
+                or not os.path.exists(path_reactome + file_proteoform_search):
+            print("Creating proteoform files...")
             command = f"java -jar {path_pathwaymatcher}{file_pathwaymatcher} match-proteoforms -i {path_reactome}{file_reactome_proteoforms} -o {path_reactome}Proteoforms/ -g"
             os.system(command)
 
@@ -94,7 +97,7 @@ def create_pathwaymatcher_files(path_reactome,
                        "Genes/geneExternalEdges.tsv", "Proteins/proteinExternalEdges.tsv",
                        "Proteoforms/proteoformExternalEdges.tsv",
                        "Genes/geneVertices.tsv", "Proteins/proteinVertices.tsv", "Proteoforms/proteoformVertices.tsv",
-                       "Genes/search.tsv", "Proteins/search.tsv", "Proteoforms/search.tsv"]
+                       "Genes/search.tsv", "Proteins/search.tsv"]
         for file in extra_files:
             if os.path.exists(f"{path_reactome}{file}"):
                 os.remove(f"{path_reactome}{file}")

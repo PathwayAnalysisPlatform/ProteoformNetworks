@@ -1,13 +1,12 @@
 # %%
-import bokeh
-import networkx as nx
 import matplotlib.pyplot as plt
-
+import networkx as nx
 from bokeh.io import output_file, show
-from bokeh.models import Plot, Range1d, MultiLine, Circle, HoverTool, BoxZoomTool, ResetTool
+from bokeh.layouts import row
+from bokeh.models import Plot, Range1d, MultiLine, Circle, HoverTool, BoxZoomTool, ResetTool, PointDrawTool
 from bokeh.models.graphs import from_networkx
 
-
+from config import levels
 # Plot the frequency of each overlap score
 # Only considers positive scores, where sets overlap.
 from lib.data_read_write import get_graph
@@ -107,3 +106,83 @@ def plot_module_pair(trait1, trait2, level, path_to_modules, path_to_figures):
 
     output_file(f"{path_to_figures}{trait1}_to_{trait2}_{level}.html")
     show(plot)
+
+
+def create_graph(trait1, trait2, level, path_to_modules, path_to_figures):
+    G = nx.Graph()
+    print("Creating graph 1")
+    g1 = get_graph(trait1, level, path_to_modules)
+    # g1 = nx.gnp_random_graph(5, 0, 5)
+    print("Creating graph 2")
+    g2 = get_graph(trait2, level, path_to_modules)
+    # g2 = nx.gnp_random_graph(7, 0.5)
+
+    G.add_edges_from(g1.edges)
+    G.add_edges_from(g2.edges)
+
+    region = {}
+    colors = {}
+    for node in G.nodes:
+        if node in g1.nodes and node in g2.nodes:
+            region[node] = "OVERLAP"
+            colors[node] = "red"
+        elif node in g1.nodes:
+            region[node] = trait1
+            colors[node] = "green"
+        else:
+            region[node] = trait2
+            colors[node] = "yellow"
+    nx.set_node_attributes(G, colors, "colors")
+    nx.set_node_attributes(G, region, "region")
+
+    CROSSING_EDGES, IN_MODULE_1_EDGES, IN_MODULE_2_EDGES, IN_OVERLAP_EDGES = "orange", "green", "yellow", "red"
+
+    edge_attrs = {}
+    for start_node, end_node, _ in G.edges(data=True):
+        if G.nodes[start_node]["region"] == G.nodes[end_node]["region"]:
+            if G.nodes[start_node]["region"] == "OVERLAP":
+                edge_color = IN_OVERLAP_EDGES
+            elif G.nodes[start_node]["region"] == trait1:
+                edge_color = IN_MODULE_1_EDGES
+            else:
+                edge_color = IN_MODULE_2_EDGES
+        else:
+            edge_color = CROSSING_EDGES
+        edge_attrs[(start_node, end_node)] = edge_color
+    nx.set_edge_attributes(G, edge_attrs, "edge_color")
+    return G
+
+
+def create_plot(trait1, trait2, level, path_to_modules, path_to_figures):
+    G = create_graph(trait1, trait2, level, path_to_modules, path_to_figures)
+
+    plot = Plot(plot_width=600, plot_height=600,
+                x_range=Range1d(-1.1, 1.1), y_range=Range1d(-1.1, 1.1),
+                toolbar_location="below")
+    plot.title.text = f"{level.title()}"
+    plot.title.align = 'center'
+    plot.title.text_font_size = '22pt'
+
+    node_hover_tool = HoverTool(tooltips=[("index", "@index"), ("club", "@club")])
+    plot.add_tools(node_hover_tool, BoxZoomTool(), ResetTool(), PointDrawTool())
+
+    graph_renderer = from_networkx(G, nx.spring_layout, scale=1, center=(0, 0))
+
+    graph_renderer.node_renderer.glyph = Circle(size=15, fill_color="black")
+    graph_renderer.edge_renderer.glyph = MultiLine(line_color="edge_color", line_alpha=0.8, line_width=1)
+    plot.renderers.append(graph_renderer)
+    return plot
+
+
+def plot_module_pair(trait1, trait2, path_to_modules, path_to_figures):
+    """Visualize the pair of modules in an interactive graph.
+
+    trait1, trait2: names of the two sets as strings
+    path_to_modules: directory where to find the input files
+    path_to_figures: directory where to create the output files
+    """
+
+    figures = [create_plot(trait1, trait2, level, path_to_modules, path_to_figures) for level in levels]
+
+    output_file(f"{path_to_figures}{trait1}_to_{trait2}.html")
+    show(row(figures))

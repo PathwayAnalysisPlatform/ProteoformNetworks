@@ -116,6 +116,10 @@ double getOverlapSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> 
     }
 }
 
+double getOverlapSize(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2) {
+    return (set1 & set2).count();
+}
+
 pair_map<double> getScores(const vb &sets,
                            std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score_function) {
 
@@ -131,18 +135,20 @@ pair_map<double> getScores(const vb &sets,
 }
 
 void writeScores(const bimap_str_int &groups, const modules &entity_modules,
-                 const pair_map<double> &scores, std::string_view path_output) {
+                 const pair_map<double> &scores, const pair_map<double> &overlap_sizes,
+                 std::string_view path_output) {
     ofstream output(path_output.data());
     if (!output.is_open()) {
         throw runtime_error("Problem opening scores file.\n");
     }
     int score = 0;
-    output << "TRAIT1\tTRAIT2\tSCORE\n";
+    output << "TRAIT1\tTRAIT2\tSCORE\tOVERLAP_SIZE\n";
     for (int I1 = 0; I1 < entity_modules.group_to_members.size(); I1++) {
         for (int I2 = I1 + 1; I2 < entity_modules.group_to_members.size(); I2++) {
             const std::pair<int, int> index_pair = make_pair(I1, I2);
             output << groups.int_to_str[I1] << "\t" << groups.int_to_str[I2] << "\t"
-                   << std::setprecision(5) << scores.at(index_pair) << "\n";
+                   << std::setprecision(5) << scores.at(index_pair) << "\t"
+                   << overlap_sizes.at(index_pair) << "\n";
             score++;
         }
     }
