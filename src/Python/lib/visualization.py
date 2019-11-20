@@ -109,57 +109,70 @@ def plot_module_pair(trait1, trait2, level, path_to_modules, path_to_figures):
 
 
 def create_graph(trait1, trait2, level, path_to_modules, only_interface=False):
-    G = nx.Graph()
-    print("Creating graph 1")
-    g1 = get_graph(trait1, level, path_to_modules)
-    # g1 = nx.gnp_random_graph(5, 0, 5)
-    print("Creating graph 2")
-    g2 = get_graph(trait2, level, path_to_modules)
-    # g2 = nx.gnp_random_graph(7, 0.5)
+    graph_complete = nx.Graph()
+    graph_interface = nx.Graph()
 
-    G.add_edges_from(g1.edges)
-    G.add_edges_from(g2.edges)
+    traits = [trait1, trait2]
+    graphs = {trait: get_graph(trait, level, path_to_modules) for trait in traits}
+    [graph_complete.add_edges_from(graph.edges) for graph in graphs.values()]  # Merge both graphs
+
+    CROSSING_EDGES, IN_MODULE_1_EDGES, IN_MODULE_2_EDGES, IN_OVERLAP_EDGES = "orange", "darkgreen", "darkblue", "red"
 
     region = {}
     colors = {}
-    for node in G.nodes:
-        if node in g1.nodes and node in g2.nodes:
+    for node in graph_complete.nodes:
+        if node in graphs[trait1].nodes and node in graphs[trait2].nodes:
             region[node] = "OVERLAP"
             colors[node] = "red"
-        elif node in g1.nodes:
+        elif node in graphs[trait1].nodes:
             region[node] = trait1
             colors[node] = "green"
         else:
             region[node] = trait2
             colors[node] = "blue"
-    nx.set_node_attributes(G, colors, "colors")
-    nx.set_node_attributes(G, region, "region")
-
-    CROSSING_EDGES, IN_MODULE_1_EDGES, IN_MODULE_2_EDGES, IN_OVERLAP_EDGES = "orange", "darkgreen", "darkblue", "red"
+    nx.set_node_attributes(graph_complete, colors, "colors")
+    nx.set_node_attributes(graph_complete, region, "region")
 
     edge_attrs = {}
-    for start_node, end_node, _ in G.edges(data=True):
-        if G.nodes[start_node]["region"] == G.nodes[end_node]["region"]:
-            if G.nodes[start_node]["region"] == "OVERLAP":
+    interface_nodes = set()
+    for start_node, end_node, _ in graph_complete.edges(data=True):
+        if graph_complete.nodes[start_node]["region"] == graph_complete.nodes[end_node]["region"]:
+            if graph_complete.nodes[start_node]["region"] == "OVERLAP":
                 edge_color = IN_OVERLAP_EDGES
-            elif G.nodes[start_node]["region"] == trait1:
+                interface_nodes.add(start_node)
+                interface_nodes.add(end_node)
+            elif graph_complete.nodes[start_node]["region"] == trait1:
                 edge_color = IN_MODULE_1_EDGES
             else:
                 edge_color = IN_MODULE_2_EDGES
         else:
             edge_color = CROSSING_EDGES
+            interface_nodes.add(start_node)
+            interface_nodes.add(end_node)
         edge_attrs[(start_node, end_node)] = edge_color
-    nx.set_edge_attributes(G, edge_attrs, "edge_color")
-    return G
+    nx.set_edge_attributes(graph_complete, edge_attrs, "edge_color")
+
+    if only_interface:
+        graph_interface = graph_complete.subgraph(interface_nodes)
+
+    print("All nodes:")
+    for node in graph_complete.nodes:
+        print(node)
+
+    print("Interface nodes: ")
+    for node in graph_interface.nodes:
+        print(node)
+
+    return graph_interface if only_interface else graph_complete
 
 
 def create_plot(level, graph):
-    plot = Plot(plot_width=600, plot_height=500,
+    plot = Plot(plot_width=600, plot_height=450,
                 x_range=Range1d(-1.1, 1.1), y_range=Range1d(-1.1, 1.1),
                 toolbar_location="below")
     plot.title.text = f"{level.title()}"
     plot.title.align = 'center'
-    plot.title.text_font_size = '22pt'
+    plot.title.text_font_size = '16pt'
 
     TOOLTIPS = """
             <div>
@@ -174,8 +187,9 @@ def create_plot(level, graph):
 
     graph_renderer = from_networkx(graph, nx.spring_layout, scale=1, center=(0, 0))
 
-    graph_renderer.node_renderer.glyph = Circle(size=6, fill_color="colors")
-    graph_renderer.edge_renderer.glyph = MultiLine(line_color="edge_color", line_alpha=0.8, line_width=1.5)
+    if len(graph.nodes) > 0:
+        graph_renderer.node_renderer.glyph = Circle(size=6, fill_color="colors")
+        graph_renderer.edge_renderer.glyph = MultiLine(line_color="edge_color", line_alpha=0.8, line_width=1.5)
     plot.renderers.append(graph_renderer)
     return plot
 
