@@ -43,6 +43,8 @@ double getOverlapSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> 
 
 double getOverlapSize(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2);
 
+double getInterfaceSize(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2);
+
 // Calculate similarity score between al pairs of bitsets
 // The sets are the second value of each entry in the sets parameter.
 // The score is a function capable of calculating the overlap with bitsets.

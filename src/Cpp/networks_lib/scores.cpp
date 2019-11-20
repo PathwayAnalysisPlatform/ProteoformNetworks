@@ -120,6 +120,10 @@ double getOverlapSize(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2) 
     return (set1 & set2).count();
 }
 
+double getInterfaceSize(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2) {
+    return (set1 & set2).count();
+}
+
 pair_map<double> getScores(const vb &sets,
                            std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score_function) {
 

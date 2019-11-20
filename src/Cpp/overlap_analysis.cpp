@@ -221,7 +221,7 @@ void report_pairs_overlap_data(const std::string &path_out,
 
         auto overlap_coefficients = getScores(all_modules.at(level).group_to_members, getOverlapSimilarity);
         auto overlap_sizes = getScores(all_modules.at(level).group_to_members, getOverlapSize);
-        auto interface_sizes = getScores(all_modules.at(level).group_to_members, getOverlapSize);
+        auto interface_sizes = getScores(all_modules.at(level).group_to_members, getInterfaceSize);
         std::vector<std::string> features_labels = {"OVERLAP_COEFFICIENT", "OVERLAP_SIZE", "INTERFACE_SIZE"};
         std::vector<pair_map<double>> features = {overlap_coefficients, overlap_sizes, interface_sizes};
         std::string file_output = path_out + "pairs_overlap_data_" + level + ".tsv";

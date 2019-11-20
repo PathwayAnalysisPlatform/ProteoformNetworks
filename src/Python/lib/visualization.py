@@ -2,7 +2,8 @@
 import matplotlib.pyplot as plt
 import networkx as nx
 from bokeh.io import output_file, show
-from bokeh.layouts import row
+from bokeh.layouts import layout
+from bokeh.models import Div
 from bokeh.models import Plot, Range1d, MultiLine, Circle, HoverTool, BoxZoomTool, ResetTool, PointDrawTool
 from bokeh.models.graphs import from_networkx
 
@@ -80,7 +81,7 @@ def plot_module_pair(trait1, trait2, level, path_to_modules, path_to_figures):
     nx.set_edge_attributes(G, edge_attrs, "edge_color")
     # %%
     # Show with Bokeh
-    plot = Plot(plot_width=1800, plot_height=900,
+    plot = Plot(plot_width=600, plot_height=600,
                 x_range=Range1d(-1.1, 1.1), y_range=Range1d(-1.1, 1.1))
     plot.title.text = "Modules for \"" + trait1 + "\" and \"" + trait2 + "\""
     plot.title.text_font_size = '24pt'
@@ -93,8 +94,6 @@ def plot_module_pair(trait1, trait2, level, path_to_modules, path_to_figures):
             <span style="font-size: 18px; font-weight: bold; color: @colors;">Region: @region</span>
         </div>
     """
-
-    # node_hover_tool = HoverTool(tooltips=[("name", "@index"), ("region", "@region")])
     node_hover_tool = HoverTool(tooltips=TOOLTIPS)
     plot.add_tools(node_hover_tool, BoxZoomTool(), ResetTool())
 
@@ -106,9 +105,10 @@ def plot_module_pair(trait1, trait2, level, path_to_modules, path_to_figures):
 
     output_file(f"{path_to_figures}{trait1}_to_{trait2}_{level}.html")
     show(plot)
+    return plot
 
 
-def create_graph(trait1, trait2, level, path_to_modules, path_to_figures):
+def create_graph(trait1, trait2, level, path_to_modules, only_interface=False):
     G = nx.Graph()
     print("Creating graph 1")
     g1 = get_graph(trait1, level, path_to_modules)
@@ -131,11 +131,11 @@ def create_graph(trait1, trait2, level, path_to_modules, path_to_figures):
             colors[node] = "green"
         else:
             region[node] = trait2
-            colors[node] = "yellow"
+            colors[node] = "blue"
     nx.set_node_attributes(G, colors, "colors")
     nx.set_node_attributes(G, region, "region")
 
-    CROSSING_EDGES, IN_MODULE_1_EDGES, IN_MODULE_2_EDGES, IN_OVERLAP_EDGES = "orange", "green", "yellow", "red"
+    CROSSING_EDGES, IN_MODULE_1_EDGES, IN_MODULE_2_EDGES, IN_OVERLAP_EDGES = "orange", "darkgreen", "darkblue", "red"
 
     edge_attrs = {}
     for start_node, end_node, _ in G.edges(data=True):
@@ -153,23 +153,29 @@ def create_graph(trait1, trait2, level, path_to_modules, path_to_figures):
     return G
 
 
-def create_plot(trait1, trait2, level, path_to_modules, path_to_figures):
-    G = create_graph(trait1, trait2, level, path_to_modules, path_to_figures)
-
-    plot = Plot(plot_width=600, plot_height=600,
+def create_plot(level, graph):
+    plot = Plot(plot_width=600, plot_height=500,
                 x_range=Range1d(-1.1, 1.1), y_range=Range1d(-1.1, 1.1),
                 toolbar_location="below")
     plot.title.text = f"{level.title()}"
     plot.title.align = 'center'
     plot.title.text_font_size = '22pt'
 
-    node_hover_tool = HoverTool(tooltips=[("index", "@index"), ("club", "@club")])
+    TOOLTIPS = """
+            <div>
+                <span style="font-size: 18px; font-weight: bold;">Name: @index</span>
+            </div>
+            <div>
+                <span style="font-size: 18px; font-weight: bold; color: @colors;">Region: @region</span>
+            </div>
+        """
+    node_hover_tool = HoverTool(tooltips=TOOLTIPS)
     plot.add_tools(node_hover_tool, BoxZoomTool(), ResetTool(), PointDrawTool())
 
-    graph_renderer = from_networkx(G, nx.spring_layout, scale=1, center=(0, 0))
+    graph_renderer = from_networkx(graph, nx.spring_layout, scale=1, center=(0, 0))
 
-    graph_renderer.node_renderer.glyph = Circle(size=15, fill_color="black")
-    graph_renderer.edge_renderer.glyph = MultiLine(line_color="edge_color", line_alpha=0.8, line_width=1)
+    graph_renderer.node_renderer.glyph = Circle(size=6, fill_color="colors")
+    graph_renderer.edge_renderer.glyph = MultiLine(line_color="edge_color", line_alpha=0.8, line_width=1.5)
     plot.renderers.append(graph_renderer)
     return plot
 
@@ -182,7 +188,17 @@ def plot_module_pair(trait1, trait2, path_to_modules, path_to_figures):
     path_to_figures: directory where to create the output files
     """
 
-    figures = [create_plot(trait1, trait2, level, path_to_modules, path_to_figures) for level in levels]
+    graphs_complete = {level: create_graph(trait1, trait2, level, path_to_modules) for level in levels}
+    graphs_interface = {level: create_graph(trait1, trait2, level, path_to_modules, only_interface=True)
+                        for level in levels}
+
+    figures_complete_modules = [create_plot(level, graph) for level, graph in graphs_complete.items()]
+    figures_interfaces = [create_plot(level, graph) for level, graph in graphs_interface.items()]
 
     output_file(f"{path_to_figures}{trait1}_to_{trait2}.html")
-    show(row(figures))
+    title = f"<p style=\"font-weight:bold;text-align:center;font-size:22px;width:1800px;\">" \
+            f"<span style=\"color:green;\">{trait1}</span> with " \
+            f"<span style=\"color:blue;\">{trait2}</span>" \
+            f"</p>"
+
+    show(layout([[Div(text=f"{title}")], figures_complete_modules, figures_interfaces]))

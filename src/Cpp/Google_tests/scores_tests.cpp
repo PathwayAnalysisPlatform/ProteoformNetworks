@@ -294,3 +294,68 @@ TEST_F(ScoresFixture, WriteScores) {
     strcpy(file_name_char, file_name.c_str());
     std::remove(file_name_char);
 }
+
+class InterfaceSizeFixture : public ::testing::Test {
+
+protected:
+    virtual void SetUp() {
+        groups = createBimap({"A", "B", "C", "D"});
+//
+//        // Create 4 sets of 5 members.
+//        sets.push_back(base::dynamic_bitset<>(5));  // 0, 1, 2, 3, 4
+//        sets.push_back(base::dynamic_bitset<>(5));  // 0, 1, 2
+//        sets.push_back(base::dynamic_bitset<>(5));  // 3, 4
+//        sets.push_back(base::dynamic_bitset<>(5));  // 1, 2, 3
+//
+//        for (int I = 0; I <= 4; I++)
+//            sets[groups.str_to_int["A"]][I].set();
+//        for (int I = 0; I <= 2; I++)
+//            sets[groups.str_to_int["B"]][I].set();
+//        for (int I = 3; I <= 4; I++)
+//            sets[groups.str_to_int["C"]][I].set();
+//        for (int I = 1; I <= 3; I++)
+//            sets[groups.str_to_int["D"]][I].set();
+//
+//        the_modules.group_to_members = sets;
+
+    }
+//
+//    vb sets;
+//    modules the_modules;
+    bimap_str_int groups, members;
+};
+
+TEST_F(InterfaceSizeFixture, SetsDoNotOverlapAndNotConnectedSoNoInterface) {
+    // Create sets: vertices and edges
+    vusi
+
+    // Calculate interface
+
+
+    // Assert result
+
+}
+
+TEST_F(InterfaceSizeFixture, OneSetIsEmptySoNoInterface){
+    FAIL();
+}
+
+TEST_F(InterfaceSizeFixture, BothSetsAreEmptySoNoInterface){
+    FAIL();
+}
+
+TEST_F(InterfaceSizeFixture, SetsAreConnectedAndNotOverlap){
+    FAIL();
+}
+
+TEST_F(InterfaceSizeFixture, SetsOverlapAtOneVertexAndConnectedOnlyFromOverlapVertices){
+    FAIL();
+}
+
+TEST_F(InterfaceSizeFixture, SetsOverlapAtMultipleVerticesAndConnectOnlyFromOverlapVertices){
+    FAIL();
+}
+
+TEST_F(InterfaceSizeFixture, SetsOverlapAndConnectedFromOverlapAndNonOverlappingVertices){
+    FAIL();
+}
