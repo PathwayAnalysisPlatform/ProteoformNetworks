@@ -37,18 +37,15 @@ inline bool file_exists(const std::string &name) {
 }
 
 // Create or read module files at the three levels: all in one, and single module files.
-const std::map<const std::string, const modules>
-get_or_create_modules(const std::string &path_modules,
-                      std::string_view path_file_phegeni,
+std::map<const std::string, const modules>
+get_or_create_modules(const std::string &path_modules, std::string_view path_file_phegeni,
                       std::string_view path_file_gene_interactions,
                       std::string_view path_file_mapping_proteins_to_genes,
                       std::string_view path_file_protein_interactions,
                       std::string_view path_file_mapping_proteins_to_proteoforms,
-                      std::string_view path_file_proteoform_interactions,
-                      const bimap_str_int &genes,
-                      const bimap_str_int &proteins,
-                      const bimap_str_int &proteoforms,
-                      const bimap_str_int &traits);
+                      std::string_view path_file_proteoform_interactions, const bimap_str_int &genes,
+                      const bimap_str_int &proteins, const bimap_str_int &proteoforms, const bimap_str_int &traits,
+                      bool keep_disconnected_nodes);
 
 struct score_maps {
     pair_map<double> gene_scores;
@@ -78,7 +75,7 @@ void doOverlapAnalysis(
         std::string path_reports);
 
 void report_module_size_variation(std::string_view path_reports, const std::map<const std::string, const modules> &,
-                                  const bimap_str_int &traits, const int min_module_size, const int max_module_size);
+                                  const bimap_str_int &traits, std::map<const std::string, um<int, int>> &sizes);
 
 // Check if there are pairs of modules sharing nodes at one level but not in another
 void report_node_overlap_reduction_examples(std::string path_scores, std::string label, const score_maps &scores,

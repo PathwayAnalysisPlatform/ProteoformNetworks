@@ -62,10 +62,10 @@ module_bimaps loadPheGenIGenesAndTraits(
 // - trait strings to gene bitsets.
 // - gene strings to trait bitsets
 // The two mappings define the trait modules (also called, phenotype modules or disease modules)
-modules createAndLoadPheGenIGeneModules(string_view path_file_phegeni,
-                                        const bimap_str_int &genes, const bimap_str_int &traits,
-                                        const std::string &path_file_gene_interactions, const std::string &path_modules,
-                                        const std::string &suffix) {
+modules createAndLoadPheGenIGeneModules(std::string_view path_file_phegeni, const bimap_str_int &genes,
+                                        const bimap_str_int &traits, const std::string &path_file_gene_interactions,
+                                        const std::string &path_modules, const std::string &suffix,
+                                        bool keep_disconnected_nodes) {
     ifstream file_phegen(path_file_phegeni.data());
     string line, field, trait, gene, gene2;
     string p_value_str;
@@ -109,31 +109,23 @@ modules createAndLoadPheGenIGeneModules(string_view path_file_phegeni,
         if (hasKey(traits.str_to_int, trait) && hasKey(genes.str_to_int, gene)) {
             modules.group_to_members[traits.str_to_int.at(trait)][genes.str_to_int.at(gene)].set();
             modules.member_to_groups[genes.str_to_int.at(gene)][traits.str_to_int.at(trait)].set();
-        } else {
-//            if (!hasKey(traits.str_to_int, trait))
-//                std::cerr << "The trait " << trait << " was not found in the bimap.\n";
-//            if (!hasKey(genes.str_to_int, gene))
-//                std::cerr << "The gene " << gene << " was not found in the bimap.\n";
         }
         if (hasKey(traits.str_to_int, trait) && hasKey(genes.str_to_int, gene2)) {
             modules.group_to_members[traits.str_to_int.at(trait)][genes.str_to_int.at(gene2)].set();
             modules.member_to_groups[genes.str_to_int.at(gene2)][traits.str_to_int.at(trait)].set();
-        } else {
-//            if (!hasKey(traits.str_to_int, trait))
-//                std::cerr << "The trait " << trait << " was not found in the bimap.\n";
-//            if (!hasKey(genes.str_to_int, gene2))
-//                std::cerr << "The gene " << gene2 << " was not found in the bimap.\n";
         }
     }
 
     // Load interaction network
     std::cout << "Reading gene interaction network..." << std::endl;
-    auto interactions = loadInteractionNetwork(path_file_gene_interactions, genes, true);
-    std::cout << "Removing disconnected genes from modules..." << std::endl;
-    removeDisconnectedMembers(modules, traits, genes, interactions);
 
-    writeModulesSingleFile(path_modules, "genes", suffix, modules, traits, genes);
-    writeModulesManyFiles(path_modules, "genes", suffix, modules, traits, genes, interactions);
+    if (!keep_disconnected_nodes) {
+        std::cout << "Removing disconnected genes from modules..." << std::endl;
+        auto interactions = loadInteractionNetwork(path_file_gene_interactions, genes, true);
+        removeDisconnectedMembers(modules, traits, genes, interactions);
+        writeModulesSingleFile(path_modules, "genes", suffix, modules, traits, genes);
+        writeModulesManyFiles(path_modules, "genes", ".tsv", modules, traits, genes, interactions);
+    }
 
     cerr << "Number of traits with gene members as bitset: " << modules.group_to_members.size() << "\n";
     cerr << "Number of genes with traits they belong as bitset: " << modules.member_to_groups.size() << "\n";
@@ -144,25 +136,19 @@ modules createAndLoadPheGenIGeneModules(string_view path_file_phegeni,
 // Creates modules of proteins and proteoforms.
 // Converts the modules from gene --> protein or protein --> proteoform, and then removes the disconnected vertices
 // It applies the logic that, some nodes should not be in the network module, because there are no connection to others
-modules createAndLoadPheGenIModules(const modules &prev_modules,
-                                    const bimap_str_int &prev_entities,
-                                    const bimap_str_int &entities,
-                                    const bimap_str_int &traits,
-                                    const ummss &mapping,
-                                    const std::string &path_file_entity_interactions,
-                                    const std::string &path_modules,
-                                    const std::string &level,
-                                    const std::string &suffix) {
+modules createAndLoadPheGenIModules(const modules &prev_modules, const bimap_str_int &prev_entities,
+                                    const bimap_str_int &entities, const bimap_str_int &traits, const ummss &mapping,
+                                    const std::string &path_file_entity_interactions, const std::string &path_modules,
+                                    const std::string &level, const std::string &suffix, bool keep_disconnected_nodes) {
     // Convert gene modules to protein modules using the mapping from entities to genes
-    modules result_modules = convertModulesWithMapping(prev_modules, prev_entities, entities, traits,
-                                                       mapping);
+    modules result_modules = convertModulesWithMapping(prev_modules, prev_entities, entities, traits, mapping);
 
-    // Load interaction network
-    auto interactions = loadInteractionNetwork(path_file_entity_interactions, entities, true);
-    removeDisconnectedMembers(result_modules, traits, entities, interactions);
-
-    writeModulesSingleFile(path_modules, level, suffix, result_modules, traits, entities);
-    writeModulesManyFiles(path_modules, level, suffix, result_modules, traits, entities, interactions);
+    if (!keep_disconnected_nodes) {
+        auto interactions = loadInteractionNetwork(path_file_entity_interactions, entities, true);
+        removeDisconnectedMembers(result_modules, traits, entities, interactions);
+        writeModulesSingleFile(path_modules, level, suffix, result_modules, traits, entities);
+        writeModulesManyFiles(path_modules, level, ".tsv", result_modules, traits, entities, interactions);
+    }
 
     return result_modules;
 }

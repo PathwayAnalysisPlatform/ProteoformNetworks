@@ -109,10 +109,15 @@ load_modules_result loadModules(std::string_view path_file_modules,
     }
     while (std::getline(file_modules, group, '\t')) {
         std::getline(file_modules, member);
-        int group_index = groups.str_to_int.at(group);
-        int member_index = members.str_to_int.at(member);
-        result_modules.group_to_members[group_index][member_index].set();
-        result_modules.member_to_groups[member_index][group_index].set();
+        try {
+            int group_index = groups.str_to_int.at(group);
+            int member_index = members.str_to_int.at(member);
+            result_modules.group_to_members[group_index][member_index].set();
+            result_modules.member_to_groups[member_index][group_index].set();
+        }
+        catch (const std::out_of_range& oor) {
+            std::cerr << "Out of Range error: " << oor.what() << '\n';
+        }
     }
     file_modules.close();
 
@@ -172,7 +177,6 @@ void writeModulesSingleFile(std::string_view path_file_modules, std::string_view
                             const bimap_str_int &members) {
     std::string all_traits_file_path = path_file_modules.data();
     all_traits_file_path += level;
-    all_traits_file_path += "_modules";
     all_traits_file_path += suffix;
 
     std::ofstream file_all_traits(all_traits_file_path); // File for all modules
@@ -238,12 +242,14 @@ void writeModulesManyFiles(std::string_view path_file_modules, std::string_view 
 }
 
 // Calculates and create a file with the sizes of all trait modules at a level (genes, proteins or proteoforms)
-std::map<const std::string, um<int, int>>
-calculate_and_report_sizes(std::string_view path_reports, const modules &entity_modules, const bimap_str_int &groups) {
+std::map<const std::string, um<int, int>> calculate_and_report_sizes(std::string_view path_reports,
+                                                                     const std::map<const std::string, const modules> &all_modules,
+                                                                     const bimap_str_int &groups) {
     std::map<const std::string, um<int, int>> sizes;
 
     for (const auto &level : levels) {
-        std::ofstream output(path_reports.data() + static_cast<std::string>("module_sizes_") + level + ".tsv");
+        std::string file_name = path_reports.data() + static_cast<std::string>("module_sizes_") + level + ".tsv";
+        std::ofstream output(file_name);
 
         if (!output.is_open()) {
             std::string message = "Cannot open report file at ";
@@ -251,11 +257,14 @@ calculate_and_report_sizes(std::string_view path_reports, const modules &entity_
             throw std::runtime_error(message + function);
         }
 
+        std::cerr << "Writing file: " << file_name << std::endl;
+
         output << "MODULE\tSIZE\n";
-        for (int group_index = 0; group_index < entity_modules.group_to_members.size(); group_index++) {
-            output << groups.int_to_str[group_index] << "\t" << entity_modules.group_to_members[group_index].count()
+        for (int group_index = 0; group_index < all_modules.at(level).group_to_members.size(); group_index++) {
+            output << groups.int_to_str[group_index] << "\t"
+                   << all_modules.at(level).group_to_members[group_index].count()
                    << "\n";
-            sizes[level][group_index] = entity_modules.group_to_members[group_index].count();
+            sizes[level][group_index] = all_modules.at(level).group_to_members[group_index].count();
         }
         output.close();
     }

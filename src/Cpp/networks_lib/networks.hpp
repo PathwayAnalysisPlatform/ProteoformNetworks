@@ -48,7 +48,7 @@ modules removeDisconnectedMembers(modules &modules, const bimap_str_int &groups,
 
 // Create a file with the sizes of the modules for each trait at a single level (genes, proteins or proteoforms)
 std::map<const std::string, um<int, int>> calculate_and_report_sizes(std::string_view path_reports,
-                                                                     const modules &entity_modules,
+                                                                     const std::map<const std::string, const modules> &all_modules,
                                                                      const bimap_str_int &groups);
 
 // Counts the number of edges crossing from one module to the other.

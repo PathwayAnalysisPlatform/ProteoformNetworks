@@ -27,9 +27,10 @@ void doOverlapAnalysis(
     const auto[traits, phegen_genes] = loadPheGenIGenesAndTraits(path_file_modules, genes);
 
     // Create or read module files at the three levels: all in one, and single module files.
-    std::cout << "Creating protein and proteoform modules.\n\n";
+
+    std::cout << "Creating modules keeping disconnected nodes...\n\n";
     std::string path_modules = path_reports;
-    path_modules += "modules/";
+    path_modules += "modules_keep_disconnected/";
     auto all_modules = get_or_create_modules(
             path_modules,
             path_file_modules,
@@ -39,16 +40,36 @@ void doOverlapAnalysis(
             path_file_mapping_proteins_to_proteoforms,
             path_file_proteoform_interactions,
             genes, proteins, proteoforms,
-            traits);
+            traits, true);
 
-    for (const auto &level : levels)
-        std::cerr << level << " level: " << all_modules.at(level).group_to_members.size() << " traits\n";
+    int num_modules = all_modules.begin()->second.group_to_members.size();
+    for (const auto &level : levels){
+        std::cerr << "Num " << level << " modules: " << all_modules.at(level).group_to_members.size() << std::endl;
+        assert(num_modules == all_modules.at(level).group_to_members.size());
+    }
+    calculate_and_report_sizes(path_modules, all_modules, traits);
 
-    // Check variation in module sizes
-    std::cout << "Calculating module size variation.\n\n";
-    report_module_size_variation(path_reports, all_modules, traits, MIN_MODULE_SIZE, MAX_MODULE_SIZE);
+    std::cout << "Creating modules removing disconnected nodes...\n\n";
+    path_modules = path_reports += "modules/";
+    all_modules = get_or_create_modules(
+            path_modules,
+            path_file_modules,
+            path_file_gene_interactions,
+            path_file_mapping_proteins_to_genes,
+            path_file_protein_interactions,
+            path_file_mapping_proteins_to_proteoforms,
+            path_file_proteoform_interactions,
+            genes, proteins, proteoforms,
+            traits, false);
 
-    // Calculate scores with Overlap Similarity
+    num_modules = all_modules.begin()->second.group_to_members.size();
+    for (const auto &level : levels){
+        std::cerr << "Num " << level << " modules: " << all_modules.at(level).group_to_members.size() << std::endl;
+        assert(num_modules == all_modules.at(level).group_to_members.size());
+    }
+    calculate_and_report_sizes(path_reports, all_modules, traits);
+
+//     Calculate scores with Overlap Similarity
     std::cout << "Reading interaction networks...\n";
     const std::map<const std::string, const vusi> interactions = {
             {levels.at(0), loadInteractionNetwork(path_file_gene_interactions, genes, true)},
@@ -100,19 +121,15 @@ void report_node_overlap_reduction_examples(std::string path_scores, std::string
 // Create or read module files at the three levels: all in one, and single module files.
 // There should be three files with all modules, one for genes, one for proteins and one for protoeforms.
 // There should be three more files for each single trait in an individual file.
-const std::map<const std::string, const modules>
-get_or_create_modules(const std::string &path_modules,
-                      std::string_view path_file_phegeni,
+std::map<const std::string, const modules>
+get_or_create_modules(const std::string &path_modules, std::string_view path_file_phegeni,
                       std::string_view path_file_gene_interactions,
                       std::string_view path_file_mapping_proteins_to_genes,
                       std::string_view path_file_protein_interactions,
                       std::string_view path_file_mapping_proteins_to_proteoforms,
-                      std::string_view path_file_proteoform_interactions,
-                      const bimap_str_int &genes,
-                      const bimap_str_int &proteins,
-                      const bimap_str_int &proteoforms,
-                      const bimap_str_int &traits
-) {
+                      std::string_view path_file_proteoform_interactions, const bimap_str_int &genes,
+                      const bimap_str_int &proteins, const bimap_str_int &proteoforms, const bimap_str_int &traits,
+                      bool keep_disconnected_nodes) {
     std::string suffix = "_modules.tsv";
     modules gene_modules, protein_modules, proteoform_modules;
 
@@ -120,6 +137,7 @@ get_or_create_modules(const std::string &path_modules,
     std::string all_traits_proteins_file_name = path_modules + "proteins" + suffix;
     std::string all_traits_proteoforms_file_name = path_modules + "proteoforms" + suffix;
 
+    std::cerr << "Checking if file " << all_traits_genes_file_name << " exists." << std::endl;
     if (file_exists(all_traits_genes_file_name)) {
         std::cout << "Reading gene modules." << std::endl;
         gene_modules = loadModules(all_traits_genes_file_name, traits, genes).entity_modules;
@@ -127,9 +145,10 @@ get_or_create_modules(const std::string &path_modules,
         std::cout << "Creating gene modules." << std::endl;
         gene_modules = createAndLoadPheGenIGeneModules(path_file_phegeni, genes, traits,
                                                        path_file_gene_interactions.data(),
-                                                       path_modules, suffix);
+                                                       path_modules, suffix, keep_disconnected_nodes);
     }
 
+    std::cerr << "Checking if file " << all_traits_proteins_file_name << " exists." << std::endl;
     if (file_exists(all_traits_proteins_file_name)) {
         std::cout << "Reading protein modules." << std::endl;
         protein_modules = loadModules(all_traits_proteins_file_name, traits, proteins).entity_modules;
@@ -140,9 +159,10 @@ get_or_create_modules(const std::string &path_modules,
         protein_modules = createAndLoadPheGenIModules(gene_modules, genes, proteins, traits,
                                                       mapping_genes_to_proteins.second_to_first,
                                                       path_file_protein_interactions.data(),
-                                                      path_modules, "proteins", suffix);
+                                                      path_modules, "proteins", suffix, keep_disconnected_nodes);
     }
 
+    std::cerr << "Checking if file " << all_traits_proteoforms_file_name << " exists." << std::endl;
     if (file_exists(all_traits_proteoforms_file_name)) {
         std::cout << "Reading proteoform modules." << std::endl;
         proteoform_modules = loadModules(all_traits_proteoforms_file_name, traits, proteoforms).entity_modules;
@@ -153,7 +173,7 @@ get_or_create_modules(const std::string &path_modules,
         proteoform_modules = createAndLoadPheGenIModules(protein_modules, proteins, proteoforms, traits,
                                                          mapping_proteins_to_proteoforms.second_to_first,
                                                          path_file_proteoform_interactions.data(),
-                                                         path_modules, "proteoforms", suffix);
+                                                         path_modules, "proteoforms", suffix, keep_disconnected_nodes);
     }
 
     return {
@@ -214,7 +234,7 @@ void report_pairs_overlap_data(const std::string &path_out,
 
     std::cout << "Calculating overlap sizes at " << "genes" << " level. " << std::endl;
     auto overlap_sizes_proteoforms = getScores(all_modules.at(levels[2]).group_to_members, getOverlapSize,
-                                   min_module_size, max_module_size);
+                                               min_module_size, max_module_size);
 
     for (const auto &level : levels) {
         std::cout << "Calculating overlap sizes at " << level << " level. " << std::endl;
@@ -227,15 +247,17 @@ void report_pairs_overlap_data(const std::string &path_out,
 
         std::cout << "Calculating node interface sizes at " << level << " level. " << std::endl;
         auto interface_sizes_nodes = getScores(all_modules.at(level).group_to_members, interactions.at(level),
-                                         calculate_interface_size_nodes, overlap_sizes_proteoforms);
+                                               calculate_interface_size_nodes, overlap_sizes_proteoforms);
 
         std::cout << "Calculating edge interface sizes at " << level << " level. " << std::endl;
         auto interface_sizes_edges = getScores(all_modules.at(level).group_to_members, interactions.at(level),
                                                calculate_interface_size_nodes, overlap_sizes_proteoforms);
 
         std::cout << "Writing results to file." << std::endl;
-        std::vector<std::string> features_labels = {"OVERLAP_COEFFICIENT", "NODE_OVERLAP_SIZE", "NODE_INTERFACE_SIZE", "EDGE_INTERFACE_SIZE" };
-        std::vector<pair_map<double>> features = {overlap_coefficients, overlap_sizes, interface_sizes_nodes, interface_sizes_edges};
+        std::vector<std::string> features_labels = {"OVERLAP_COEFFICIENT", "NODE_OVERLAP_SIZE", "NODE_INTERFACE_SIZE",
+                                                    "EDGE_INTERFACE_SIZE"};
+        std::vector<pair_map<double>> features = {overlap_coefficients, overlap_sizes, interface_sizes_nodes,
+                                                  interface_sizes_edges};
         std::string file_output = path_out + "pairs_overlap_data_" + level + ".tsv";
 
         writeScores(traits, all_modules.at(level), features_labels, features, file_output);
@@ -245,9 +267,7 @@ void report_pairs_overlap_data(const std::string &path_out,
 
 void report_module_size_variation(std::string_view path_reports,
                                   const std::map<const std::string, const modules> &all_modules,
-                                  const bimap_str_int &traits, const int min_module_size, const int max_module_size) {
-
-    std::map<const std::string, um<int, int>> sizes = calculate_and_report_sizes(path_reports, all_modules, traits);
+                                  const bimap_str_int &traits, std::map<const std::string, um<int, int>> &sizes) {
 
     // Check sizes of modules
     // Calculate how many empty modules exist, for genes, proteins and proteoforms
