@@ -229,14 +229,14 @@ TEST_F(ScoresFixture, AllPairsCorrectPairs) {
     sets.push_back(base::dynamic_bitset<>(5));
     sets.push_back(base::dynamic_bitset<>(5));
 
-    auto scores = getScores(sets, getOverlapSimilarity);
+    auto scores = getScores(sets, getOverlapSimilarity, 0, 6);
 
     EXPECT_EQ((sets.size() * (sets.size() - 1)) / 2, scores.size());
 }
 
 // Get scores for pairs of sets: Correct values
 TEST_F(ScoresFixture, AllPairsCorrectValues) {
-    pair_map<double> scores = getScores(sets, getOverlapSimilarity);
+    pair_map<double> scores = getScores(sets, getOverlapSimilarity, 0, 6);
 
     for (const auto &score_entry : scores) {
         std::cout << "Score " << groups.int_to_str[score_entry.first.first] << '\t'
@@ -263,30 +263,29 @@ TEST_F(ScoresFixture, WriteScores) {
     file_name += "_scores.txt";
 
     std::vector<std::string> features_labels = {"SCORE"};
-    std::vector<pair_map<double>> features = {getScores(sets, getOverlapSimilarity)};
+    std::vector<pair_map<double>> features = {getScores(sets, getOverlapSimilarity, 0, 10)};
     writeScores(groups, the_modules, features_labels, features, file_name);
 
     // Open file
     std::ifstream scores_file(file_name);
     std::string line;
-    std::vector<std::string> lines;
+    std::set<std::string> lines;
     while (std::getline(scores_file, line)) {
-        lines.push_back(line);
+        lines.insert(line);
     }
 
-
-    EXPECT_EQ(7, lines.size()); // Check number of lines is correct
-    EXPECT_EQ("TRAIT1\tTRAIT2\tSCORE", lines[0]); // Check header is there
+    EXPECT_EQ(6, lines.size()); // Check number of lines is correct
+    EXPECT_TRUE(lines.find("TRAIT1\tTRAIT2\tSCORE") != lines.end()); // Check header is there
     // Check every row has 3 columns
-    for (int I = 0; I < lines.size(); I++) {
-        size_t appeareances = std::count(lines[I].begin(), lines[I].end(), '\t');
+    for(const auto& line : lines){
+        size_t appeareances = std::count(line.begin(), line.end(), '\t');
         EXPECT_EQ(2, (int) appeareances);
     }
     // Check values are correct
-    EXPECT_EQ("A\tB\t1", lines[1]);
-    EXPECT_EQ("B\tC\t0", lines[4]);
-    EXPECT_EQ("B\tD\t0.66667", lines[5]);
-    EXPECT_EQ("C\tD\t0.5", lines[6]);
+    EXPECT_TRUE(lines.find("A\tB\t1") != lines.end());
+    EXPECT_TRUE(lines.find("B\tC\t0") == lines.end());
+    EXPECT_TRUE(lines.find("B\tD\t0.66667") != lines.end());
+    EXPECT_TRUE(lines.find("C\tD\t0.5") != lines.end());
 
     // Delete example file
     int n = file_name.length();
@@ -295,6 +294,12 @@ TEST_F(ScoresFixture, WriteScores) {
     std::remove(file_name_char);
 }
 
+/*
+ * Fixture to test three methods:
+ * - Interface size calculation in nodes
+ * - Interface size calculation in edges
+ * - Interface size calculation for all pairs of sets
+ */
 class InterfaceSizeFixture : public ::testing::Test {
 
 protected:
@@ -319,6 +324,7 @@ protected:
 //        the_modules.group_to_members = sets;
 
     }
+
 //
 //    vb sets;
 //    modules the_modules;
@@ -327,35 +333,165 @@ protected:
 
 TEST_F(InterfaceSizeFixture, SetsDoNotOverlapAndNotConnectedSoNoInterface) {
     // Create sets: vertices and edges
-    vusi
+    base::dynamic_bitset<> V1 = base::dynamic_bitset<>(5);
+    base::dynamic_bitset<> V2 = base::dynamic_bitset<>(5);
+    vusi E(5, std::unordered_set<int>());
 
-    // Calculate interface
+    V1[0].set();
+    V1[1].set();
+    V2[2].set();
+    V2[3].set();
+    V2[4].set();
 
+    E[0].insert(1);
+    E[0].insert(0);
+    E[2].insert({3, 4});
+    E[3].insert({2, 4});
+    E[4].insert({2, 3});
 
-    // Assert result
-
+    int size_nodes = calculate_interface_size_nodes(V1, V2, E);
+    int size_edges = calculate_interface_size_edges(V1, V2, E);
+    EXPECT_EQ(0, size_nodes);
+    EXPECT_EQ(0, size_edges);
 }
 
-TEST_F(InterfaceSizeFixture, OneSetIsEmptySoNoInterface){
-    FAIL();
+TEST_F(InterfaceSizeFixture, OneSetIsEmptySoNoInterface) {
+    base::dynamic_bitset<> V1 = base::dynamic_bitset<>(5);
+    base::dynamic_bitset<> V2 = base::dynamic_bitset<>(5);
+    vusi E(5, std::unordered_set<int>());
+
+    V2[2].set();
+    V2[3].set();
+    V2[4].set();
+
+    E[2].insert({3, 4});
+    E[3].insert({2, 4});
+    E[4].insert({2, 3});
+
+    int size_nodes = calculate_interface_size_nodes(V1, V2, E);
+    int size_edges = calculate_interface_size_edges(V1, V2, E);
+    EXPECT_EQ(0, size_nodes);
+    EXPECT_EQ(0, size_edges);
 }
 
-TEST_F(InterfaceSizeFixture, BothSetsAreEmptySoNoInterface){
-    FAIL();
+TEST_F(InterfaceSizeFixture, BothSetsAreEmptySoNoInterface) {
+    base::dynamic_bitset<> V1 = base::dynamic_bitset<>(5);
+    base::dynamic_bitset<> V2 = base::dynamic_bitset<>(5);
+    vusi E(5, std::unordered_set<int>());
+
+    int size_nodes = calculate_interface_size_nodes(V1, V2, E);
+    int size_edges = calculate_interface_size_edges(V1, V2, E);
+    EXPECT_EQ(0, size_nodes);
+    EXPECT_EQ(0, size_edges);
 }
 
-TEST_F(InterfaceSizeFixture, SetsAreConnectedAndNotOverlap){
-    FAIL();
+TEST_F(InterfaceSizeFixture, SetsAreConnectedAndNotOverlap) {
+    base::dynamic_bitset<> V1 = base::dynamic_bitset<>(8);
+    base::dynamic_bitset<> V2 = base::dynamic_bitset<>(8);
+    vusi E(8, std::unordered_set<int>());
+
+    for (int I : {0, 1, 2, 3})
+        V1[I].set();
+    for (int I : {4, 5, 6, 7})
+        V2[I].set();
+
+    E[0].insert({1, 2});
+    E[1].insert({0, 3, 4});
+    E[2].insert({2, 3});
+    E[3].insert({1, 2, 4, 6});
+    E[4].insert({1, 3, 5, 6});
+    E[5].insert({4, 7});
+    E[6].insert({3, 4, 7});
+    E[7].insert({5, 6});
+
+    int size_nodes = calculate_interface_size_nodes(V1, V2, E);
+    int size_edges = calculate_interface_size_edges(V1, V2, E);
+    EXPECT_EQ(4, size_nodes);
+    EXPECT_EQ(3, size_edges);
 }
 
-TEST_F(InterfaceSizeFixture, SetsOverlapAtOneVertexAndConnectedOnlyFromOverlapVertices){
-    FAIL();
+TEST_F(InterfaceSizeFixture, SetsOverlapAtOneVertexAndConnectedOnlyFromOverlapVertices) {
+    base::dynamic_bitset<> V1 = base::dynamic_bitset<>(7);
+    base::dynamic_bitset<> V2 = base::dynamic_bitset<>(7);
+    vusi E(7, std::unordered_set<int>());
+
+    for (int I : {0, 1, 2, 3})
+        V1[I].set();
+    for (int I : {3, 4, 5, 6})
+        V2[I].set();
+
+    E[0].insert({1, 2});
+    E[1].insert({0, 3});
+    E[2].insert({0, 3});
+    E[3].insert({1, 2, 4, 5});
+    E[4].insert({3, 5, 6});
+    E[5].insert({4, 6});
+    E[6].insert({4, 5});
+
+    int size_nodes = calculate_interface_size_nodes(V1, V2, E);
+    int size_edges = calculate_interface_size_edges(V1, V2, E);
+    EXPECT_EQ(5, size_nodes);
+    EXPECT_EQ(4, size_edges);
 }
 
-TEST_F(InterfaceSizeFixture, SetsOverlapAtMultipleVerticesAndConnectOnlyFromOverlapVertices){
-    FAIL();
+TEST_F(InterfaceSizeFixture, SetsOverlapAtMultipleVerticesAndConnectOnlyFromOverlapVertices) {
+    base::dynamic_bitset<> V1 = base::dynamic_bitset<>(14);
+    base::dynamic_bitset<> V2 = base::dynamic_bitset<>(14);
+    vusi E(14, std::unordered_set<int>());
+
+    for (int I : {1, 2, 3, 4, 5, 6, 7})
+        V1[I].set();
+    for (int I : {0, 2, 4, 7, 8, 9, 10, 11, 12, 13})
+        V2[I].set();
+
+    E[0].insert({8, 9, 10});
+    E[1].insert({2, 5});
+    E[2].insert({1, 3, 7});
+    E[3].insert({2, 5, 6});
+    E[4].insert({6, 7, 8});
+    E[5].insert({1, 3});
+    E[6].insert({3, 4});
+    E[7].insert({2, 4, 10});
+    E[8].insert({0, 4, 9});
+    E[9].insert({0, 8});
+    E[10].insert({0, 7});
+    E[11].insert({12, 13});
+    E[12].insert({11, 13});
+    E[13].insert({11, 12});
+
+    int size_nodes = calculate_interface_size_nodes(V1, V2, E);
+    int size_edges = calculate_interface_size_edges(V1, V2, E);
+    EXPECT_EQ(8, size_nodes);
+    EXPECT_EQ(7, size_edges);
 }
 
-TEST_F(InterfaceSizeFixture, SetsOverlapAndConnectedFromOverlapAndNonOverlappingVertices){
-    FAIL();
+TEST_F(InterfaceSizeFixture, SetsOverlapAndConnectedFromOverlapAndNonOverlappingVertices) {
+    base::dynamic_bitset<> V1 = base::dynamic_bitset<>(14);
+    base::dynamic_bitset<> V2 = base::dynamic_bitset<>(14);
+    vusi E(14, std::unordered_set<int>());
+
+    for (int I : {1, 2, 3, 4, 5, 6, 7})
+        V1[I].set();
+    for (int I : {0, 2, 4, 7, 8, 9, 10, 11, 12, 13})
+        V2[I].set();
+
+    E[0].insert({1, 8, 9, 10});
+    E[1].insert({0, 2, 5});
+    E[2].insert({1, 3, 7});
+    E[3].insert({2, 5, 6});
+    E[4].insert({6, 7, 8});
+    E[5].insert({1, 3});
+    E[6].insert({3, 4, 9});
+    E[7].insert({2, 4, 10});
+    E[8].insert({0, 4, 9});
+    E[9].insert({0, 6, 8});
+    E[10].insert({0, 7});
+    E[11].insert({12, 13});
+    E[12].insert({11, 13});
+    E[13].insert({11, 12});
+
+    int size_nodes = calculate_interface_size_nodes(V1, V2, E);
+    int size_edges = calculate_interface_size_edges(V1, V2, E);
+    EXPECT_EQ(10, size_nodes);
+    EXPECT_EQ(9, size_edges);
 }

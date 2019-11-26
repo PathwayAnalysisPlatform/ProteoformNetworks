@@ -11,6 +11,8 @@
 #include <set>
 #include <utility>
 
+const std::vector<std::string> levels = {"genes", "proteins", "proteoforms"};
+
 using msi = std::map<std::string, int>;
 using msb = std::map<std::string, base::dynamic_bitset<>>;
 
@@ -31,7 +33,7 @@ using ummii = std::unordered_multimap<int, int>;
 
 using vs = std::vector<std::string>;
 using vb = std::vector<base::dynamic_bitset<>>;
-using vusi = std::vector<std::unordered_set<int>>;
+using vusi = std::vector<std::unordered_set<int>>; // Adjacency list for indexed nodes
 
 using umsb = um<std::string, base::dynamic_bitset<>>;
 

@@ -3,8 +3,10 @@
 
 #define PHEGENI_HPP
 
+#include <assert.h>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
 #include <string_view>
@@ -43,13 +45,35 @@ double getOverlapSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> 
 
 double getOverlapSize(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2);
 
-double getInterfaceSize(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2);
+// Calculate score between al pairs of bitsets
+// The sets are the second value of each entry in the sets parameter.
+// The score is a function capable of calculating the overlap with bitsets.
+// Returns only the sets within the module sizes and with a score greater than 0.
+pair_map<double>
+getScores(const vb &vertex_sets, std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score_function,
+          const int min_module_size, const int max_module_size);
 
-// Calculate similarity score between al pairs of bitsets
+// Calculate score between the selected pairs.
 // The sets are the second value of each entry in the sets parameter.
 // The score is a function capable of calculating the overlap with bitsets.
 pair_map<double>
-getScores(const vb &sets, std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score_function);
+getScores(const vb &vertex_sets, std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>)> score_function,
+          const pair_map<double> &prev_score);
+
+pair_map<double>
+getScores(const vb &vertex_sets,
+          const vusi &edges,
+          std::function<double(base::dynamic_bitset<>, base::dynamic_bitset<>, vusi)> score_function,
+          const pair_map<double> &prev_score);
+
+double calculate_interface_size_nodes(const base::dynamic_bitset<> &V1,
+                                      const base::dynamic_bitset<> &V2,
+                                      const vusi &E);
+
+double calculate_interface_size_edges(const base::dynamic_bitset<> &V1,
+                                      const base::dynamic_bitset<> &V2,
+                                      const vusi &E);
+
 
 void writeScores(const bimap_str_int &groups,
                  const modules &entity_modules,

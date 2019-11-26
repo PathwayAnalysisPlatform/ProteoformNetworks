@@ -12,13 +12,8 @@
 #include "others/uniprot.hpp"
 #include "reactome.hpp"
 
-const int MIN_OVERLAP_SIZE = 1;
-const int MAX_OVERLAP_SIZE = 100;
-
-const int MIN_SET_SIZE = 1;
-const int MAX_SET_SIZE = 200;
-
-const std::vector<std::string> levels = {"genes", "proteins", "proteoforms"};
+const int MAX_MODULE_SIZE = 20;
+const int MIN_MODULE_SIZE = 5;
 
 struct Frequencies {
     msi modifications;
@@ -63,7 +58,9 @@ struct score_maps {
 
 void report_pairs_overlap_data(const std::string &path_out,
                                const std::map<const std::string, const modules> &all_modules,
-                               const bimap_str_int &traits);
+                               const std::map<const std::string, const vusi> &interactions,
+                               const bimap_str_int &traits,
+                               const int min_module_size, const int max_module_size);
 
 // Calculates differences in module overlap between gene and proteoform level networks_lib
 // It uses multiple scoring functions to calculate the overlap score between each pair of modules.
@@ -81,7 +78,7 @@ void doOverlapAnalysis(
         std::string path_reports);
 
 void report_module_size_variation(std::string_view path_reports, const std::map<const std::string, const modules> &,
-                                  const bimap_str_int &traits);
+                                  const bimap_str_int &traits, const int min_module_size, const int max_module_size);
 
 // Check if there are pairs of modules sharing nodes at one level but not in another
 void report_node_overlap_reduction_examples(std::string path_scores, std::string label, const score_maps &scores,

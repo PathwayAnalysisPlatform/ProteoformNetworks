@@ -155,13 +155,13 @@ def create_graph(trait1, trait2, level, path_to_modules, only_interface=False):
     if only_interface:
         graph_interface = graph_complete.subgraph(interface_nodes)
 
-    print("All nodes:")
-    for node in graph_complete.nodes:
-        print(node)
-
-    print("Interface nodes: ")
-    for node in graph_interface.nodes:
-        print(node)
+    # print("All nodes:")
+    # for node in graph_complete.nodes:
+    #     print(node)
+    #
+    # print("Interface nodes: ")
+    # for node in graph_interface.nodes:
+    #     print(node)
 
     return graph_interface if only_interface else graph_complete
 

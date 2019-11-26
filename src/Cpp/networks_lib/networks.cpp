@@ -1,8 +1,4 @@
-#include <iomanip>
-#include <list>
 #include "networks.hpp"
-#include "overlap_types.hpp"
-#include "maps.hpp"
 
 // Read entity interactions in Reactome from a PathwayMatcher edges file
 // For each interacting entities A and B, adds both the edges A --> B and B --> A
@@ -242,22 +238,27 @@ void writeModulesManyFiles(std::string_view path_file_modules, std::string_view 
 }
 
 // Calculates and create a file with the sizes of all trait modules at a level (genes, proteins or proteoforms)
-um<int, int> calculate_and_report_sizes(std::string_view path_reports, const std::string &level,
-                                        const modules &entity_modules, const bimap_str_int &groups) {
-    um<int, int> sizes;
-    std::ofstream output(path_reports.data() + static_cast<std::string>("module_sizes_") + level + ".tsv");
+std::map<const std::string, um<int, int>>
+calculate_and_report_sizes(std::string_view path_reports, const modules &entity_modules, const bimap_str_int &groups) {
+    std::map<const std::string, um<int, int>> sizes;
 
-    if (!output.is_open()) {
-        std::string message = "Cannot open report file at ";
-        std::string function = __FUNCTION__;
-        throw std::runtime_error(message + function);
+    for (const auto &level : levels) {
+        std::ofstream output(path_reports.data() + static_cast<std::string>("module_sizes_") + level + ".tsv");
+
+        if (!output.is_open()) {
+            std::string message = "Cannot open report file at ";
+            std::string function = __FUNCTION__;
+            throw std::runtime_error(message + function);
+        }
+
+        output << "MODULE\tSIZE\n";
+        for (int group_index = 0; group_index < entity_modules.group_to_members.size(); group_index++) {
+            output << groups.int_to_str[group_index] << "\t" << entity_modules.group_to_members[group_index].count()
+                   << "\n";
+            sizes[level][group_index] = entity_modules.group_to_members[group_index].count();
+        }
+        output.close();
     }
 
-    output << "MODULE\tSIZE\n";
-    for (int group_index = 0; group_index < entity_modules.group_to_members.size(); group_index++) {
-        output << groups.int_to_str[group_index] << "\t" << entity_modules.group_to_members[group_index].count() << "\n";
-        sizes[group_index] = entity_modules.group_to_members[group_index].count();
-    }
-    output.close();
     return sizes;
 }

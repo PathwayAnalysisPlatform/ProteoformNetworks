@@ -4,6 +4,10 @@
 #include <string_view>
 #include "types.hpp"
 #include "bimap_str_int.hpp"
+#include <iomanip>
+#include <list>
+#include "overlap_types.hpp"
+#include "maps.hpp"
 
 vusi loadInteractionNetwork(std::string_view path_file_interactions,
                             const bimap_str_int &entities,
@@ -43,8 +47,9 @@ modules removeDisconnectedMembers(modules &modules, const bimap_str_int &groups,
                                   const vusi &interactions);
 
 // Create a file with the sizes of the modules for each trait at a single level (genes, proteins or proteoforms)
-um<int, int> calculate_and_report_sizes(std::string_view path_reports, const std::string &level,
-                                        const modules &entity_modules, const bimap_str_int &groups);
+std::map<const std::string, um<int, int>> calculate_and_report_sizes(std::string_view path_reports,
+                                                                     const modules &entity_modules,
+                                                                     const bimap_str_int &groups);
 
 // Counts the number of edges crossing from one module to the other.
 // This function requires that the modules vertices and edges files are created
