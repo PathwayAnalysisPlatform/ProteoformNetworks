@@ -51,9 +51,6 @@ src/Cpp/lib/
 src/Cpp/cmake-build-debug/
 src/Cpp/cmake-build-release
 
-# Java
-*.jar
-
 # Datasets
 *.tsv
 *.csv
@@ -70,5 +67,7 @@ figures/
 #Python
 venv/
 *.pyc
+src/Python/.ipynb_checkpoints
+src/Python/learning/
 
 !.idea/runConfigurations/
