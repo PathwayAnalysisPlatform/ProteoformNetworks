@@ -7,10 +7,10 @@ from bokeh.models import Div
 from bokeh.models import Plot, Range1d, MultiLine, Circle, HoverTool, BoxZoomTool, ResetTool, PointDrawTool
 from bokeh.models.graphs import from_networkx
 
-from config import levels
 # Plot the frequency of each overlap score
 # Only considers positive scores, where sets overlap.
-from lib.data_read_write import get_graph
+from Python.config import LEVELS
+from Python.lib.data_read_write import get_graph
 
 
 def plot(x, score_label='overlap'):
@@ -202,9 +202,9 @@ def plot_module_pair(trait1, trait2, path_to_modules, path_to_figures):
     path_to_figures: directory where to create the output files
     """
 
-    graphs_complete = {level: create_graph(trait1, trait2, level, path_to_modules) for level in levels}
+    graphs_complete = {level: create_graph(trait1, trait2, level, path_to_modules) for level in LEVELS}
     graphs_interface = {level: create_graph(trait1, trait2, level, path_to_modules, only_interface=True)
-                        for level in levels}
+                        for level in LEVELS}
 
     figures_complete_modules = [create_plot(level, graph) for level, graph in graphs_complete.items()]
     figures_interfaces = [create_plot(level, graph) for level, graph in graphs_interface.items()]

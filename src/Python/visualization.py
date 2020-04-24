@@ -75,7 +75,7 @@ figures_interfaces = [create_plot(level, graph) for level, graph in graphs_inter
 
 l = layout(
     [[data_table], 
-     [Div(text=f"{title}", source=)],
+     [Div(text=f"{title}")],
      figures_complete_modules, 
      figures_interfaces,
 ])
