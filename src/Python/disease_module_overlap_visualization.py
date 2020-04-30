@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from bokeh.io import output_file, show
 from bokeh.layouts import layout
-from bokeh.models import Div
-from bokeh.models import Plot, Range1d, MultiLine, Circle, HoverTool, BoxZoomTool, ResetTool, PointDrawTool
+from bokeh.models import Div, Plot, Range1d, HoverTool, BoxZoomTool, ResetTool, PointDrawTool, Circle, MultiLine
+from bokeh.models import Plot, Range1d, MultiLine, Circle, HoverTool, BoxZoomTool, ResetTool
 from bokeh.models.graphs import from_networkx
 
 # Plot the frequency of each overlap score
@@ -13,11 +13,11 @@ from Python.config import LEVELS
 from Python.lib.data_read_write import get_graph
 
 
-def plot(x, score_label='overlap'):
+def plot_scores(scores, score_label='overlap'):
     # Consider only overlapping sets
-    x = x[x != 0]
-    prob = x.value_counts()
-    plt.hist(x, bins=40)
+    scores = scores[scores != 0]
+    prob = scores.value_counts()
+    plt.hist(scores, bins=40)
     plt.title(f"Histogram of {score_label} score")
     plt.xlabel('Score')
     plt.ylabel('Frequency')
@@ -108,7 +108,7 @@ def plot_module_pair(trait1, trait2, level, path_to_modules, path_to_figures):
     return plot
 
 
-def create_graph(trait1, trait2, level, path_to_modules, only_interface=False):
+def create_overlap_graph(trait1, trait2, level, path_to_modules, only_interface=False):
     graph_complete = nx.Graph()
     graph_interface = nx.Graph()
 
@@ -166,7 +166,31 @@ def create_graph(trait1, trait2, level, path_to_modules, only_interface=False):
     return graph_interface if only_interface else graph_complete
 
 
-def create_plot(level, graph):
+def plot_module_pair(trait1, trait2, path_to_modules, path_to_figures):
+    """Visualize the pair of modules in an interactive graph.
+
+    trait1, trait2: names of the two sets as strings
+    path_to_modules: directory where to find the input files
+    path_to_figures: directory where to create the output files
+    """
+
+    graphs_complete = {level: create_overlap_graph(trait1, trait2, level, path_to_modules) for level in LEVELS}
+    graphs_interface = {level: create_overlap_graph(trait1, trait2, level, path_to_modules, only_interface=True)
+                        for level in LEVELS}
+
+    figures_complete_modules = [plot_overlap_graph(level, graph) for level, graph in graphs_complete.items()]
+    figures_interfaces = [plot_overlap_graph(level, graph) for level, graph in graphs_interface.items()]
+
+    output_file(f"{path_to_figures}{trait1}_to_{trait2}.html")
+    title = f"<p style=\"font-weight:bold;text-align:center;font-size:22px;width:1800px;\">" \
+            f"<span style=\"color:green;\">{trait1}</span> with " \
+            f"<span style=\"color:blue;\">{trait2}</span>" \
+            f"</p>"
+
+    show(layout([[Div(text=f"{title}")], figures_complete_modules, figures_interfaces]))
+
+
+def plot_overlap_graph(level, graph):
     plot = Plot(plot_width=600, plot_height=450,
                 x_range=Range1d(-1.1, 1.1), y_range=Range1d(-1.1, 1.1),
                 toolbar_location="below")
@@ -192,27 +216,3 @@ def create_plot(level, graph):
         graph_renderer.edge_renderer.glyph = MultiLine(line_color="edge_color", line_alpha=0.8, line_width=1.5)
     plot.renderers.append(graph_renderer)
     return plot
-
-
-def plot_module_pair(trait1, trait2, path_to_modules, path_to_figures):
-    """Visualize the pair of modules in an interactive graph.
-
-    trait1, trait2: names of the two sets as strings
-    path_to_modules: directory where to find the input files
-    path_to_figures: directory where to create the output files
-    """
-
-    graphs_complete = {level: create_graph(trait1, trait2, level, path_to_modules) for level in LEVELS}
-    graphs_interface = {level: create_graph(trait1, trait2, level, path_to_modules, only_interface=True)
-                        for level in LEVELS}
-
-    figures_complete_modules = [create_plot(level, graph) for level, graph in graphs_complete.items()]
-    figures_interfaces = [create_plot(level, graph) for level, graph in graphs_interface.items()]
-
-    output_file(f"{path_to_figures}{trait1}_to_{trait2}.html")
-    title = f"<p style=\"font-weight:bold;text-align:center;font-size:22px;width:1800px;\">" \
-            f"<span style=\"color:green;\">{trait1}</span> with " \
-            f"<span style=\"color:blue;\">{trait2}</span>" \
-            f"</p>"
-
-    show(layout([[Div(text=f"{title}")], figures_complete_modules, figures_interfaces]))
