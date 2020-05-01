@@ -72,6 +72,6 @@ def create_graph(df, directed=False, showSmallMolecules=True):
 
 
 # df = get_reactions_and_participants_by_pathway("R-HSA-70171")
-# G = create_graph(df)
+# # G = create_graph(df)
 # print(G.nodes)
 # print(G.edges)

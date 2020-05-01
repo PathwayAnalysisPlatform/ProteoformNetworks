@@ -5,7 +5,7 @@ def get_pathways():
     return get_query_result(query)
 
 def get_reactions_by_pathway(pathway):
-    query = f"MATCH (p:Pathway{{stId:\"{pathway}\"}})-[:hasEvent]->(rle:Reaction{{speciesName:'Homo sapiens'}}) RETURN rle.stId"
+    query = f"MATCH (p:Pathway{{stId:\"{pathway}\"}})-[:hasEvent]->(rle:Reaction{{speciesName:'Homo sapiens'}}) RETURN rle.stId as reaction"
     return get_query_result(query)
 
 def get_reactions_and_participants_by_pathway(pathway):
