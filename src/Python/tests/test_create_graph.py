@@ -79,11 +79,77 @@ def test_query_for_pathway_participants_decomposes_sets():
     assert (df['Entity'] == "R-HSA-70378").any()
     assert (df['Entity'] == "R-HSA-70412").any()
 
+
 # Test: If small molecules disabled, cypher query returns only the gene direct participants
+def test_query_for_pathway_participants_disable_small_molecules():
+    df = get_reactions_and_participants_by_pathway("R-HSA-70171", showSmallMolecules=False)
+    assert len(df) == 31  # Only EWAS
+    # Has EWAS participants
+    assert (df['Entity'] == "R-HSA-5696062").any()
+    assert (df['Entity'] == "R-HSA-6798334").any()
+    assert (df['Entity'] == "R-HSA-6799597").any()
+    # Does not have Small molecule participants
+    assert (df['Entity'] != "R-ALL-449701").all()
+    assert (df['Entity'] != "R-ALL-70113").all()
+    assert (df['Entity'] != "R-ALL-217314").all()
+
+
 # Test: If small molecules disabled, cypher query returns only the gene complex decomposed participants
+def test_query_for_pathway_participants_complexes_show_only_ewas():
+    df = get_reactions_and_participants_by_pathway("R-HSA-70171", showSmallMolecules=False)
+    # The pathway has the reaction R-HSA-5696021 which has the complex R-HSA-5696043 as participant
+    # THe components of the complex are 2, one EWAS and one small molecule:
+    assert (df['Entity'] == 'R-HSA-5696062').any()  # EWAS ADPGK
+    assert (df['Entity'] != 'R-ALL-217314').all()  # Small molecule Mg2+
+
+
+# Test: Get pathway participants as genes
+def test_query_for_pathway_participants_as_genes():
+    df = get_reactions_and_participants_by_pathway("R-HSA-70171", level="genes")
+    assert len(df) == 102
+
+    # Participant protein Q9BRR6 should be in the result as a gene name: ADPGK not as UniProt accession
+    assert (df['Id'] == 'ADPGK').any()
+    assert (df['Id'] != 'Q9BRR6').all()
+
+    # Simmilar for the next proteins
+    assert (df['Id'] == 'BPGM').any()
+    assert (df['Id'] != 'P07738').all()
+
+    assert (df['Id'] == 'BPGM').any()
+    assert (df['Id'] != 'P07738').all()
+
+    assert (df['Id'] == 'PKLR').any()
+    assert (df['Id'] != 'P07738').all()
+
+
+def test_query_for_pathway_participants_as_genes_trims_gene_id():
+    df = get_reactions_and_participants_by_pathway("R-HSA-70171", level="genes")
+    assert ((df['Entity'] == 'R-HSA-70097') & (df['Id'] == "PKLR")).any()
+    assert ((df['Entity'] == 'R-HSA-450658') & (df['Id'] == "PKM")).any()
+    assert not ((df['Entity'] == 'R-HSA-450658') & (df['Id'] == "PKM-2 [cytosol]")).any()
+    assert not ((df['Entity'] == 'R-HSA-450658') & (df['Id'] == "P62993")).any()
+    print(df.loc[(df['Entity'] == 'R-HSA-70097') & (df['Id'] == "PKLR")])
+    assert not ((df['Entity'] == 'R-HSA-70097') & (df['Id'] == "PKLR-1 [cytosol]")).any()
+    assert not ((df['Entity'] == 'R-HSA-211388') & (df['Id'] == "PKLR-2")).any()
+
+
+def test_query_for_pathway_participants_replaces_small_molecule_names():
+    df = get_reactions_and_participants_by_pathway("R-HSA-70171", level="genes")
+    assert ((df['Entity'] == 'R-ALL-29370') & (df['Id'] == '456216')).any()
+    assert ((df['Entity'] == 'R-ALL-29926') & (df['Id'] == '18420')).any()
+    assert not ((df['Entity'] == 'R-ALL-29926') & (df['Id'] == 'Mg2+ [cytosol]')).any()
+    assert not ((df['Entity'] == 'R-ALL-29926') & (df['Id'] == '18420')).any()
+
+
+# Test: Get pathway participants as proteins
+def test_query_for_pathway_participants_as_proteins(setup_participants):
+    df = setup_participants
+
+
+# Test: Get pathway participants as proteoforms
 
 # Graph creation
-
 def test_create_graph_num_edges(setup_participants):
     df = setup_participants
     G = create_graph(df)
@@ -94,7 +160,6 @@ def test_create_graph_num_vertices(setup_participants):
     df = setup_participants
     G = create_graph(df)
     assert len(G.nodes) == 61
-
 
 # Test: Receive a Reaction with a direct participant EWAS input and a Simple entity output --> connects them
 # Test: Receive a Reaction with a direct participant EWAS input and EWAS output --> connects them
