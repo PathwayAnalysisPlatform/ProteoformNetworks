@@ -136,15 +136,43 @@ def test_query_for_pathway_participants_as_genes_trims_gene_id():
 
 def test_query_for_pathway_participants_replaces_small_molecule_names():
     df = get_reactions_and_participants_by_pathway("R-HSA-70171", level="genes")
-    assert ((df['Entity'] == 'R-ALL-29370') & (df['Id'] == '456216')).any()
-    assert ((df['Entity'] == 'R-ALL-29926') & (df['Id'] == '18420')).any()
-    assert not ((df['Entity'] == 'R-ALL-29926') & (df['Id'] == 'Mg2+ [cytosol]')).any()
+    assert not ((df['Entity'] == 'R-ALL-29370') & (df['Id'] == '456216')).any()
+    assert ((df['Entity'] == 'R-ALL-29370') & (df['Id'] == 'ADP')).any()
     assert not ((df['Entity'] == 'R-ALL-29926') & (df['Id'] == '18420')).any()
+    assert not ((df['Entity'] == 'R-ALL-29926') & (df['Id'] == 'Mg2+ [cytosol]')).any()
+    assert ((df['Entity'] == 'R-ALL-29926') & (df['Id'] == 'Mg2+')).any()
 
 
 # Test: Get pathway participants as proteins
 def test_query_for_pathway_participants_as_proteins(setup_participants):
+    df = get_reactions_and_participants_by_pathway("R-HSA-70171", level="proteins")
+    assert not ((df['Entity'] == 'R-HSA-5696062') & (df['Id'] == 'ADPGK')).any()
+    assert ((df['Entity'] == 'R-HSA-5696062') & (df['Id'] == 'Q9BRR6')).any()
+
+    assert not ((df['Entity'] == "R-HSA-6798334") & (df['Id'] == 'BPGM')).any()
+    assert ((df['Entity'] == "R-HSA-6798334") & (df['Id'] == 'P07738')).any()
+
+    assert not ((df['Entity'] == 'R-HSA-70412') & (df['Id'] == 'HK3')).any()
+    assert ((df['Entity'] == 'R-HSA-70412') & (df['Id'] == 'P52790')).any()
+
+
+def test_query_for_pathway_participants_as_proteins_implicit_parameter(setup_participants):
     df = setup_participants
+    assert not ((df['Entity'] == 'R-HSA-5696062') & (df['Id'] == 'ADPGK')).any()
+    assert ((df['Entity'] == 'R-HSA-5696062') & (df['Id'] == 'Q9BRR6')).any()
+
+    assert not ((df['Entity'] == "R-HSA-6798334") & (df['Id'] == 'BPGM')).any()
+    assert ((df['Entity'] == "R-HSA-6798334") & (df['Id'] == 'P07738')).any()
+
+    assert not ((df['Entity'] == 'R-HSA-70412') & (df['Id'] == 'HK3')).any()
+    assert ((df['Entity'] == 'R-HSA-70412') & (df['Id'] == 'P52790')).any()
+
+
+def test_query_for_pathway_participants_as_proteins_complex_should_not_be_in_records(setup_participants):
+    df = setup_participants
+    assert not (df["Entity"] == "R-HSA-5696043").any()
+    assert not (df["Name"] == "BPGM dimer [cytosol]").any()
+    assert not (df["Entity"] == "R-HSA-6799598").any()
 
 
 # Test: Get pathway participants as proteoforms

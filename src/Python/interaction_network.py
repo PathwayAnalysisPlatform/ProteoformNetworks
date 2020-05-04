@@ -70,8 +70,9 @@ def create_graph(df, directed=False, showSmallMolecules=True):
     print(f"Added {len(G.edges)} edges to the graph.")
     return G
 
-
-# df = get_reactions_and_participants_by_pathway("R-HSA-70171")
-# # G = create_graph(df)
+#df = get_reactions_and_participants_by_pathway("R-HSA-70171")
+#print(df.columns)
+#df['Id'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.Id) if x.Type == 'SimpleEntity' else x.Id, axis=1)
+#print(df[['Type', 'Id']])
 # print(G.nodes)
 # print(G.edges)

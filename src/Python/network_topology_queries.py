@@ -1,3 +1,5 @@
+import re
+
 from Python.lib.graph_database import get_query_result
 
 
@@ -17,6 +19,8 @@ def get_reactions_and_participants_by_pathway(pathway, showSmallMolecules=True, 
     :param pathway: string id of a pathway
     :return: pandas dataframe with the records
     """
+    print(f"\n\nQuerying {level} participants of pathway {pathway}...\n\n")
+
     query = f"MATCH (p:Pathway{{stId:\"{pathway}\"}})-[:hasEvent]->(rle:ReactionLikeEvent{{speciesName:'Homo sapiens'}})"
     query += "\nWITH rle"
     query += "\nMATCH p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity)"
@@ -26,11 +30,18 @@ def get_reactions_and_participants_by_pathway(pathway, showSmallMolecules=True, 
     query += "]"
     query += "\nOPTIONAL MATCH (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)"
     query += "\nRETURN DISTINCT rle.stId as Reaction, pe.stId as Entity, pe.displayName as Name, last(labels(pe)) as Type,"
+    query += "\nCASE WHEN last(labels(pe)) = \"SimpleEntity\" THEN pe.displayName "
     if level == "genes":
-        query += " CASE WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) ELSE re.identifier END as Id,"
+        query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) "
     else:
-        query += " re.identifier as Id,"
+        query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier "
+    query += " ELSE re.identifier END as Id,"
     query += " rd.displayName AS Database, head([scores IN relationships(p) | type(scores)]) as Role"
     query += "\nORDER BY Reaction, Role, Type"
     print(query)
-    return get_query_result(query)
+
+    df = get_query_result(query)
+
+    df['Id'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.Id) if x.Type == 'SimpleEntity' else x.Id, axis=1)
+
+    return df
