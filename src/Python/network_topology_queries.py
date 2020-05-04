@@ -1,5 +1,6 @@
 import re
 
+from Python.config import LEVELS
 from Python.lib.graph_database import get_query_result
 
 
@@ -19,6 +20,9 @@ def get_reactions_and_participants_by_pathway(pathway, showSmallMolecules=True, 
     :param pathway: string id of a pathway
     :return: pandas dataframe with the records
     """
+    if level not in LEVELS:
+        raise Exception
+
     print(f"\n\nQuerying {level} participants of pathway {pathway}...\n\n")
 
     query = f"MATCH (p:Pathway{{stId:\"{pathway}\"}})-[:hasEvent]->(rle:ReactionLikeEvent{{speciesName:'Homo sapiens'}})"
