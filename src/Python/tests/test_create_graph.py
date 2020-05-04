@@ -1,198 +1,128 @@
-import pandas as pd
 import pytest
 
 from Python.interaction_network import create_graph
-from Python.network_topology_queries import get_reactions_and_participants_by_pathway, get_pathways, \
-    get_reactions_by_pathway
+from Python.network_topology_queries import get_reactions_and_participants_by_pathway
 
-
-@pytest.fixture()
-def setup_participants():
-    print("Setting up glycolysis participants")
-    return get_reactions_and_participants_by_pathway("R-HSA-70171")
-
-
-# Test: Cypher query to get all pathways gets all of them correctly
-def test_get_pathways():
-    pathways = get_pathways()
-    assert len(pathways) == 2362
-    assert type(pathways) == pd.DataFrame
-    assert ((pathways['stId'] == 'R-HSA-9612973') & (pathways['displayName'] == 'Autophagy')).any()
-    assert ((pathways['stId'] == 'R-HSA-1640170') & (pathways['displayName'] == 'Cell Cycle')).any()
-    assert ((pathways['stId'] == 'R-HSA-70171') & (pathways['displayName'] == 'Glycolysis')).any()
-
-
-# Test: Query to get reactions of pathway returns the correct list of reactions
-def test_get_reactions_of_pathway():
-    reactions = get_reactions_by_pathway("R-HSA-70171")
-    assert len(reactions) == 15
-    assert (reactions['reaction'] == "R-HSA-8955794").any()
-    assert (reactions['reaction'] == "R-HSA-6799604").any()
-    assert (reactions['reaction'] == "R-HSA-70467").any()
-
-
-# Test: Query to get participants of a pathway gets all participant reactions.
-def test_query_for_pathway_participants_has_all_reactions(setup_participants):
-    df = setup_participants
-    assert len(df['Reaction'].unique()) == 15
-    assert (df['Reaction'] == "R-HSA-8955794").any()
-    assert (df['Reaction'] == "R-HSA-6799604").any()
-    assert (df['Reaction'] == "R-HSA-70467").any()
-
-
-# Test: Query to get participants of a pathway returns all small molecule participants
-def test_query_for_pathway_participans_returns_all_simple_molecules(setup_participants):
-    df = setup_participants
-    print(df.loc[df['Type'] == 'SimpleEntity'])
-    assert len(df.loc[df['Type'] == 'SimpleEntity']['Entity'].unique()) == 32
-
-
-# Test: Query to get participants of a pathway returns all gene participants
-def test_query_for_pathway_participans_returns_all_ewas(setup_participants):
-    df = setup_participants
-    print(df.loc[df['Type'] == 'EntityWithAccessionedSequence'])
-    assert len(df.loc[df['Type'] == 'EntityWithAccessionedSequence']['Entity'].unique()) == 31
-
-
-# Test: Query for participants of a pathway returns all the gene and small molecule participants decomposing complexes
-# Pathway R-HSA-1237044 hast complex participants in its reactions, some complexes also have complex components.
-# Checks if the component molecules of the complex components are in the result
-def test_query_for_pathway_participants_decomposes_complexes():
-    df = get_reactions_and_participants_by_pathway("R-HSA-1237044")
-    # Reaction R-HSA-1237325 in the pathway has complex participants: "R-HSA-1237320"
-    # Complex R-HSA-1237320 has 6 participant molecules:
-    assert (df['Entity'] == "R-ALL-71185").any()
-    assert (df['Entity'] == "R-HSA-1008268").any()
-    assert (df['Entity'] == "R-ALL-29368").any()
-    assert (df['Entity'] == "R-ALL-71185").any()
-    assert (df['Entity'] == "R-ALL-29368").any()
-    assert (df['Entity'] == "R-HSA-1008196").any()
-
-
-# Test: Query for participants of a pathway returns all the gene and small molecule participants decomposing sets
-# Pathway R-HSA-70171 has reactions with EntitySets as participants, like reaction R-HSA-70420 with set R-HSA-450097
-def test_query_for_pathway_participants_decomposes_sets():
-    df = get_reactions_and_participants_by_pathway("R-HSA-70171")
-    # DefinedSet R-HSA-450097 has 4 members
-    assert (df['Entity'] == "R-HSA-450094").any()
-    assert (df['Entity'] == "R-HSA-70395").any()
-    assert (df['Entity'] == "R-HSA-70378").any()
-    assert (df['Entity'] == "R-HSA-70412").any()
-
-
-# Test: If small molecules disabled, cypher query returns only the gene direct participants
-def test_query_for_pathway_participants_disable_small_molecules():
-    df = get_reactions_and_participants_by_pathway("R-HSA-70171", showSmallMolecules=False)
-    assert len(df) == 31  # Only EWAS
-    # Has EWAS participants
-    assert (df['Entity'] == "R-HSA-5696062").any()
-    assert (df['Entity'] == "R-HSA-6798334").any()
-    assert (df['Entity'] == "R-HSA-6799597").any()
-    # Does not have Small molecule participants
-    assert (df['Entity'] != "R-ALL-449701").all()
-    assert (df['Entity'] != "R-ALL-70113").all()
-    assert (df['Entity'] != "R-ALL-217314").all()
-
-
-# Test: If small molecules disabled, cypher query returns only the gene complex decomposed participants
-def test_query_for_pathway_participants_complexes_show_only_ewas():
-    df = get_reactions_and_participants_by_pathway("R-HSA-70171", showSmallMolecules=False)
-    # The pathway has the reaction R-HSA-5696021 which has the complex R-HSA-5696043 as participant
-    # THe components of the complex are 2, one EWAS and one small molecule:
-    assert (df['Entity'] == 'R-HSA-5696062').any()  # EWAS ADPGK
-    assert (df['Entity'] != 'R-ALL-217314').all()  # Small molecule Mg2+
-
-
-# Test: Get pathway participants as genes
-def test_query_for_pathway_participants_as_genes():
-    df = get_reactions_and_participants_by_pathway("R-HSA-70171", level="genes")
-    assert len(df) == 102
-
-    # Participant protein Q9BRR6 should be in the result as a gene name: ADPGK not as UniProt accession
-    assert (df['Id'] == 'ADPGK').any()
-    assert (df['Id'] != 'Q9BRR6').all()
-
-    # Simmilar for the next proteins
-    assert (df['Id'] == 'BPGM').any()
-    assert (df['Id'] != 'P07738').all()
-
-    assert (df['Id'] == 'BPGM').any()
-    assert (df['Id'] != 'P07738').all()
-
-    assert (df['Id'] == 'PKLR').any()
-    assert (df['Id'] != 'P07738').all()
-
-
-def test_query_for_pathway_participants_as_genes_trims_gene_id():
-    df = get_reactions_and_participants_by_pathway("R-HSA-70171", level="genes")
-    assert ((df['Entity'] == 'R-HSA-70097') & (df['Id'] == "PKLR")).any()
-    assert ((df['Entity'] == 'R-HSA-450658') & (df['Id'] == "PKM")).any()
-    assert not ((df['Entity'] == 'R-HSA-450658') & (df['Id'] == "PKM-2 [cytosol]")).any()
-    assert not ((df['Entity'] == 'R-HSA-450658') & (df['Id'] == "P62993")).any()
-    print(df.loc[(df['Entity'] == 'R-HSA-70097') & (df['Id'] == "PKLR")])
-    assert not ((df['Entity'] == 'R-HSA-70097') & (df['Id'] == "PKLR-1 [cytosol]")).any()
-    assert not ((df['Entity'] == 'R-HSA-211388') & (df['Id'] == "PKLR-2")).any()
-
-
-def test_query_for_pathway_participants_replaces_small_molecule_names():
-    df = get_reactions_and_participants_by_pathway("R-HSA-70171", level="genes")
-    assert not ((df['Entity'] == 'R-ALL-29370') & (df['Id'] == '456216')).any()
-    assert ((df['Entity'] == 'R-ALL-29370') & (df['Id'] == 'ADP')).any()
-    assert not ((df['Entity'] == 'R-ALL-29926') & (df['Id'] == '18420')).any()
-    assert not ((df['Entity'] == 'R-ALL-29926') & (df['Id'] == 'Mg2+ [cytosol]')).any()
-    assert ((df['Entity'] == 'R-ALL-29926') & (df['Id'] == 'Mg2+')).any()
-
-
-# Test: Get pathway participants as proteins
-def test_query_for_pathway_participants_as_proteins(setup_participants):
-    df = get_reactions_and_participants_by_pathway("R-HSA-70171", level="proteins")
-    assert not ((df['Entity'] == 'R-HSA-5696062') & (df['Id'] == 'ADPGK')).any()
-    assert ((df['Entity'] == 'R-HSA-5696062') & (df['Id'] == 'Q9BRR6')).any()
-
-    assert not ((df['Entity'] == "R-HSA-6798334") & (df['Id'] == 'BPGM')).any()
-    assert ((df['Entity'] == "R-HSA-6798334") & (df['Id'] == 'P07738')).any()
-
-    assert not ((df['Entity'] == 'R-HSA-70412') & (df['Id'] == 'HK3')).any()
-    assert ((df['Entity'] == 'R-HSA-70412') & (df['Id'] == 'P52790')).any()
-
-
-def test_query_for_pathway_participants_as_proteins_implicit_parameter(setup_participants):
-    df = setup_participants
-    assert not ((df['Entity'] == 'R-HSA-5696062') & (df['Id'] == 'ADPGK')).any()
-    assert ((df['Entity'] == 'R-HSA-5696062') & (df['Id'] == 'Q9BRR6')).any()
-
-    assert not ((df['Entity'] == "R-HSA-6798334") & (df['Id'] == 'BPGM')).any()
-    assert ((df['Entity'] == "R-HSA-6798334") & (df['Id'] == 'P07738')).any()
-
-    assert not ((df['Entity'] == 'R-HSA-70412') & (df['Id'] == 'HK3')).any()
-    assert ((df['Entity'] == 'R-HSA-70412') & (df['Id'] == 'P52790')).any()
-
-
-def test_query_for_pathway_participants_as_proteins_complex_should_not_be_in_records(setup_participants):
-    df = setup_participants
-    assert not (df["Entity"] == "R-HSA-5696043").any()
-    assert not (df["Name"] == "BPGM dimer [cytosol]").any()
-    assert not (df["Entity"] == "R-HSA-6799598").any()
-
-
-# Test: Get pathway participants as proteoforms
 
 # Graph creation
-def test_create_graph_num_edges(setup_participants):
-    df = setup_participants
-    G = create_graph(df)
-    assert len(G.edges) == 107
+class TestGeneNetworkClass:
+
+    @pytest.fixture()
+    def setup_gene_participants(self, scope='class'):
+        print("\nSetup Class")
+        df = get_reactions_and_participants_by_pathway("R-HSA-9634600", level="genes")
+        return create_graph(df)
+
+    def test_create_graph_wrong_level_raises_exception(self):
+        assert 1 == 2
+
+    def test_create_graph_num_edges(self, setup_gene_participants):
+        G = setup_gene_participants
+        print(G.edges)
+        assert len(G.edges) == 36
+
+    def test_create_graph_num_vertices(self, setup_gene_participants):
+        G = setup_gene_participants
+        print(G.nodes)
+        assert len(G.nodes) == 18
+
+    # Test: Receive a Reaction with a direct participant EWAS input and a Simple entity output --> connects them
+    def test_connects_inputs_with_outputs(self, setup_gene_participants):
+        G = setup_gene_participants
+        # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
+
+        # Input to output interactions for reaction R-HSA-163773:
+        assert ("PFKFB1", "ADP") in G.edges
+        assert ("ATP", "ADP") in G.edges
+        assert ("ATP", "PFKFB1") in G.edges
+
+        # Input to output interactions for reaction R-HSA-163750
+        assert ("PFKFB1", "Pi") in G.edges
+        assert ("H2O", "Pi") in G.edges
+        assert ("H2O", "PFKFB1") in G.edges
+
+        # Input to output interaction for reaction R-HSA-71802
+        assert ("Fru(6)P", "D-Fructose 2,6-bisphosphate") in G.edges
+        assert ("Fru(6)P", "ADP") in G.edges
+        assert ("ATP", "D-Fructose 2,6-bisphosphate") in G.edges
+        assert ("ATP", "ADP") in G.edges
+
+    def test_connects_input_genes_with_small_outputs_not_when_is_same_molecule(self, setup_gene_participants):
+        G = setup_gene_participants
+        # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
+        assert not ("PFKFB1", "PFKFB1") in G.edges
+
+    def test_connects_catalysts_with_outputs(self, setup_gene_participants):
+        G = setup_gene_participants
+        # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
+
+        # Catalysts to output interactions for reaction R-HSA-163773:
+        assert ("PRKACA", "PFKFB1") in G.edges
+        assert ("PRKACA", "ADP") in G.edges
+        assert ("PRKACB", "PFKFB1") in G.edges
+        assert ("PRKACB", "ADP") in G.edges
+
+        # Catalysts to output interactions for reaction R-HSA-163750
+        assert ("PPP2R1A", "PFKFB1") in G.edges
+        assert ("PPP2R1A", "Pi") in G.edges
+        assert ("PPP2R1B", "PFKFB1") in G.edges
+        assert ("PPP2R1B", "Pi") in G.edges
+        assert ("PPP2CA", "PFKFB1") in G.edges
+        assert ("PPP2CA", "Pi") in G.edges
+        assert ("PPP2CB", "PFKFB1") in G.edges
+        assert ("PPP2CB", "Pi") in G.edges
+        assert ("PPP2R5D", "PFKFB1") in G.edges
+        assert ("PPP2R5D", "Pi") in G.edges
+
+        # Catalysts to output interactions for reaction R-HSA-70262
+        assert ("PFKFB1", "Fru(6)P") in G.edges
+        assert ("PFKFB1", "Pi") in G.edges
+
+        # Catalysts to output interactions for reaction R-HSA-71802
+        assert ("PFKFB3", "D-Fructose 2,6-bisphosphate") in G.edges
+        assert ("PFKFB3", "ADP") in G.edges
+        assert ("PFKFB4", "D-Fructose 2,6-bisphosphate") in G.edges
+        assert ("PFKFB4", "ADP") in G.edges
+        assert ("PFKFB1", "D-Fructose 2,6-bisphosphate") in G.edges
+        assert ("PFKFB1", "ADP") in G.edges
+        assert ("PFKFB2", "D-Fructose 2,6-bisphosphate") in G.edges
+        assert ("PFKFB2", "ADP") in G.edges
+
+    def test_connects_regulators_with_outputs(self):
+        df = get_reactions_and_participants_by_pathway("R-HSA-5627083", level="genes")
+        G = create_graph(df)
+        # Pathway "RHO GTPases regulate CFTR trafficking" R-HSA-5627083
+
+        # Regulator to output interactions for reaction R-HSA-5627071:
+        assert ("RHOQ", "CFTR") in G.edges
+        assert ("GOPC", "CFTR") in G.edges
+        assert not ("CFTR", "CFTR") in G.edges
+        assert ("GTP", "CFTR") in G.edges
+
+        assert ("RHOQ", "GOPC") in G.edges
+        assert not ("GOPC", "GOPC") in G.edges
+        assert ("CFTR", "GOPC") in G.edges
+        assert ("GTP", "GOPC") in G.edges
+
+        assert not ("RHOQ", "RHOQ") in G.edges
+        assert ("GOPC", "RHOQ") in G.edges
+        assert ("CFTR", "RHOQ") in G.edges
+        assert ("GTP", "RHOQ") in G.edges
+
+        assert ("RHOQ", "GTP") in G.edges
+        assert ("GOPC", "GTP") in G.edges
+        assert ("CFTR", "GTP") in G.edges
+        assert not ("GTP", "GTP") in G.edges
+
+# Test graph creation with genes and small molecules disabled
 
 
-def test_create_graph_num_vertices(setup_participants):
-    df = setup_participants
-    G = create_graph(df)
-    assert len(G.nodes) == 61
+# Test graph creation with proteins and small molecules disabled
 
-# Test: Receive a Reaction with a direct participant EWAS input and a Simple entity output --> connects them
-# Test: Receive a Reaction with a direct participant EWAS input and EWAS output --> connects them
-# Test: Receive a Reaction with a direct participant EWAS catalyst and EWAS output --> connects them
-# Test: Receive a Reaction with a direct participant EWAS regulator and EWAS output --> connects them
+# Test graph creation for proteins
+
+# Test graph creation for proteoforms
+
 # Test: Receive a Reaction with a direct participant SimpleEntity input and SimpleEntity output --> connects them
 # Test: Receive a Reaction with a direct participant SimpleEntity catalyst and SimpleEntity output --> connects them
 # Test: Receive a Reaction with a direct participant SimpleEntity regulator and SimpleEntity output --> connects them
@@ -208,6 +138,7 @@ def test_create_graph_num_vertices(setup_participants):
 # Test: Given a pathway, the graph merges participants of all reactions in the pathway
 
 # Test: Participant nodes have the attribute "Type" correctly as "Gene", "Protein", "SimpleEntity", etc.
+# Test: Get pathway participants as proteoforms
 
 # For protein network:
 # All the tests of gene network

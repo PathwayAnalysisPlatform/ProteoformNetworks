@@ -5,6 +5,22 @@ import networkx as nx
 from Python.network_topology_queries import get_reactions_and_participants_by_pathway
 
 
+def add_edges_from_product(G, c1, c2, color, reaction, verbose=False):
+    for i in c1:
+        for j in c2:
+            if i != j:
+                G.add_edge(i, j, edge_color=color, reaction=reaction)
+                if verbose:
+                    print(f"Added edge from: {i} to {j}")
+
+
+def add_edges(G, inputs, outputs, catalysts, regulators, reaction, verbose=False):
+    print(f"\n\nReaction: {reaction}:\nInputs: {inputs}\nCatalysts: {catalysts}\nOutputs: {outputs}\nRegulators: {regulators}")
+    add_edges_from_product(G, inputs, outputs, "black", reaction, True)
+    add_edges_from_product(G, catalysts, outputs, "green", reaction, True)
+    add_edges_from_product(G, regulators, outputs, "red", reaction, True)
+
+
 def create_graph(df, directed=False, showSmallMolecules=True):
     """
     Converts a set of reactions with its participants into a graph
@@ -22,57 +38,44 @@ def create_graph(df, directed=False, showSmallMolecules=True):
     # Add all nodes
     G = nx.Graph()
 
-    reaction = df.loc[1]['Reaction']
-    print(f"First reaction is: {reaction}")
+    reaction = df.iloc[1]['Reaction']
     inputs = set()
     outputs = set()
     catalysts = set()
     regulators = set()
     for index, participant in df.iterrows():
-        G.add_node(participant['Name'],
+        G.add_node(participant['Id'],
                    type=participant['Type'],
                    role=participant['Role'],
                    reaction=participant['Reaction'])
         if reaction != participant["Reaction"]:
-            # print(f"Reaction: {reaction}:\n")
-            # print(f"Inputs: {inputs}")
-            # print(f"Catalysts: {catalysts}")
-            # print(f"Outputs: {outputs}")
-            # print(f"Regulators: {regulators}")
-            for i in inputs:
-                for o in outputs:
-                    G.add_edge(i, o, edge_color='black')
-                    # print(f"Added edge from: {i} to {o}")
-            for c in catalysts:
-                for o in outputs:
-                    G.add_edge(c, o, edge_color='green')
-                    # print(f"Added edge from: {c} to {o}")
-            for r in regulators:
-                for o in outputs:
-                    G.add_edge(r, o, edge_color='red')
-                    # print(f"Added edge from: {r} to {o}")
+            add_edges(G, inputs, outputs, catalysts, regulators, reaction, True)
             reaction = participant["Reaction"]
             inputs = set()
             outputs = set()
             catalysts = set()
             regulators = set()
-        else:
-            if participant['Role'] == 'input':
-                inputs.add(participant['Name'])
-            elif participant['Role'] == 'output':
-                outputs.add(participant['Name'])
-            elif participant['Role'] == 'regulatedBy':
-                regulators.add(participant['Name'])
-            elif participant['Role'] == 'catalystActivity':
-                catalysts.add(participant['Name'])
+        if participant['Role'] == 'input':
+            inputs.add(participant['Id'])
+        elif participant['Role'] == 'output':
+            outputs.add(participant['Id'])
+        elif participant['Role'] == 'regulatedBy':
+            regulators.add(participant['Id'])
+        elif participant['Role'] == 'catalystActivity':
+            catalysts.add(participant['Id'])
+    reaction = df.iloc[-1]['Reaction']
+    add_edges(G, inputs, outputs, catalysts, regulators, reaction, True)
 
     print(f"Added {len(G.nodes)} nodes to the graph.")
     print(f"Added {len(G.edges)} edges to the graph.")
     return G
 
-#df = get_reactions_and_participants_by_pathway("R-HSA-70171")
-#print(df.columns)
-#df['Id'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.Id) if x.Type == 'SimpleEntity' else x.Id, axis=1)
-#print(df[['Type', 'Id']])
-# print(G.nodes)
-# print(G.edges)
+
+df = get_reactions_and_participants_by_pathway("R-HSA-9634600", level="genes")
+# print(df.columns)
+#df = df.loc[df['Reaction'] == 'R-HSA-163773']
+print(df[['Id', 'Role']])
+G = create_graph(df)
+print(G.nodes)
+print(G.edges)
+
