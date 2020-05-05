@@ -71,9 +71,8 @@ def create_graph(df, directed=False, showSmallMolecules=True):
     return G
 
 
-df = get_reactions_and_participants_by_pathway("R-HSA-9634600", level="genes")
+df = get_reactions_and_participants_by_pathway("R-HSA-9634600", level="proteoforms")
 # print(df.columns)
-#df = df.loc[df['Reaction'] == 'R-HSA-163773']
 print(df[['Id', 'Role']])
 G = create_graph(df)
 print(G.nodes)
