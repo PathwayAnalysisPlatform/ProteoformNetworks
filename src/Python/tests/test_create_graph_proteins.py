@@ -1,32 +1,28 @@
-import pytest
-
 from Python.interaction_network import create_graph
-from Python.network_topology_queries import get_reactions_and_participants_by_pathway
 
 
 # Test graph creation for proteins
 class TestProteinNetworkClass:
-    @pytest.fixture()
-    def setup_gene_participants(self, scope='class'):
-        print("\nSetup Class")
-        df = get_reactions_and_participants_by_pathway("R-HSA-9634600", level="proteins")
-        return create_graph(df)
+    # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
+    G_glycolysis = create_graph("R-HSA-9634600", level="proteins")
 
-    def test_create_graph_num_edges(self, setup_gene_participants):
-        G = setup_gene_participants
+    # Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
+    G_traffic = create_graph("R-HSA-5627083", level="proteins")
+
+    def test_create_graph_num_edges(self):
+        G = TestProteinNetworkClass.G_glycolysis
         print(G.edges)
-        assert len(G.edges) == 36
+        assert len(G.edges) == 46
 
-    def test_create_graph_num_vertices(self, setup_gene_participants):
-        G = setup_gene_participants
+    def test_create_graph_num_vertices(self):
+        G = TestProteinNetworkClass.G_glycolysis
         print(G.nodes)
         assert len(G.nodes) == 18
 
     # Test: Receive a Reaction with a direct participant EWAS input and a Simple entity output --> connects them
-    def test_connects_inputs_with_outputs(self, setup_gene_participants):
-        G = setup_gene_participants
+    def test_connects_inputs_with_outputs(self):
         # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
-
+        G = TestProteinNetworkClass.G_glycolysis
         # Input to output interactions for reaction R-HSA-163773:
         assert ("P16118", "ADP") in G.edges
         assert ("ATP", "ADP") in G.edges
@@ -43,14 +39,14 @@ class TestProteinNetworkClass:
         assert ("ATP", "D-Fructose 2,6-bisphosphate") in G.edges
         assert ("ATP", "ADP") in G.edges
 
-    def test_connects_input_genes_with_small_outputs_not_when_is_same_molecule(self, setup_gene_participants):
-        G = setup_gene_participants
+    def test_connects_input_genes_with_small_outputs_not_when_is_same_molecule(self):
         # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
+        G = TestProteinNetworkClass.G_glycolysis
         assert not ("P16118", "P16118") in G.edges
 
-    def test_connects_catalysts_with_outputs(self, setup_gene_participants):
-        G = setup_gene_participants
+    def test_connects_catalysts_with_outputs(self):
         # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
+        G = TestProteinNetworkClass.G_glycolysis
 
         # Catalysts to output interactions for reaction R-HSA-163773:
         assert ("P17612", "P16118") in G.edges
@@ -85,9 +81,8 @@ class TestProteinNetworkClass:
         assert ("O60825", "ADP") in G.edges
 
     def test_connects_regulators_with_outputs(self):
-        df = get_reactions_and_participants_by_pathway("R-HSA-5627083", level="proteins")
-        G = create_graph(df)
         # Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
+        G = TestProteinNetworkClass.G_traffic
 
         # Regulator to output interactions for reaction R-HSA-5627071:
         assert ("P17081", "P13569") in G.edges
@@ -109,3 +104,17 @@ class TestProteinNetworkClass:
         assert ("Q9HD26", "GTP") in G.edges
         assert ("P13569", "GTP") in G.edges
         assert not ("GTP", "GTP") in G.edges
+
+    def test_connects_components_of_same_complex(self):
+        G = TestProteinNetworkClass.G_glycolysis
+
+        # As part of PP2A-ABdeltaC complex R-HSA-165961
+        assert not ("P30153", "P30153") in G.edges
+        assert ("P30153", "P30154") in G.edges
+        assert ("P30154", "P30153") in G.edges
+        assert ("P30153", "P67775") in G.edges
+        assert ("P30153", "P62714") in G.edges
+        assert ("P30153", "Q14738") in G.edges
+        assert ("Q14738", "P30154") in G.edges
+        assert ("Q14738", "P30153") in G.edges
+        assert ("Q14738", "P62714") in G.edges

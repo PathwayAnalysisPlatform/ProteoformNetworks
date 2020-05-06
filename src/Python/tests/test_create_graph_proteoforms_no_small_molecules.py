@@ -1,35 +1,38 @@
-import pytest
-
 from Python.interaction_network import create_graph
-from Python.network_topology_queries import get_reactions_and_participants_by_pathway
 
 
 # Test graph creation for proteins
-class TestProteinNetworkClass:
-    @pytest.fixture()
-    def setup_proteoform_participants(self, scope='class'):
-        print("\nSetup Class")
-        df = get_reactions_and_participants_by_pathway("R-HSA-9634600", level="proteoforms", showSmallMolecules=False)
-        return create_graph(df)
 
-    def test_create_graph_num_edges(self, setup_proteoform_participants):
-        G = setup_proteoform_participants
+
+class TestProteoformNetworkClass:
+    # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
+    G_glycolysis = create_graph("R-HSA-9634600", level="proteoforms", showSmallMolecules=False)
+
+    # Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
+    G_traffic = create_graph("R-HSA-5627083", level="proteoforms", showSmallMolecules=False)
+
+    # Pathway "FRS-mediated FGFR3 signaling" R-HSA-5654706
+    G_signal = create_graph("R-HSA-5654706", level="proteoforms", showSmallMolecules=False)
+
+    def test_create_graph_num_edges(self):
+        G = TestProteoformNetworkClass.G_glycolysis
         print(G.edges)
-        assert len(G.edges) == 9
+        assert len(G.edges) == 24
 
-    def test_create_graph_num_vertices(self, setup_proteoform_participants):
-        G = setup_proteoform_participants
+    def test_create_graph_num_vertices(self):
+        G = TestProteoformNetworkClass.G_glycolysis
         print(G.nodes)
         assert len(G.nodes) == 13
 
     # Test: Receive a Reaction with a direct participant EWAS input and a Simple entity output --> connects them
-    def test_connects_inputs_with_outputs(self, setup_proteoform_participants):
-        G = setup_proteoform_participants
+    def test_connects_inputs_with_outputs(self):
+        G = TestProteoformNetworkClass.G_glycolysis
         # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
 
         # Input to output interactions for reaction R-HSA-163773:
         assert not ("P16118", "ADP") in G.edges
         assert ("P16118", "P16118;00046:33") in G.edges
+        assert ("P16118;00046:33", "P16118") in G.edges
         assert not ("ATP", "ADP") in G.edges
         assert not ("ATP", "P16118") in G.edges
         assert not ("ATP", "P16118;00046:33") in G.edges
@@ -48,10 +51,8 @@ class TestProteinNetworkClass:
         assert not ("ATP", "ADP") in G.edges
 
     def test_does_not_connect_input_to_output_when_same_molecule(self):
-        df = get_reactions_and_participants_by_pathway("R-HSA-5627083", level="proteins", showSmallMolecules=False)
-        G = create_graph(df)
-
         # Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
+        G = TestProteoformNetworkClass.G_traffic
 
         # In reaction R-HSA-5627071 there are same set of proteoforms as input and output, since they are in
         # different sub cellular locations. Nevertheless, there are no self interactions in our network
@@ -60,8 +61,8 @@ class TestProteinNetworkClass:
         assert not ("Q9HD26", "Q9HD26") in G.edges
         assert not ("GTP", "GTP") in G.edges
 
-    def test_connects_catalysts_with_outputs(self, setup_proteoform_participants):
-        G = setup_proteoform_participants
+    def test_connects_catalysts_with_outputs(self):
+        G = TestProteoformNetworkClass.G_glycolysis
         # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
 
         # Catalysts to output interactions for reaction R-HSA-163773:
@@ -101,9 +102,8 @@ class TestProteinNetworkClass:
         assert not ("O60825", "ADP") in G.edges
 
     def test_connects_regulators_with_outputs(self):
-        df = get_reactions_and_participants_by_pathway("R-HSA-5627083", level="proteins", showSmallMolecules=False)
-        G = create_graph(df)
         # Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
+        G = TestProteoformNetworkClass.G_traffic
 
         # Regulator to output interactions for reaction R-HSA-5627071:
         assert ("P17081", "P13569") in G.edges
@@ -127,10 +127,8 @@ class TestProteinNetworkClass:
         assert not ("GTP", "GTP") in G.edges
 
     def test_connects_regulators_with_outputs_2(self):
-        df = get_reactions_and_participants_by_pathway("R-HSA-5654706", level="proteoforms", showSmallMolecules=False)
-        G = create_graph(df)
-
         # Pathway "FRS-mediated FGFR3 signaling" R-HSA-5654706
+        G = TestProteoformNetworkClass.G_signal
         # In reaction R-HSA-5654408
         assert ("Q9NP95", "O43320") or ("O43320", "Q9NP95") in G.edges
         assert ("O60258-1", "Q9NP95") in G.edges
@@ -139,3 +137,43 @@ class TestProteinNetworkClass:
         assert not ("Q9GZV9;00164:178", "Q9GZV9;00164:178") in G.edges
         assert ("Q9GZV9;00164:178", "Q8WU20;00048:196,00048:306,00048:349,00048:392,00048:436,00048:471") in G.edges
         assert not ("HS", "O60258-1") in G.edges
+
+    def test_connects_components_of_same_complex(self):
+        G = TestProteoformNetworkClass.G_glycolysis
+
+        # As part of PP2A-ABdeltaC complex R-HSA-165961
+        assert not ("P30153", "P30153") in G.edges
+        assert ("P30153", "P30154") in G.edges
+        assert ("P30154", "P30153") in G.edges
+        assert ("P30153", "P67775") in G.edges
+        assert ("P30153", "P62714") in G.edges
+        assert ("P30153", "Q14738") in G.edges
+        assert ("Q14738", "P30154") in G.edges
+        assert ("Q14738", "P30153") in G.edges
+        assert ("Q14738", "P62714") in G.edges
+
+    def test_connect_components_of_same_complex_2(self):
+        G = TestProteoformNetworkClass.G_signal
+
+        assert not ("P01116-1;00115:179,01116:186", "GTP") in G.edges
+        assert not ("P01111;00115:181,01116:186", "GTP") in G.edges
+        assert not ("P01112;00115:181,00115:184,01116:186", "GTP") in G.edges
+        assert not ("P01116-2;01116:186", "GTP") in G.edges
+
+        assert ("P01112;00115:181,00115:184,01116:186", "P01111;00115:181,01116:186") in G.edges
+        assert ("P01112;00115:181,00115:184,01116:186", "P01116-2;01116:186") in G.edges
+
+        assert ("P01116-2;01116:186", "P01111;00115:181,01116:186") in G.edges
+        assert ("P01116-2;01116:186", "P01112;00115:181,00115:184,01116:186") in G.edges
+
+        assert ("P01111;00115:181,01116:186", "P01116-2;01116:186") in G.edges
+        assert ("P01111;00115:181,01116:186", "P01112;00115:181,00115:184,01116:186") in G.edges
+
+        assert ("Q07889", "P62993-1") in G.edges
+
+        assert not ("HS", "P22607-2;00048:579,00048:649,00048:650,00048:726,00048:762,00048:772") in G.edges
+        assert ("P22607-2;00048:579,00048:649,00048:650,00048:726,00048:762,00048:772", "P05230") in G.edges
+
+        assert ("P55075-1", "P09038") in G.edges
+        assert ("O60258-1", "Q9GZV9;00164:178") in G.edges
+        assert ("Q9GZV9;00164:178", "O60258-1") in G.edges

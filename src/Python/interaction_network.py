@@ -1,55 +1,39 @@
-import re
-
 import networkx as nx
 
-from Python.network_topology_queries import get_reactions_and_participants_by_pathway
+from Python.network_topology_queries import get_reaction_participants_by_pathway, get_complex_components_by_pathway
 
 
-def add_edges_from_product(G, c1, c2, color, reaction, verbose=False):
+def add_edges_from_product(G, c1, c2, color, reaction, complex, verbose=False):
     for i in c1:
         for j in c2:
             if i != j:
-                G.add_edge(i, j, edge_color=color, reaction=reaction)
+                G.add_edge(i, j, edge_color=color, reaction=reaction, complex=complex)
                 if verbose:
                     print(f"Added edge from: {i} to {j}")
 
 
-def add_edges(G, inputs, outputs, catalysts, regulators, reaction, verbose=False):
-    print(f"\n\nReaction: {reaction}:\nInputs: {inputs}\nCatalysts: {catalysts}\nOutputs: {outputs}\nRegulators: {regulators}")
-    add_edges_from_product(G, inputs, outputs, "black", reaction, True)
-    add_edges_from_product(G, catalysts, outputs, "green", reaction, True)
-    add_edges_from_product(G, regulators, outputs, "red", reaction, True)
+def add_edges(g, inputs, outputs, catalysts, regulators, reaction, verbose=True):
+    if verbose:
+        print(
+            f"\n\nReaction: {reaction}:\nInputs: {inputs}\nCatalysts: {catalysts}\nOutputs: {outputs}\nRegulators: {regulators}")
+    add_edges_from_product(g, inputs, outputs, "black", reaction, "", True)
+    add_edges_from_product(g, catalysts, outputs, "green", reaction, "", True)
+    add_edges_from_product(g, regulators, outputs, "red", reaction, "", True)
 
 
-def create_graph(df, directed=False, showSmallMolecules=True):
-    """
-    Converts a set of reactions with its participants into a graph
-
-    :param df: Pandas dataframe with reactions and its participants
-    :param directed: True creates a directed graph, False an undirected graph
-    :param showSmallMolecules: False shows only EntityWithAccessionSequence participants
-    :return: networkx graph with the interaction network representation of the reactions
-    """
-
-    df['Name'] = df['Name'].apply(lambda x: re.sub("\s*\[[\s\w]*\]\s*", '', x))
-
-    # TODO Connect complex neighbours
-
-    # Add all nodes
-    G = nx.Graph()
-
+def connect_reaction_participants(g, df, directed=False, verbose=True):
     reaction = df.iloc[1]['Reaction']
     inputs = set()
     outputs = set()
     catalysts = set()
     regulators = set()
     for index, participant in df.iterrows():
-        G.add_node(participant['Id'],
+        g.add_node(participant['Id'],
                    type=participant['Type'],
                    role=participant['Role'],
                    reaction=participant['Reaction'])
         if reaction != participant["Reaction"]:
-            add_edges(G, inputs, outputs, catalysts, regulators, reaction, True)
+            add_edges(g, inputs, outputs, catalysts, regulators, reaction)
             reaction = participant["Reaction"]
             inputs = set()
             outputs = set()
@@ -64,17 +48,59 @@ def create_graph(df, directed=False, showSmallMolecules=True):
         elif participant['Role'] == 'catalystActivity':
             catalysts.add(participant['Id'])
     reaction = df.iloc[-1]['Reaction']
-    add_edges(G, inputs, outputs, catalysts, regulators, reaction, True)
+    add_edges(g, inputs, outputs, catalysts, regulators, reaction, True)
 
-    print(f"Added {len(G.nodes)} nodes to the graph.")
-    print(f"Added {len(G.edges)} edges to the graph.")
+    if (verbose):
+        print(f"From reactions, added {len(g.nodes)} nodes to the graph.")
+        print(f"From reactions, added {len(g.edges)} edges to the graph.")
+
+
+def connect_complex_components(g, df, directed=False, verbose=True):
+    complex = df.iloc[1]['Complex']
+    components = set()
+
+    for index, record in df.iterrows():
+        if not g.has_node(record['Id']):
+            g.add_node(record['Id'], type=record['Type'], complex=record['Complex'])
+
+        if complex != record['Complex']:
+            add_edges_from_product(g, components, components, "blue", "", complex)
+            components = set()
+        components.add(record['Id'])
+    complex = df.iloc[-1]['Complex']
+    add_edges_from_product(g, components, components, "blue", "", complex)
+
+    if (verbose):
+        print(f"From complexes, added {len(g.nodes)} nodes to the graph.")
+        print(f"From complexes, added {len(g.edges)} edges to the graph.")
+
+
+def create_graph(pathway, level="proteins", directed=False, showSmallMolecules=True, verbose=True):
+    """
+    Converts a set of reactions with its participants into a graph
+
+    :param df_reactions: Pandas dataframe with reactions and its participants
+    :param df_complexes: Pandas dataframe with complexes and its components
+    :param directed: True creates a directed graph, False an undirected graph
+    :param showSmallMolecules: False shows only EntityWithAccessionSequence participants
+    :return: networkx graph with the interaction network representation of the reactions
+    """
+
+    G = nx.Graph()
+
+    df_reactions = get_reaction_participants_by_pathway(pathway, showSmallMolecules=showSmallMolecules,
+                                                        level=level, verbose=verbose)
+    df_complexes = get_complex_components_by_pathway(pathway, showSmallMolecules=showSmallMolecules,
+                                                     level=level, verbose=verbose)
+
+    connect_reaction_participants(G, df_reactions, directed, verbose)
+    connect_complex_components(G, df_complexes, directed, verbose)
+
     return G
 
-
-df = get_reactions_and_participants_by_pathway("R-HSA-9634600", level="proteoforms")
-# print(df.columns)
-print(df[['Id', 'Role']])
-G = create_graph(df)
-print(G.nodes)
-print(G.edges)
-
+# df = get_reaction_participants_by_pathway("R-HSA-9634600", level="proteoforms")
+# print(df_reactions.columns)
+# print(df[['Id', 'Role']])
+# g = create_graph(df)
+# print(g.nodes)
+# print(g.edges)

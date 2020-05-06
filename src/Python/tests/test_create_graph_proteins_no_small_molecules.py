@@ -1,31 +1,30 @@
 import pytest
 
 from Python.interaction_network import create_graph
-from Python.network_topology_queries import get_reactions_and_participants_by_pathway
+from Python.network_topology_queries import get_reaction_participants_by_pathway
 
 
 # Test graph creation with genes and small molecules disabled
 class TestGeneNetworkNoSmallMoleculesClass:
+    # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
+    G_glycolysis = create_graph("R-HSA-9634600", level="proteins", showSmallMolecules=False)
 
-    @pytest.fixture()
-    def setup_gene_participants(self, scope='class'):
-        print("\nSetup Class")
-        df = get_reactions_and_participants_by_pathway("R-HSA-9634600", level="proteins", showSmallMolecules=False)
-        return create_graph(df)
+    # Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
+    G_traffic = create_graph("R-HSA-5627083", level="proteins", showSmallMolecules=False)
 
-    def test_create_graph_num_edges(self, setup_gene_participants):
-        G = setup_gene_participants
+    def test_create_graph_num_edges(self):
+        G = TestGeneNetworkNoSmallMoleculesClass.G_glycolysis
         print(G.edges)
-        assert len(G.edges) == 8
+        assert len(G.edges) == 18
 
-    def test_create_graph_num_vertices(self, setup_gene_participants):
-        G = setup_gene_participants
+    def test_create_graph_num_vertices(self):
+        G = TestGeneNetworkNoSmallMoleculesClass.G_glycolysis
         print(G.nodes)
         assert len(G.nodes) == 12
 
     # Test: Receive a Reaction with a direct participant EWAS input and a Simple entity output --> connects them
-    def test_connects_inputs_with_outputs(self, setup_gene_participants):
-        G = setup_gene_participants
+    def test_connects_inputs_with_outputs(self):
+        G = TestGeneNetworkNoSmallMoleculesClass.G_glycolysis
         # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
 
         # Input to output interactions for reaction R-HSA-163750
@@ -45,8 +44,8 @@ class TestGeneNetworkNoSmallMoleculesClass:
         assert not ("ATP", "D-Fructose 2,6-bisphosphate") in G.edges
         assert not ("ATP", "ADP") in G.edges
 
-    def test_connects_catalysts_with_outputs(self, setup_gene_participants):
-        G = setup_gene_participants
+    def test_connects_catalysts_with_outputs(self):
+        G = TestGeneNetworkNoSmallMoleculesClass.G_glycolysis
         # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
 
         # Catalysts to output interactions for reaction R-HSA-163773:
@@ -83,8 +82,7 @@ class TestGeneNetworkNoSmallMoleculesClass:
         assert not ("O60825", "ADP") in G.edges
 
     def test_connects_regulators_with_outputs(self):
-        df = get_reactions_and_participants_by_pathway("R-HSA-5627083", level="proteins", showSmallMolecules=False)
-        G = create_graph(df)
+        G = TestGeneNetworkNoSmallMoleculesClass.G_traffic
         # Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
 
         # Regulator to output interactions for reaction R-HSA-5627071:
@@ -107,3 +105,17 @@ class TestGeneNetworkNoSmallMoleculesClass:
         assert not ("Q9HD26", "GTP") in G.edges
         assert not ("P13569", "GTP") in G.edges
         assert not ("GTP", "GTP") in G.edges
+
+    def test_connects_components_of_same_complex(self):
+        G = TestGeneNetworkNoSmallMoleculesClass.G_glycolysis
+
+        # As part of PP2A-ABdeltaC complex R-HSA-165961
+        assert not ("P30153", "P30153") in G.edges
+        assert ("P30153", "P30154") in G.edges
+        assert ("P30154", "P30153") in G.edges
+        assert ("P30153", "P67775") in G.edges
+        assert ("P30153", "P62714") in G.edges
+        assert ("P30153", "Q14738") in G.edges
+        assert ("Q14738", "P30154") in G.edges
+        assert ("Q14738", "P30153") in G.edges
+        assert ("Q14738", "P62714") in G.edges
