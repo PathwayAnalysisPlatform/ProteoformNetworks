@@ -247,7 +247,7 @@ std::map<const std::string, um<int, int>> calculate_and_report_sizes(std::string
                                                                      const bimap_str_int &groups) {
     std::map<const std::string, um<int, int>> sizes;
 
-    for (const auto &level : levels) {
+    for (const auto &level : LEVELS) {
         std::string file_name = path_reports.data() + static_cast<std::string>("module_sizes_") + level + ".tsv";
         std::ofstream output(file_name);
 

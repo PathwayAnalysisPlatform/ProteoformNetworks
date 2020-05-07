@@ -43,7 +43,7 @@ void doOverlapAnalysis(
             traits, true);
 
     int num_modules = all_modules.begin()->second.group_to_members.size();
-    for (const auto &level : levels){
+    for (const auto &level : LEVELS){
         std::cerr << "Num " << level << " modules: " << all_modules.at(level).group_to_members.size() << std::endl;
         assert(num_modules == all_modules.at(level).group_to_members.size());
     }
@@ -63,7 +63,7 @@ void doOverlapAnalysis(
             traits, false);
 
     num_modules = all_modules.begin()->second.group_to_members.size();
-    for (const auto &level : levels){
+    for (const auto &level : LEVELS){
         std::cerr << "Num " << level << " modules: " << all_modules.at(level).group_to_members.size() << std::endl;
         assert(num_modules == all_modules.at(level).group_to_members.size());
     }
@@ -72,9 +72,9 @@ void doOverlapAnalysis(
 //     Calculate scores with Overlap Similarity
     std::cout << "Reading interaction networks...\n";
     const std::map<const std::string, const vusi> interactions = {
-            {levels.at(0), loadInteractionNetwork(path_file_gene_interactions, genes, true)},
-            {levels.at(1), loadInteractionNetwork(path_file_protein_interactions, proteins, true)},
-            {levels.at(2), loadInteractionNetwork(path_file_proteoform_interactions, proteoforms, true)}
+            {LEVELS.at(0), loadInteractionNetwork(path_file_gene_interactions, genes, true)},
+            {LEVELS.at(1), loadInteractionNetwork(path_file_protein_interactions, proteins, true)},
+            {LEVELS.at(2), loadInteractionNetwork(path_file_proteoform_interactions, proteoforms, true)}
     };
     std::cout << "Calculating module pairs overlap.\n\n";
     report_pairs_overlap_data(path_reports, all_modules, interactions, traits, MIN_MODULE_SIZE, MAX_MODULE_SIZE);
@@ -119,7 +119,7 @@ void report_node_overlap_reduction_examples(std::string path_scores, std::string
 }
 
 // Create or read module files at the three levels: all in one, and single module files.
-// There should be three files with all modules, one for genes, one for proteins and one for protoeforms.
+// There should be three files with all modules, one for genes, one for proteins and one for proteoforms.
 // There should be three more files for each single trait in an individual file.
 std::map<const std::string, const modules>
 get_or_create_modules(const std::string &path_modules, std::string_view path_file_phegeni,
@@ -178,11 +178,11 @@ get_or_create_modules(const std::string &path_modules, std::string_view path_fil
 
     return {
             {
-                    levels.at(0), gene_modules},
+                    LEVELS.at(0), gene_modules},
             {
-                    levels.at(1), protein_modules},
+                    LEVELS.at(1), protein_modules},
             {
-                    levels.at(2), proteoform_modules}
+                    LEVELS.at(2), proteoform_modules}
     };
 }
 
@@ -233,10 +233,10 @@ void report_pairs_overlap_data(const std::string &path_out,
                                const int min_module_size, const int max_module_size) {
 
     std::cout << "Calculating overlap sizes at " << "genes" << " level. " << std::endl;
-    auto overlap_sizes_proteoforms = getScores(all_modules.at(levels[2]).group_to_members, getOverlapSize,
+    auto overlap_sizes_proteoforms = getScores(all_modules.at(LEVELS[2]).group_to_members, getOverlapSize,
                                                min_module_size, max_module_size);
 
-    for (const auto &level : levels) {
+    for (const auto &level : LEVELS) {
         std::cout << "Calculating overlap sizes at " << level << " level. " << std::endl;
         auto overlap_sizes = getScores(all_modules.at(level).group_to_members, getOverlapSize,
                                        overlap_sizes_proteoforms);
@@ -272,7 +272,7 @@ void report_module_size_variation(std::string_view path_reports,
     // Check sizes of modules
     // Calculate how many empty modules exist, for genes, proteins and proteoforms
     std::cout << "Total number of possible modules is: " << traits.int_to_str.size() << std::endl;
-    for (const auto &level : levels)
+    for (const auto &level : LEVELS)
         std::cout << "Number of non-empty modules for " << level << ": " << sizes.at(level).size() << std::endl;
 
     std::ofstream output(path_reports.data() + static_cast<std::string>("sizes_variation.tsv"));
@@ -284,27 +284,27 @@ void report_module_size_variation(std::string_view path_reports,
     }
 
     output << "TRAIT\tGENES_TO_PROTEINS\tPROTEINS_TO_PROTEOFORMS\n";
-    for (const auto &module_entry : sizes.at(levels.at(0))) {
+    for (const auto &module_entry : sizes.at(LEVELS.at(0))) {
         output << module_entry.first << "\t";
 
         // Difference genes --> proteins
-        if (hasKey(sizes.at(levels.at(1)), module_entry.first)) {
-            output << sizes.at(levels.at(1)).at(module_entry.first) - sizes.at(levels.at(0)).at(module_entry.first);
+        if (hasKey(sizes.at(LEVELS.at(1)), module_entry.first)) {
+            output << sizes.at(LEVELS.at(1)).at(module_entry.first) - sizes.at(LEVELS.at(0)).at(module_entry.first);
         } else {
-            output << -sizes.at(levels.at(0)).at(module_entry.first);
+            output << -sizes.at(LEVELS.at(0)).at(module_entry.first);
         }
         output << "\t";
 
         // Difference proteins --> proteoforms
-        if (hasKey(sizes.at(levels.at(1)), module_entry.first)) {
-            if (hasKey(sizes.at(levels.at(2)), module_entry.first)) {
-                output << sizes.at(levels.at(2)).at(module_entry.first) - sizes.at(levels.at(1)).at(module_entry.first);
+        if (hasKey(sizes.at(LEVELS.at(1)), module_entry.first)) {
+            if (hasKey(sizes.at(LEVELS.at(2)), module_entry.first)) {
+                output << sizes.at(LEVELS.at(2)).at(module_entry.first) - sizes.at(LEVELS.at(1)).at(module_entry.first);
             } else {
-                output << -sizes.at(levels.at(1)).at(module_entry.first);
+                output << -sizes.at(LEVELS.at(1)).at(module_entry.first);
             }
         } else {
-            if (hasKey(sizes.at(levels.at(2)), module_entry.first)) {
-                output << sizes.at(levels.at(2)).at(module_entry.first);
+            if (hasKey(sizes.at(LEVELS.at(2)), module_entry.first)) {
+                output << sizes.at(LEVELS.at(2)).at(module_entry.first);
             } else {
                 output << 0;
             }
@@ -348,4 +348,5 @@ void report_overlap_only_ptms(std::string string, const score_maps maps, const b
     // Report that pair of modules with the modifications of the proteins
 }
 
-// TODO: Test example of overlap pairs Adiponectin and Glomerular Filtration Rate. Check why the protein P15692 is not in the proteoform module of Glomerular Filtration Rate.
+// TODO: Test example of overlap pairs Adiponectin and Glomerular Filtration Rate.
+//  Check why the protein P15692 is not in the proteoform module of Glomerular Filtration Rate.

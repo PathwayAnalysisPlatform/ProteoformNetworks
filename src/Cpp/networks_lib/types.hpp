@@ -11,7 +11,7 @@
 #include <set>
 #include <utility>
 
-const std::vector<std::string> levels = {"genes", "proteins", "proteoforms"};
+const std::vector<std::string> LEVELS = {"genes", "proteins", "proteoforms"};
 
 using msi = std::map<std::string, int>;
 using msb = std::map<std::string, base::dynamic_bitset<>>;

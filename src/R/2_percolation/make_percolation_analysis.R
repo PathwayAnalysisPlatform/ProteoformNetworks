@@ -279,7 +279,7 @@ degrees.frequencies <- rbind(mm.g1.frequencies, mm.g2.frequencies)
 MakeDistributionPlot <- function(density.binned, degrees.frequencies, colors = c("blue3", "green3", "red3")) {
   plot <- ggplot() +
     geom_point(data = degrees.frequencies, aes(x = Degree, y = Frequency, color = Entity), alpha = 0.2) +
-    #geom_line(data = density.binned, aes(x = degree, y = p, color = Entity), size = 1, linetype = "dashed") +
+    #geom_line(data = density.binned, aes(scores = degree, y = p, color = Entity), size = 1, linetype = "dashed") +
     scale_color_manual(values = colors) +
     scale_x_continuous("Degree", trans = "log2", breaks = 2^(0:20)) +
     scale_y_continuous("Frequency", trans = "log2") +
