@@ -3,6 +3,9 @@ import re
 from config import LEVELS
 from lib.graph_database import get_query_result
 
+def get_pathway_name(pathway):
+    query = f"MATCH (p:Pathway{{stId:\"{pathway}\"}}) RETURN p.displayName as Name"
+    return get_query_result(query)
 
 def get_pathways():
     query = "MATCH (p:Pathway{speciesName:\"Homo sapiens\"})\nRETURN p.stId as stId, p.displayName as displayName"
@@ -38,6 +41,9 @@ def fix_neo4j_values(df, level):
     :param level: "genes", "proteins" or "proteoforms"
     :return: Pandas dataframe with the values fixed
     """
+    if len(df) == 0:
+        return df
+
     df['Id'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.Id) if x.Type == 'SimpleEntity' else x.Id, axis=1)
     if level == "proteoforms":
         df['Id'] = df['Id'].apply(make_proteoform_string)

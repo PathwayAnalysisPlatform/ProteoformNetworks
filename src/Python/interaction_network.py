@@ -1,14 +1,15 @@
 import networkx as nx
 
-from config import LEVELS_COLOR, get_entity_color
+from config import LEVELS_COLOR, get_entity_color, COLOR_IO, COLOR_CO, COLOR_RO, COLOR_CC, EDGES_WEIGHT_IN_REACTION, \
+    EDGES_WEIGHT_IN_COMPLEX
 from network_topology_queries import get_reaction_participants_by_pathway, get_complex_components_by_pathway
 
 
-def add_edges_from_product(G, c1, c2, color, reaction, complex, verbose=False):
+def add_edges_from_product(G, c1, c2, color, reaction, complex, weight=1, verbose=False):
     for i in c1:
         for j in c2:
             if i != j:
-                G.add_edge(i, j, edge_color=color, reaction=reaction, complex=complex)
+                G.add_edge(i, j, edge_color=color, reaction=reaction, complex=complex, weight=weight)
                 if verbose:
                     print(f"Added edge from: {i} to {j}")
 
@@ -17,12 +18,14 @@ def add_edges(g, inputs, outputs, catalysts, regulators, reaction, verbose=True)
     if verbose:
         print(
             f"\n\nReaction: {reaction}:\nInputs: {inputs}\nCatalysts: {catalysts}\nOutputs: {outputs}\nRegulators: {regulators}")
-    add_edges_from_product(g, inputs, outputs, "black", reaction, "", True)
-    add_edges_from_product(g, catalysts, outputs, "green", reaction, "", True)
-    add_edges_from_product(g, regulators, outputs, "red", reaction, "", True)
+    add_edges_from_product(g, inputs, outputs, COLOR_IO, reaction, "", EDGES_WEIGHT_IN_REACTION, verbose)
+    add_edges_from_product(g, catalysts, outputs, COLOR_CO, reaction, "", EDGES_WEIGHT_IN_REACTION, verbose)
+    add_edges_from_product(g, regulators, outputs, COLOR_RO, reaction, "", EDGES_WEIGHT_IN_REACTION, verbose)
 
 
 def connect_reaction_participants(g, df, directed=False, level="proteins", verbose=True):
+    if len(df) == 0:
+        return g
     reaction = df.iloc[1]['Reaction']
     inputs = set()
     outputs = set()
@@ -35,7 +38,7 @@ def connect_reaction_participants(g, df, directed=False, level="proteins", verbo
                    reaction=participant['Reaction'],
                    color=get_entity_color(participant["Type"], level))
         if reaction != participant["Reaction"]:
-            add_edges(g, inputs, outputs, catalysts, regulators, reaction)
+            add_edges(g, inputs, outputs, catalysts, regulators, reaction, verbose=verbose)
             reaction = participant["Reaction"]
             inputs = set()
             outputs = set()
@@ -50,7 +53,7 @@ def connect_reaction_participants(g, df, directed=False, level="proteins", verbo
         elif participant['Role'] == 'catalystActivity':
             catalysts.add(participant['Id'])
     reaction = df.iloc[-1]['Reaction']
-    add_edges(g, inputs, outputs, catalysts, regulators, reaction, True)
+    add_edges(g, inputs, outputs, catalysts, regulators, reaction, verbose=verbose)
 
     if (verbose):
         print(f"From reactions, added {len(g.nodes)} nodes to the graph.")
@@ -58,6 +61,8 @@ def connect_reaction_participants(g, df, directed=False, level="proteins", verbo
 
 
 def connect_complex_components(g, df, directed=False, level="proteins", verbose=True):
+    if len(df) == 0:
+        return g
     complex = df.iloc[1]['Complex']
     components = set()
 
@@ -69,11 +74,11 @@ def connect_complex_components(g, df, directed=False, level="proteins", verbose=
                        color=get_entity_color(record["Type"], level))
 
         if complex != record['Complex']:
-            add_edges_from_product(g, components, components, "blue", "", complex)
+            add_edges_from_product(g, components, components, COLOR_CC, "", complex, EDGES_WEIGHT_IN_COMPLEX, verbose=verbose)
             components = set()
         components.add(record['Id'])
     complex = df.iloc[-1]['Complex']
-    add_edges_from_product(g, components, components, "blue", "", complex)
+    add_edges_from_product(g, components, components, COLOR_CC, "", complex, EDGES_WEIGHT_IN_COMPLEX, verbose=verbose)
 
     if (verbose):
         print(f"From complexes, added {len(g.nodes)} nodes to the graph.")

@@ -31,3 +31,11 @@ def get_entity_color(type, level):
         return '#8DC7C5'
     else:
         return LEVELS_COLOR[level]
+
+COLOR_IO = "black"
+COLOR_CO = "orange"
+COLOR_RO = "red"
+COLOR_CC = "dodgerblue"
+
+EDGES_WEIGHT_IN_REACTION = 1
+EDGES_WEIGHT_IN_COMPLEX = 50

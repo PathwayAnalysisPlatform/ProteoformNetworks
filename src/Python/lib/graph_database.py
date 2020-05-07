@@ -23,7 +23,10 @@ class GraphDatabaseAccess:
     def get_result(self, query):
         with self.driver.session() as session:
             records = session.read_transaction(self.get_records, query)
-            df = pd.DataFrame([r.values() for r in records], columns=records[0].keys())
+            if len(records) > 0:
+                df = pd.DataFrame([r.values() for r in records], columns=records[0].keys())
+            else:
+                df = pd.DataFrame()
             return df
 
     @staticmethod
