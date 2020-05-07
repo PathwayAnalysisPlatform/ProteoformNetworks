@@ -1,35 +1,55 @@
 # %%
 import networkx as nx
-from bokeh.io import output_file, show
-from bokeh.models import Plot, Range1d, BoxZoomTool, ResetTool, Circle, MultiLine
+from bokeh.io import show
+from bokeh.models import Plot, Range1d, BoxZoomTool, ResetTool, Circle, HoverTool, MultiLine
 from bokeh.models.graphs import from_networkx
 
 from Python.interaction_network import create_graph
-from Python.network_topology_queries import get_reactions_and_participants_by_pathway
 
 
-def plot_graph(G, title=""):
+def plot_pathway(pathway, level="proteins", directed=False, showSmallMolecules=True, verbose=True):
+    G = create_graph(pathway, level, directed, showSmallMolecules, verbose)
+    P = plot_graph(G)
+    return P
 
-    SMALL_MOLECULES = '#8DC7C5'
-    PROTEINS = "teal"
 
-    plot = Plot(plot_width=400, plot_height=400,
-                x_range=Range1d(-1.1, 1.1), y_range=Range1d(-1.1, 1.1))
-    plot.title.text = "Graph Interaction Demonstration"
+def plot_graph(G):
+    """
+    Plots the interaction network represented by Graph G
+    :param G: networkx graph, it must have attributes "stId" with the Pathway id
+    :return: the figure
+    """
 
-    plot.add_tools(BoxZoomTool(), ResetTool())
+    plot = Plot(plot_width=250, plot_height=250,
+                x_range=Range1d(-1.1, 1.1), y_range=Range1d(-1.1, 1.1),
+                toolbar_location="below")
+    plot.title.text = G.graph["level"].title()
+    plot.title.text_font_size = '12pt'
+
+    TOOLTIPS = """
+            <div>
+                <span style="font-size: 18px; font-weight: bold;">Name: @index</span>
+            </div>
+            <div>
+                <span style="font-size: 18px; font-weight: bold; color: @color;">Type: @type</span>
+            </div>
+        """
+
+    node_hover_tool = HoverTool(tooltips=TOOLTIPS)
+    plot.add_tools(node_hover_tool, BoxZoomTool(), ResetTool())
 
     graph_renderer = from_networkx(G, nx.spring_layout, scale=1, center=(0, 0))
 
-    spectral = ('#084594', '#2171b5', '#4292c6', '#6baed6', '#9ecae1', '#c6dbef', '#deebf7', '#f7fbff')
-    graph_renderer.node_renderer.glyph = Circle(size=15, fill_color=spectral[0])
-    # graph_renderer.edge_renderer.glyph = MultiLine(line_color="edge_color", line_alpha=0.8, line_width=2)
+    graph_renderer.node_renderer.glyph = Circle(size=10, fill_color="color")
+    graph_renderer.edge_renderer.glyph = MultiLine(line_color="edge_color", line_alpha=0.8, line_width=2)
     plot.renderers.append(graph_renderer)
 
-    output_file("graph.html")
     show(plot)
     return plot
 
-df = get_reactions_and_participants_by_pathway("R-HSA-70171")
-G = create_graph(df)
-plot_graph(G)
+
+def plot_pathway_all_levels():
+    pass
+
+
+plot_pathway("R-HSA-9634600", level="proteins")

@@ -1,5 +1,6 @@
 import networkx as nx
 
+from Python.config import LEVELS_COLOR, get_entity_color
 from Python.network_topology_queries import get_reaction_participants_by_pathway, get_complex_components_by_pathway
 
 
@@ -21,7 +22,7 @@ def add_edges(g, inputs, outputs, catalysts, regulators, reaction, verbose=True)
     add_edges_from_product(g, regulators, outputs, "red", reaction, "", True)
 
 
-def connect_reaction_participants(g, df, directed=False, verbose=True):
+def connect_reaction_participants(g, df, directed=False, level="proteins", verbose=True):
     reaction = df.iloc[1]['Reaction']
     inputs = set()
     outputs = set()
@@ -29,9 +30,10 @@ def connect_reaction_participants(g, df, directed=False, verbose=True):
     regulators = set()
     for index, participant in df.iterrows():
         g.add_node(participant['Id'],
-                   type=participant['Type'],
+                   type=(participant['Type'] if participant["Type"] == "SimpleEntity" else level[:-1]),
                    role=participant['Role'],
-                   reaction=participant['Reaction'])
+                   reaction=participant['Reaction'],
+                   color=get_entity_color(participant["Type"], level))
         if reaction != participant["Reaction"]:
             add_edges(g, inputs, outputs, catalysts, regulators, reaction)
             reaction = participant["Reaction"]
@@ -55,13 +57,16 @@ def connect_reaction_participants(g, df, directed=False, verbose=True):
         print(f"From reactions, added {len(g.edges)} edges to the graph.")
 
 
-def connect_complex_components(g, df, directed=False, verbose=True):
+def connect_complex_components(g, df, directed=False, level="proteins", verbose=True):
     complex = df.iloc[1]['Complex']
     components = set()
 
     for index, record in df.iterrows():
         if not g.has_node(record['Id']):
-            g.add_node(record['Id'], type=record['Type'], complex=record['Complex'])
+            g.add_node(record['Id'],
+                       type=(record['Type'] if record["Type"] == "SimpleEntity" else level[:-1]),
+                       complex=record['Complex'],
+                       color=get_entity_color(record["Type"], level))
 
         if complex != record['Complex']:
             add_edges_from_product(g, components, components, "blue", "", complex)
@@ -87,14 +92,17 @@ def create_graph(pathway, level="proteins", directed=False, showSmallMolecules=T
     """
 
     G = nx.Graph()
+    G.graph["stId"] = pathway
+    G.graph["level"] = level
+    G.graph["showSmallMolecules"] = showSmallMolecules
 
     df_reactions = get_reaction_participants_by_pathway(pathway, showSmallMolecules=showSmallMolecules,
                                                         level=level, verbose=verbose)
     df_complexes = get_complex_components_by_pathway(pathway, showSmallMolecules=showSmallMolecules,
                                                      level=level, verbose=verbose)
 
-    connect_reaction_participants(G, df_reactions, directed, verbose)
-    connect_complex_components(G, df_complexes, directed, verbose)
+    connect_reaction_participants(G, df_reactions, directed, level, verbose)
+    connect_complex_components(G, df_complexes, directed, level, verbose)
 
     return G
 

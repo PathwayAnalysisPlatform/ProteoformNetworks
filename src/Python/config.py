@@ -2,6 +2,7 @@ import os
 import sys
 
 LEVELS = ["genes", "proteins", "proteoforms"]
+LEVELS_COLOR = {"genes": "gray", "proteins": "teal", "proteoforms": "green"}
 
 PATH_REACTOME = "resources/reactome/v72/"
 FILE_REACTOME_GENES = "genes/all_genes_v72.csv"         # these paths are the suffix of PATH_REACTOME
@@ -23,3 +24,10 @@ def set_root_wd():
     """
     os.chdir(os.path.dirname(os.path.abspath(sys.executable)) + "\\..\\..")
     print(f"Working directory: {os.getcwd()}")
+
+
+def get_entity_color(type, level):
+    if type == "SimpleEntity":
+        return '#8DC7C5'
+    else:
+        return LEVELS_COLOR[level]
