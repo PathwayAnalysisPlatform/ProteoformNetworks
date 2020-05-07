@@ -4,8 +4,8 @@ import re
 import networkx as nx
 import pandas as pd
 
-from Python.config import LEVELS
-from Python.lib.download import download_if_not_exists
+from config import LEVELS
+from lib.download import download_if_not_exists
 
 
 def read_scores(file_name):

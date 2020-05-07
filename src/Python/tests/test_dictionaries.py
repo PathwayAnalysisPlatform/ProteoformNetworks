@@ -1,7 +1,7 @@
 import os
 from unittest import TestCase
 
-from Python.lib.dictionaries import read_dictionary_one_to_set, write_dictionary_one_to_one, convert_tab_to_dict, \
+from lib.dictionaries import read_dictionary_one_to_set, write_dictionary_one_to_one, convert_tab_to_dict, \
     write_dictionary_one_to_set, read_set_from_columns, get_intersection, in_dictionary, flatten_dictionary
 
 

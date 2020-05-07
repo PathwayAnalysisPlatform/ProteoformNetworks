@@ -1,7 +1,7 @@
 import re
 
-from Python.config import LEVELS
-from Python.lib.graph_database import get_query_result
+from config import LEVELS
+from lib.graph_database import get_query_result
 
 
 def get_pathways():

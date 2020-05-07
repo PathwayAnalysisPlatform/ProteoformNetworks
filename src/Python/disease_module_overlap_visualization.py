@@ -9,8 +9,8 @@ from bokeh.models.graphs import from_networkx
 
 # Plot the frequency of each overlap score
 # Only considers positive scores, where sets overlap.
-from Python.config import LEVELS
-from Python.lib.data_read_write import get_graph
+from config import LEVELS
+from lib.data_read_write import get_graph
 
 
 def plot_scores(scores, score_label='overlap'):

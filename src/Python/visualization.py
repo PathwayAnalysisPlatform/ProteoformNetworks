@@ -1,10 +1,10 @@
 # %%
+import os
 import networkx as nx
-from bokeh.io import show
+from bokeh.io import show, output_file
 from bokeh.models import Plot, Range1d, BoxZoomTool, ResetTool, Circle, HoverTool, MultiLine
 from bokeh.models.graphs import from_networkx
-
-from Python.interaction_network import create_graph
+from interaction_network import create_graph
 
 
 def plot_pathway(pathway, level="proteins", directed=False, showSmallMolecules=True, verbose=True):
@@ -44,6 +44,7 @@ def plot_graph(G):
     graph_renderer.edge_renderer.glyph = MultiLine(line_color="edge_color", line_alpha=0.8, line_width=2)
     plot.renderers.append(graph_renderer)
 
+    output_file("network.html")
     show(plot)
     return plot
 
@@ -52,4 +53,5 @@ def plot_pathway_all_levels():
     pass
 
 
-plot_pathway("R-HSA-9634600", level="proteins")
+# print(f"Located at: {os. getcwd()}")
+# plot_pathway("R-HSA-9634600", level="proteins")

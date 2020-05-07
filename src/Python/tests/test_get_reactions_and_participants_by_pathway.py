@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from Python.network_topology_queries import get_reaction_participants_by_pathway, get_pathways, \
+from network_topology_queries import get_reaction_participants_by_pathway, get_pathways, \
     get_reactions_by_pathway
 
 

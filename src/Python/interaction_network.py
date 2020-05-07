@@ -1,7 +1,7 @@
 import networkx as nx
 
-from Python.config import LEVELS_COLOR, get_entity_color
-from Python.network_topology_queries import get_reaction_participants_by_pathway, get_complex_components_by_pathway
+from config import LEVELS_COLOR, get_entity_color
+from network_topology_queries import get_reaction_participants_by_pathway, get_complex_components_by_pathway
 
 
 def add_edges_from_product(G, c1, c2, color, reaction, complex, verbose=False):

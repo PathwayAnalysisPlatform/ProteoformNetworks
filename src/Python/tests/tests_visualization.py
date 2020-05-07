@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from Python.lib.data_read_write import get_graph
+from lib.data_read_write import get_graph
 
 
 class TestPlotModulePair(unittest.TestCase):

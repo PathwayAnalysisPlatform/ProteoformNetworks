@@ -1,7 +1,7 @@
 import pytest
 
-from Python.interaction_network import create_graph
-from Python.network_topology_queries import get_reaction_participants_by_pathway
+from interaction_network import create_graph
+from network_topology_queries import get_reaction_participants_by_pathway
 
 
 class TestGeneNetworkClass:

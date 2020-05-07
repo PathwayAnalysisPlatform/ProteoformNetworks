@@ -1,4 +1,4 @@
-from Python.interaction_network import create_graph
+from interaction_network import create_graph
 
 
 # Test graph creation for proteins
