@@ -187,7 +187,11 @@ def plot_module_pair(trait1, trait2, path_to_modules, path_to_figures):
             f"<span style=\"color:blue;\">{trait2}</span>" \
             f"</p>"
 
-    show(layout([[Div(text=f"{title}")], figures_complete_modules, figures_interfaces]))
+    show(layout([
+        [Div(text=f"{title}")],
+        figures_complete_modules,
+        figures_interfaces
+    ]))
 
 
 def plot_overlap_graph(level, graph):

@@ -2,7 +2,7 @@ import os
 import sys
 
 LEVELS = ["genes", "proteins", "proteoforms"]
-LEVELS_COLOR = {"genes": "gray", "proteins": "teal", "proteoforms": "green"}
+LEVELS_COLOR = {"genes": "teal", "proteins": "teal", "proteoforms": "teal"}
 
 PATH_REACTOME = "resources/reactome/v72/"
 FILE_REACTOME_GENES = "genes/all_genes_v72.csv"         # these paths are the suffix of PATH_REACTOME

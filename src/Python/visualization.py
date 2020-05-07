@@ -2,8 +2,11 @@
 import os
 import networkx as nx
 from bokeh.io import show, output_file
-from bokeh.models import Plot, Range1d, BoxZoomTool, ResetTool, Circle, HoverTool, MultiLine
+from bokeh.layouts import layout
+from bokeh.models import Plot, Range1d, BoxZoomTool, ResetTool, Circle, HoverTool, MultiLine, Div
 from bokeh.models.graphs import from_networkx
+
+from config import LEVELS
 from interaction_network import create_graph
 
 
@@ -28,10 +31,10 @@ def plot_graph(G):
 
     TOOLTIPS = """
             <div>
-                <span style="font-size: 18px; font-weight: bold;">Name: @index</span>
+                <span style="font-size: 10px; font-weight: bold;">Name: @index</span>
             </div>
             <div>
-                <span style="font-size: 18px; font-weight: bold; color: @color;">Type: @type</span>
+                <span style="font-size: 10px; font-weight: bold; color: @color;">Type: @type</span>
             </div>
         """
 
@@ -44,14 +47,26 @@ def plot_graph(G):
     graph_renderer.edge_renderer.glyph = MultiLine(line_color="edge_color", line_alpha=0.8, line_width=2)
     plot.renderers.append(graph_renderer)
 
-    output_file("network.html")
-    show(plot)
+    # output_file(f"{G.graph['level']}_network.html")
+    # show(plot)
     return plot
 
 
-def plot_pathway_all_levels():
-    pass
+def plot_pathway_all_levels(pathway):
+    figures = [plot_pathway(pathway, level=level) for level in LEVELS]
+    figures_no_small_molecules = [plot_pathway(pathway, level=level, showSmallMolecules=False) for level in LEVELS]
 
+    output_file( f"{pathway}_network.html")
+    title = f"<p style=\"font-weight:bold;text-align:left;font-size:22px;width:1800px;\">" \
+            f"<span style=\"color:green;\">{pathway}</span>"\
+            f"</p>"
+
+    show(layout([
+        [Div(text=f"{title}")],
+        figures,
+        [Div(text=f"<p style=\"font-size:12px;\">Without small molecules</p>")],
+        figures_no_small_molecules
+    ]))
 
 # print(f"Located at: {os. getcwd()}")
-# plot_pathway("R-HSA-9634600", level="proteins")
+plot_pathway_all_levels("R-HSA-9634600")
