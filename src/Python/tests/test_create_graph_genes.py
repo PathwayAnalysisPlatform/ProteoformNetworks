@@ -6,14 +6,14 @@ from network_topology_queries import get_reaction_participants_by_pathway
 
 class TestGeneNetworkClass:
     # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
-    G_glycolysis = create_graph("R-HSA-9634600", level="genes")
+    G_glycolysis = create_graph("R-HSA-9634600", level="genes", showSmallMolecules=True, verbose=True)
 
     # Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
-    G_traffic = create_graph("R-HSA-5627083", level="genes")
+    G_traffic = create_graph("R-HSA-5627083", "genes", True, True)
 
     def test_create_graph_wrong_level_raises_exception(self):
         with pytest.raises(Exception):
-            get_reaction_participants_by_pathway("R-HSA-9634600", level="banana")
+            get_reaction_participants_by_pathway("R-HSA-9634600", "banana", True, True)
 
     def test_create_graph_num_edges(self):
         G = TestGeneNetworkClass.G_glycolysis

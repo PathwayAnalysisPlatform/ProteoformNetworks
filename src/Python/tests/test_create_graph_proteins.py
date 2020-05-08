@@ -4,10 +4,10 @@ from interaction_network import create_graph
 # Test graph creation for proteins
 class TestProteinNetworkClass:
     # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
-    G_glycolysis = create_graph("R-HSA-9634600", level="proteins")
+    G_glycolysis = create_graph("R-HSA-9634600", "proteins", True, False)
 
     # Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
-    G_traffic = create_graph("R-HSA-5627083", level="proteins")
+    G_traffic = create_graph("R-HSA-5627083", "proteins", True, False)
 
     def test_create_graph_num_edges(self):
         G = TestProteinNetworkClass.G_glycolysis

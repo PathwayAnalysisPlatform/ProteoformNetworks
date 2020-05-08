@@ -4,29 +4,29 @@ from interaction_network import create_graph
 # Test graph creation for proteins
 
 
-class TestProteoformNetworkClass:
+class TestProteoformNetworkNoSmallMoleculesClass:
     # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
-    G_glycolysis = create_graph("R-HSA-9634600", level="proteoforms", showSmallMolecules=False)
+    G_glycolysis = create_graph("R-HSA-9634600", "proteoforms", False)
 
     # Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
-    G_traffic = create_graph("R-HSA-5627083", level="proteoforms", showSmallMolecules=False)
+    G_traffic = create_graph("R-HSA-5627083", "proteoforms", False)
 
     # Pathway "FRS-mediated FGFR3 signaling" R-HSA-5654706
-    G_signal = create_graph("R-HSA-5654706", level="proteoforms", showSmallMolecules=False)
+    G_signal = create_graph("R-HSA-5654706", "proteoforms", False)
 
     def test_create_graph_num_edges(self):
-        G = TestProteoformNetworkClass.G_glycolysis
+        G = TestProteoformNetworkNoSmallMoleculesClass.G_glycolysis
         print(G.edges)
         assert len(G.edges) == 24
 
     def test_create_graph_num_vertices(self):
-        G = TestProteoformNetworkClass.G_glycolysis
+        G = TestProteoformNetworkNoSmallMoleculesClass.G_glycolysis
         print(G.nodes)
         assert len(G.nodes) == 13
 
     # Test: Receive a Reaction with a direct participant EWAS input and a Simple entity output --> connects them
     def test_connects_inputs_with_outputs(self):
-        G = TestProteoformNetworkClass.G_glycolysis
+        G = TestProteoformNetworkNoSmallMoleculesClass.G_glycolysis
         # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
 
         # Input to output interactions for reaction R-HSA-163773:
@@ -52,7 +52,7 @@ class TestProteoformNetworkClass:
 
     def test_does_not_connect_input_to_output_when_same_molecule(self):
         # Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
-        G = TestProteoformNetworkClass.G_traffic
+        G = TestProteoformNetworkNoSmallMoleculesClass.G_traffic
 
         # In reaction R-HSA-5627071 there are same set of proteoforms as input and output, since they are in
         # different sub cellular locations. Nevertheless, there are no self interactions in our network
@@ -62,7 +62,7 @@ class TestProteoformNetworkClass:
         assert not ("GTP", "GTP") in G.edges
 
     def test_connects_catalysts_with_outputs(self):
-        G = TestProteoformNetworkClass.G_glycolysis
+        G = TestProteoformNetworkNoSmallMoleculesClass.G_glycolysis
         # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
 
         # Catalysts to output interactions for reaction R-HSA-163773:
@@ -103,7 +103,7 @@ class TestProteoformNetworkClass:
 
     def test_connects_regulators_with_outputs(self):
         # Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
-        G = TestProteoformNetworkClass.G_traffic
+        G = TestProteoformNetworkNoSmallMoleculesClass.G_traffic
 
         # Regulator to output interactions for reaction R-HSA-5627071:
         assert ("P17081", "P13569") in G.edges
@@ -128,7 +128,7 @@ class TestProteoformNetworkClass:
 
     def test_connects_regulators_with_outputs_2(self):
         # Pathway "FRS-mediated FGFR3 signaling" R-HSA-5654706
-        G = TestProteoformNetworkClass.G_signal
+        G = TestProteoformNetworkNoSmallMoleculesClass.G_signal
         # In reaction R-HSA-5654408
         assert ("Q9NP95", "O43320") or ("O43320", "Q9NP95") in G.edges
         assert ("O60258-1", "Q9NP95") in G.edges
@@ -139,7 +139,7 @@ class TestProteoformNetworkClass:
         assert not ("HS", "O60258-1") in G.edges
 
     def test_connects_components_of_same_complex(self):
-        G = TestProteoformNetworkClass.G_glycolysis
+        G = TestProteoformNetworkNoSmallMoleculesClass.G_glycolysis
 
         # As part of PP2A-ABdeltaC complex R-HSA-165961
         assert not ("P30153", "P30153") in G.edges
@@ -153,7 +153,7 @@ class TestProteoformNetworkClass:
         assert ("Q14738", "P62714") in G.edges
 
     def test_connect_components_of_same_complex_2(self):
-        G = TestProteoformNetworkClass.G_signal
+        G = TestProteoformNetworkNoSmallMoleculesClass.G_signal
 
         assert not ("P01116-1;00115:179,01116:186", "GTP") in G.edges
         assert not ("P01111;00115:181,01116:186", "GTP") in G.edges

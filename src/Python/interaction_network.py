@@ -14,7 +14,7 @@ def add_edges_from_product(G, c1, c2, color, reaction, complex, weight=1, verbos
                     print(f"Added edge from: {i} to {j}")
 
 
-def add_edges(g, inputs, outputs, catalysts, regulators, reaction, verbose=True):
+def add_edges(g, inputs, outputs, catalysts, regulators, reaction, verbose):
     if verbose:
         print(
             f"\n\nReaction: {reaction}:\nInputs: {inputs}\nCatalysts: {catalysts}\nOutputs: {outputs}\nRegulators: {regulators}")
@@ -23,7 +23,7 @@ def add_edges(g, inputs, outputs, catalysts, regulators, reaction, verbose=True)
     add_edges_from_product(g, regulators, outputs, COLOR_RO, reaction, "", EDGES_WEIGHT_IN_REACTION, verbose)
 
 
-def connect_reaction_participants(g, df, directed=False, level="proteins", verbose=True):
+def connect_reaction_participants(g, df, level, verbose):
     if len(df) == 0:
         return g
     reaction = df.iloc[1]['Reaction']
@@ -38,7 +38,7 @@ def connect_reaction_participants(g, df, directed=False, level="proteins", verbo
                    reaction=participant['Reaction'],
                    color=get_entity_color(participant["Type"], level))
         if reaction != participant["Reaction"]:
-            add_edges(g, inputs, outputs, catalysts, regulators, reaction, verbose=verbose)
+            add_edges(g, inputs, outputs, catalysts, regulators, reaction, verbose)
             reaction = participant["Reaction"]
             inputs = set()
             outputs = set()
@@ -53,14 +53,14 @@ def connect_reaction_participants(g, df, directed=False, level="proteins", verbo
         elif participant['Role'] == 'catalystActivity':
             catalysts.add(participant['Id'])
     reaction = df.iloc[-1]['Reaction']
-    add_edges(g, inputs, outputs, catalysts, regulators, reaction, verbose=verbose)
+    add_edges(g, inputs, outputs, catalysts, regulators, reaction, verbose)
 
     if (verbose):
         print(f"From reactions, added {len(g.nodes)} nodes to the graph.")
         print(f"From reactions, added {len(g.edges)} edges to the graph.")
 
 
-def connect_complex_components(g, df, directed=False, level="proteins", verbose=True):
+def connect_complex_components(g, df, level="proteins", verbose=True):
     if len(df) == 0:
         return g
     complex = df.iloc[1]['Complex']
@@ -85,13 +85,12 @@ def connect_complex_components(g, df, directed=False, level="proteins", verbose=
         print(f"From complexes, added {len(g.edges)} edges to the graph.")
 
 
-def create_graph(pathway, level="proteins", directed=False, showSmallMolecules=True, verbose=True):
+def create_graph(pathway, level, showSmallMolecules, verbose=False):
     """
     Converts a set of reactions with its participants into a graph
 
     :param df_reactions: Pandas dataframe with reactions and its participants
     :param df_complexes: Pandas dataframe with complexes and its components
-    :param directed: True creates a directed graph, False an undirected graph
     :param showSmallMolecules: False shows only EntityWithAccessionSequence participants
     :return: networkx graph with the interaction network representation of the reactions
     """
@@ -101,19 +100,17 @@ def create_graph(pathway, level="proteins", directed=False, showSmallMolecules=T
     G.graph["level"] = level
     G.graph["showSmallMolecules"] = showSmallMolecules
 
-    df_reactions = get_reaction_participants_by_pathway(pathway, showSmallMolecules=showSmallMolecules,
-                                                        level=level, verbose=verbose)
-    df_complexes = get_complex_components_by_pathway(pathway, showSmallMolecules=showSmallMolecules,
-                                                     level=level, verbose=verbose)
+    df_reactions = get_reaction_participants_by_pathway(pathway, level, showSmallMolecules, verbose)
+    df_complexes = get_complex_components_by_pathway(pathway, level, showSmallMolecules, verbose)
 
-    connect_reaction_participants(G, df_reactions, directed, level, verbose)
-    connect_complex_components(G, df_complexes, directed, level, verbose)
+    connect_reaction_participants(G, df_reactions, level, verbose)
+    connect_complex_components(G, df_complexes, level, verbose)
 
     return G
 
-# df = get_reaction_participants_by_pathway("R-HSA-9634600", level="proteoforms")
+# G = create_graph("R-HSA-5627083", level="proteoforms", showSmallMolecules=False, verbose=False)
 # print(df_reactions.columns)
-# print(df[['Id', 'Role']])
+# print(G.edges.data())
 # g = create_graph(df)
 # print(g.nodes)
 # print(g.edges)

@@ -8,9 +8,13 @@ def get_pathway_name(pathway):
     return get_query_result(query)
 
 def get_pathways():
-    query = "MATCH (p:Pathway{speciesName:\"Homo sapiens\"})\nRETURN p.stId as stId, p.displayName as displayName"
+    query = """
+    // Gets all low level pathways for human
+    MATCH (p:Pathway{speciesName:"Homo sapiens"})
+    WHERE NOT (p)-[:hasEvent]->(:Pathway)
+    RETURN p.stId as stId, p.displayName as displayName
+    """
     return get_query_result(query)
-
 
 def get_reactions_by_pathway(pathway):
     query = f"MATCH (p:Pathway{{stId:\"{pathway}\"}})-[:hasEvent]->(rle:Reaction{{speciesName:'Homo sapiens'}}) RETURN rle.stId as reaction"
@@ -51,7 +55,7 @@ def fix_neo4j_values(df, level):
     return df
 
 
-def get_reaction_participants_by_pathway(pathway, showSmallMolecules=True, level="proteins", verbose=True):
+def get_reaction_participants_by_pathway(pathway, level, showSmallMolecules, verbose=False):
     """
     Get list of participant molecules in the reactions of a pathway from the graph database
 
@@ -71,68 +75,77 @@ def get_reaction_participants_by_pathway(pathway, showSmallMolecules=True, level
         print(f"\n\nQuerying {level} participants of pathway {pathway}...\n\n")
     query = ""
     if level in ["genes", "proteins"]:
-        query += f"""
-        MATCH (p:Pathway{{stId:\"{pathway}\"}})-[:hasEvent]->(rle:ReactionLikeEvent{{speciesName:'Homo sapiens'}})
-        WITH rle
-        MATCH p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity)
+        query = f"""
+        MATCH (:Pathway{{stId:"{pathway}"}})-[:hasEvent]->(rle:ReactionLikeEvent),
+              p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity),
+              (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
         WHERE last(labels(pe)) IN ["EntityWithAccessionedSequence" """
         if showSmallMolecules:
             query += ", \"SimpleEntity\""
         query += """
         ]
-        OPTIONAL MATCH (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
-        RETURN DISTINCT rle.stId as Reaction, pe.stId as Entity, pe.displayName as Name, last(labels(pe)) as Type,
-        CASE WHEN last(labels(pe)) = \"SimpleEntity\" THEN pe.displayName """
+        RETURN DISTINCT rle.stId as Reaction, 
+                        pe.stId as Entity, 
+                        pe.displayName as Name, 
+                        last(labels(pe)) as Type,
+                        CASE 
+                            WHEN last(labels(pe)) = \"SimpleEntity\" THEN pe.displayName """
         if level == "genes":
-            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) "
+            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) "
         else:
-            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier "
+            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier "
         query += """ 
-        ELSE re.identifier END as Id,
-        rd.displayName AS Database, head([scores IN relationships(p) | type(scores)]) as Role
-        ORDER BY Reaction, Role, Type """
+                        ELSE re.identifier END as Id,
+                        rd.displayName AS Database, 
+                        head([scores IN relationships(p) | type(scores)]) as Role
+        ORDER BY Reaction, Role, Type
+        """
     else:
         query += f"""
-// Get pathway proteoform participants
-MATCH (p:Pathway{{stId:"{pathway}"}})-[:hasEvent]->(rle:ReactionLikeEvent{{speciesName:'Homo sapiens'}})
-WITH rle
-MATCH p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity)
-WHERE last(labels(pe)) IN ["EntityWithAccessionedSequence" """
+        MATCH (:Pathway{{stId:"{pathway}"}})-[:hasEvent]->(rle:ReactionLikeEvent),
+              p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity),
+              (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
+        WHERE last(labels(pe)) IN ["EntityWithAccessionedSequence" """
         if showSmallMolecules:
             query += ", \"SimpleEntity\""
-        query += """]
-OPTIONAL MATCH (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
-WITH DISTINCT rle, pe, re, 
-              last(labels(pe)) as Type,
-              rd.displayName AS Database, 
+        query += """
+        ]
+        WITH DISTINCT rle.stId as Reaction,
+			  pe, re, 
               head([x IN relationships(p) | type(x)]) as Role
-ORDER BY rle.stId, Role, Type
-OPTIONAL MATCH (pe)-[:hasModifiedResidue]->(tm:TranslationalModification)-[:psiMod]->(mod:PsiMod)
-WITH DISTINCT rle.stId as Reaction, 
-			  pe.stId as Entity, 
-              pe.displayName as Name,
-              Type,
-              CASE 
-              	WHEN last(labels(pe)) = "SimpleEntity" THEN pe.displayName  
-                WHEN last(labels(pe)) = "EntityWithAccessionedSequence" THEN 
-                	CASE 
-              			WHEN re.variantIdentifier IS NOT NULL THEN re.variantIdentifier 
-                		ELSE re.identifier
-              		END
-              END  as Id,
-              mod.identifier as ptm_type,
-              tm.coordinate as ptm_coordinate,
-              Database,
-              Role
-ORDER BY ptm_type, ptm_coordinate
-WITH DISTINCT Reaction, Entity, Name, Type, Id,
-                COLLECT(
-              		ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END
-              	) AS ptms,
-                Database, Role
-RETURN DISTINCT Reaction, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id,
-                Database, Role
-ORDER BY Reaction, Role, Id"""
+        ORDER BY Reaction, Role
+        OPTIONAL MATCH (pe)-[:hasModifiedResidue]->(tm:TranslationalModification)-[:psiMod]->(mod:PsiMod)
+        WITH DISTINCT Reaction, 
+                      pe.stId as Entity, 
+                      pe.displayName as Name,
+                      last(labels(pe)) as Type,
+                      CASE 
+                        WHEN last(labels(pe)) = "SimpleEntity" THEN pe.displayName  
+                        WHEN last(labels(pe)) = "EntityWithAccessionedSequence" THEN 
+                            CASE 
+                                WHEN re.variantIdentifier IS NOT NULL THEN re.variantIdentifier 
+                                ELSE re.identifier
+                            END
+                      END  as Id,
+                      mod.identifier as ptm_type,
+                      tm.coordinate as ptm_coordinate,
+                      re.databaseName as Database,
+                      Role
+        ORDER BY ptm_type, ptm_coordinate
+        WITH DISTINCT Reaction,
+                      Entity,
+                      Name,
+                      Type,
+                      Id,
+                      COLLECT(
+                          ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END
+                      ) AS ptms,
+                      Database,
+                      Role
+        ORDER BY Reaction, Role, Id
+        RETURN DISTINCT Reaction, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id, Database, Role
+		ORDER BY Reaction, Role
+        """
 
     if (verbose):
         print(query)
@@ -143,7 +156,7 @@ ORDER BY Reaction, Role, Id"""
     return df
 
 
-def get_complex_components_by_pathway(pathway, showSmallMolecules=True, level="proteins", verbose=True):
+def get_complex_components_by_pathway(pathway, level, showSmallMolecules, verbose):
     """
     Get list of complex components participating in the pathway from the graph database
 
@@ -160,7 +173,7 @@ def get_complex_components_by_pathway(pathway, showSmallMolecules=True, level="p
     if level in ["genes", "proteins"]:
         query = f"""
         // Get Pathway complex participants
-        MATCH (p:Pathway{{stId:"{pathway}"}})-[:hasEvent*]->(rle:ReactionLikeEvent)
+        MATCH (p:Pathway{{stId:"{pathway}"}})-[:hasEvent]->(rle:ReactionLikeEvent)
         WITH rle
         MATCH (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(c:Complex)
         WITH c
@@ -182,11 +195,9 @@ def get_complex_components_by_pathway(pathway, showSmallMolecules=True, level="p
         """
     else:
         query = f"""
-        MATCH (p:Pathway{{stId:"{pathway}"}})-[:hasEvent]->(rle:Reaction{{speciesName:'Homo sapiens'}})
-        WITH rle
-        MATCH p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(c:Complex)
-        WITH DISTINCT c
-        MATCH (c)-[:hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity)-[:referenceEntity]->(re:ReferenceEntity)
+        MATCH (:Pathway{{stId:"{pathway}"}})-[:hasEvent]->(rle:Reaction{{speciesName:'Homo sapiens'}}),
+        p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(c:Complex),
+        (c)-[:hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity)-[:referenceEntity]->(re:ReferenceEntity)
         WHERE last(labels(pe)) in ["EntityWithAccessionedSequence" """
         if showSmallMolecules:
             query += ", \"SimpleEntity\""
@@ -224,9 +235,3 @@ def get_complex_components_by_pathway(pathway, showSmallMolecules=True, level="p
     df = fix_neo4j_values(df, level)
 
     return df
-
-
-def get_network_nodes_by_pathway(pathway, showSmallMolecules=True, level="proteins", verbose=True):
-    df_reactions = get_reaction_participants_by_pathway(pathway, showSmallMolecules, level, verbose)
-    df_complexes = get_complex_components_by_pathway(pathway, showSmallMolecules, level, verbose)
-    return df_reactions, df_complexes

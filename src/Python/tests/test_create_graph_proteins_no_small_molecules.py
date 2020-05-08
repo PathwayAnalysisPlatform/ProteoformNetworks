@@ -7,10 +7,10 @@ from network_topology_queries import get_reaction_participants_by_pathway
 # Test graph creation with genes and small molecules disabled
 class TestGeneNetworkNoSmallMoleculesClass:
     # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
-    G_glycolysis = create_graph("R-HSA-9634600", level="proteins", showSmallMolecules=False)
+    G_glycolysis = create_graph("R-HSA-9634600", "proteins", False, False)
 
     # Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
-    G_traffic = create_graph("R-HSA-5627083", level="proteins", showSmallMolecules=False)
+    G_traffic = create_graph("R-HSA-5627083", "proteins", False, False)
 
     def test_create_graph_num_edges(self):
         G = TestGeneNetworkNoSmallMoleculesClass.G_glycolysis

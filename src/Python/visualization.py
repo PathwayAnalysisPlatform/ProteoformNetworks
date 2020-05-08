@@ -1,7 +1,7 @@
 # %%
 import os
 import networkx as nx
-from bokeh.io import show, output_file, save
+from bokeh.io import show, output_file, save, export_png
 from bokeh.layouts import layout, grid
 from bokeh.models import Plot, Range1d, BoxZoomTool, ResetTool, Circle, HoverTool, MultiLine, Div
 from bokeh.models.graphs import from_networkx
@@ -11,8 +11,8 @@ from interaction_network import create_graph
 from network_topology_queries import get_pathway_name
 
 
-def plot_pathway(pathway, level="proteins", directed=False, showSmallMolecules=True, verbose=True):
-    G = create_graph(pathway, level, directed, showSmallMolecules, verbose)
+def plot_pathway(pathway, level="proteins", showSmallMolecules=True, verbose=True):
+    G = create_graph(pathway, level, showSmallMolecules, verbose)
     P = plot_graph(G)
     return P
 
@@ -24,7 +24,7 @@ def plot_graph(G):
     :return: the figure
     """
 
-    plot = Plot(plot_width=250, plot_height=250,
+    plot = Plot(plot_width=600, plot_height=325,
                 x_range=Range1d(-1.1, 1.1), y_range=Range1d(-1.1, 1.1),
                 toolbar_location="below")
     plot.title.text = G.graph["level"].title()
@@ -54,11 +54,15 @@ def plot_graph(G):
 
 
 def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", verbose=False):
-    name = get_pathway_name(pathway).iloc[0]['Name']
+    name = get_pathway_name(pathway)
+    if len(name) == 0:
+        return
+    name = name.iloc[0]['Name']
     figures = [plot_pathway(pathway, level=level, verbose=verbose) for level in LEVELS]
     figures_no_small_molecules = [plot_pathway(pathway, level=level, showSmallMolecules=False, verbose=verbose) for level in LEVELS]
 
     output_file( f"{figures_path}{pathway}_network.html")
+
     title = f"<p style=\"font-weight:bold;text-align:left;font-size:22px;width:1800px;\">" \
             f"<span style=\"color:black;\">{name} ({pathway})</span>"\
             f"</p>"
@@ -127,13 +131,16 @@ def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", ver
 </table>
     """
 
-    save(layout([
+    l = layout([
         [Div(text=f"{title}")],
         [Div(text=notes)],
         figures,
         [Div(text=f"<p>Without small molecules:</p>")],
         figures_no_small_molecules
-    ]))
+    ])
+
+    save(l)
 
 # print(f"Located at: {os. getcwd()}")
-plot_pathway_all_levels("R-HSA-1632852")
+plot_pathway_all_levels("R-HSA-70171")
+print("Finished")

@@ -4,13 +4,13 @@ from interaction_network import create_graph
 # Test graph creation for proteins
 class TestProteoformNetworkClass:
     # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
-    G_glycolysis = create_graph("R-HSA-9634600", level="proteoforms")
+    G_glycolysis = create_graph("R-HSA-9634600", "proteoforms", True, False)
 
     # Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
-    G_traffic = create_graph("R-HSA-5627083", level="proteoforms")
+    G_traffic = create_graph("R-HSA-5627083", "proteoforms", True, False)
 
     # Pathway "FRS-mediated FGFR3 signaling" R-HSA-5654706
-    G_signal = create_graph("R-HSA-5654706", level="proteoforms")
+    G_signal = create_graph("R-HSA-5654706", "proteoforms", True, False)
 
     def test_create_graph_num_edges(self):
         G = TestProteoformNetworkClass.G_glycolysis
