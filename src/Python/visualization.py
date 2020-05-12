@@ -1,14 +1,13 @@
 # %%
-import os
 import networkx as nx
-from bokeh.io import show, output_file, save, export_png
-from bokeh.layouts import layout, grid
+from bokeh.io import output_file, save
+from bokeh.layouts import layout
 from bokeh.models import Plot, Range1d, BoxZoomTool, ResetTool, Circle, HoverTool, MultiLine, Div
 from bokeh.models.graphs import from_networkx
 
 from config import LEVELS, get_entity_color, COLOR_IO, COLOR_CO, COLOR_RO, COLOR_CC
-from interaction_network import create_graph
-from network_topology_queries import get_pathway_name
+from interaction_network import create_graph, get_pathway_graphs
+from network_topology_queries import get_pathway_name, get_low_level_pathways
 
 
 def plot_pathway(pathway, level="proteins", showSmallMolecules=True, verbose=True):
@@ -53,18 +52,33 @@ def plot_graph(G):
     return plot
 
 
-def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", verbose=False):
+def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", graphs_path="../../reports/pathways/", verbose=False):
+    name = get_pathway_name(pathway)
+    if len(name) == 0:
+        return
+
+    graphs, graphs_no_small_molecules = get_pathway_graphs(pathway, graphs_path)
+
+    plot_pathway_graphs(pathway, graphs, graphs_no_small_molecules, figures_path, verbose)
+
+
+def plot_pathway_graphs(pathway, graphs, graphs_no_small_molecules, figures_path, verbose=False):
     name = get_pathway_name(pathway)
     if len(name) == 0:
         return
     name = name.iloc[0]['Name']
-    figures = [plot_pathway(pathway, level=level, verbose=verbose) for level in LEVELS]
-    figures_no_small_molecules = [plot_pathway(pathway, level=level, showSmallMolecules=False, verbose=verbose) for level in LEVELS]
 
-    output_file( f"{figures_path}{pathway}_network.html")
+    figures = [plot_graph(graph) for graph in graphs]
+    figures_no_small_molecules = [plot_graph(graph) for graph in graphs_no_small_molecules]
+
+    if verbose:
+        import os
+        print("In function create_graph: ", os.getcwd())
+        print(f"Output path is: {figures_path}{pathway}_network.html")
+    output_file(f"{figures_path}{pathway}_network.html")
 
     title = f"<p style=\"font-weight:bold;text-align:left;font-size:22px;width:1800px;\">" \
-            f"<span style=\"color:black;\">{name} ({pathway})</span>"\
+            f"<span style=\"color:black;\">{name} ({pathway})</span>" \
             f"</p>"
 
     notes = f"""
@@ -141,6 +155,23 @@ def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", ver
 
     save(l)
 
-# print(f"Located at: {os. getcwd()}")
-plot_pathway_all_levels("R-HSA-70171")
-print("Finished")
+
+def plot_low_level_pathways(min_size=5, max_size=20, figures_path="figures/pathways/", graphs_path="reports/pathways/"):
+    pathways = get_low_level_pathways()
+    for pathway in pathways['stId']:
+        name = get_pathway_name(pathway)
+        name = name.iloc[0]['Name']
+        print(f"Creating networks for pathway {pathway}")
+        G = create_graph(pathway, "genes", True, graphs_path)
+
+        if min_size <= len(G.nodes) <= max_size:
+            plot_pathway_all_levels(pathway, figures_path, graphs_path)
+
+    print(f"Plot {pathway}")
+    plot_pathway_all_levels(pathway, figures_path, graphs_path)
+
+
+plot_pathway_all_levels("R-HSA-165160")
+
+# plot_low_level_pathways(figures_path="../../figures/pathways/", graphs_path="../../reports/pathways/")
+# print("Finished")

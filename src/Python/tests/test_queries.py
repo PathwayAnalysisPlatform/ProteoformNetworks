@@ -1,10 +1,11 @@
 import pandas as pd
 
-from network_topology_queries import get_reaction_participants_by_pathway, get_pathways, \
-    get_reactions_by_pathway, fix_neo4j_values
+from network_topology_queries import get_reaction_participants_by_pathway, get_low_level_pathways, \
+    get_reactions_by_pathway, fix_neo4j_values, get_pathways, get_reactions, get_complexes, \
+    get_complex_components_by_complex
 
 
-class TestGetReactionParticipantsByPathway:
+class TestQueries:
     # Pathway "Glycolysis" R-HSA-70171
     df_glycolysis_genes = get_reaction_participants_by_pathway("R-HSA-70171", "genes", True)
     df_glycolysis_genes_no_sm = get_reaction_participants_by_pathway("R-HSA-70171", "genes", False)
@@ -26,11 +27,12 @@ class TestGetReactionParticipantsByPathway:
 
     # Test: Cypher query to get all pathways gets all of them correctly
     def test_get_pathways(self):
-        pathways = get_pathways()
+        pathways = get_low_level_pathways()
         assert len(pathways) == 1657
         assert type(pathways) == pd.DataFrame
         assert ((pathways['stId'] == "R-HSA-110056") & (pathways['displayName'] == "MAPK3 (ERK1) activation")).any()
-        assert ((pathways['stId'] == "R-HSA-69200") & (pathways['displayName'] == "Phosphorylation of proteins involved in G1/S transition by active Cyclin E:Cdk2 complexes")).any()
+        assert ((pathways['stId'] == "R-HSA-69200") & (pathways[
+                                                           'displayName'] == "Phosphorylation of proteins involved in G1/S transition by active Cyclin E:Cdk2 complexes")).any()
         assert ((pathways['stId'] == "R-HSA-6782135") & (pathways['displayName'] == "Dual incision in TC-NER")).any()
         assert not ((pathways['stId'] == 'R-HSA-9612973') & (pathways['displayName'] == 'Autophagy')).any()
         assert not ((pathways['stId'] == 'R-HSA-1640170') & (pathways['displayName'] == 'Cell Cycle')).any()
@@ -46,7 +48,7 @@ class TestGetReactionParticipantsByPathway:
 
     # Test: Query to get participants of a pathway gets all participant reactions.
     def test_query_for_pathway_participants_has_all_reactions(self):
-        df = TestGetReactionParticipantsByPathway.df_glycolysis_proteins
+        df = TestQueries.df_glycolysis_proteins
         assert len(df['Reaction'].unique()) == 15
         assert (df['Reaction'] == "R-HSA-8955794").any()
         assert (df['Reaction'] == "R-HSA-6799604").any()
@@ -54,13 +56,13 @@ class TestGetReactionParticipantsByPathway:
 
     # Test: Query to get participants of a pathway returns all small molecule participants
     def test_query_for_pathway_participans_returns_all_simple_molecules(self):
-        df = TestGetReactionParticipantsByPathway.df_glycolysis_proteins
+        df = TestQueries.df_glycolysis_proteins
         print(df.loc[df['Type'] == 'SimpleEntity'])
         assert len(df.loc[df['Type'] == 'SimpleEntity']['Entity'].unique()) == 32
 
     # Test: Query to get participants of a pathway returns all gene participants
     def test_query_for_pathway_participans_returns_all_ewas(self):
-        df = TestGetReactionParticipantsByPathway.df_glycolysis_proteins
+        df = TestQueries.df_glycolysis_proteins
         print(df.loc[df['Type'] == 'EntityWithAccessionedSequence'])
         assert len(df.loc[df['Type'] == 'EntityWithAccessionedSequence']['Entity'].unique()) == 31
 
@@ -81,7 +83,7 @@ class TestGetReactionParticipantsByPathway:
     # Test: Query for participants of a pathway returns all the gene and small molecule participants decomposing sets
     # Pathway R-HSA-70171 has reactions with EntitySets as participants, like reaction R-HSA-70420 with set R-HSA-450097
     def test_query_for_pathway_participants_decomposes_sets(self):
-        df = TestGetReactionParticipantsByPathway.df_glycolysis_proteins
+        df = TestQueries.df_glycolysis_proteins
         # DefinedSet R-HSA-450097 has 4 members
         assert (df['Entity'] == "R-HSA-450094").any()
         assert (df['Entity'] == "R-HSA-70395").any()
@@ -90,7 +92,7 @@ class TestGetReactionParticipantsByPathway:
 
     # Test: If small molecules disabled, cypher query returns only the gene direct participants
     def test_query_for_pathway_participants_disable_small_molecules(self):
-        df = TestGetReactionParticipantsByPathway.df_glycolysis_proteins_no_sm
+        df = TestQueries.df_glycolysis_proteins_no_sm
         assert len(df) == 31  # Only EWAS
         # Has EWAS participants
         assert (df['Entity'] == "R-HSA-5696062").any()
@@ -103,7 +105,7 @@ class TestGetReactionParticipantsByPathway:
 
     # Test: If small molecules disabled, cypher query returns only the gene complex decomposed participants
     def test_query_for_pathway_participants_complexes_show_only_ewas(self):
-        df = TestGetReactionParticipantsByPathway.df_glycolysis_proteins_no_sm
+        df = TestQueries.df_glycolysis_proteins_no_sm
         # The pathway has the reaction R-HSA-5696021 which has the complex R-HSA-5696043 as participant
         # THe components of the complex are 2, one EWAS and one small molecule:
         assert (df['Entity'] == 'R-HSA-5696062').any()  # EWAS ADPGK
@@ -111,7 +113,7 @@ class TestGetReactionParticipantsByPathway:
 
     # Test: Get pathway participants as genes
     def test_query_for_pathway_participants_as_genes(self):
-        df = TestGetReactionParticipantsByPathway.df_glycolysis_genes
+        df = TestQueries.df_glycolysis_genes
         assert len(df) == 102
 
         # Participant protein Q9BRR6 should be in the result as a gene name: ADPGK not as UniProt accession
@@ -129,7 +131,7 @@ class TestGetReactionParticipantsByPathway:
         assert (df['Id'] != 'P07738').all()
 
     def test_query_for_pathway_participants_as_genes_trims_gene_id(self):
-        df = TestGetReactionParticipantsByPathway.df_glycolysis_genes
+        df = TestQueries.df_glycolysis_genes
         assert ((df['Entity'] == 'R-HSA-70097') & (df['Id'] == "PKLR")).any()
         assert ((df['Entity'] == 'R-HSA-450658') & (df['Id'] == "PKM")).any()
         assert not ((df['Entity'] == 'R-HSA-450658') & (df['Id'] == "PKM-2 [cytosol]")).any()
@@ -139,7 +141,7 @@ class TestGetReactionParticipantsByPathway:
         assert not ((df['Entity'] == 'R-HSA-211388') & (df['Id'] == "PKLR-2")).any()
 
     def test_query_for_pathway_participants_replaces_small_molecule_names(self):
-        df = TestGetReactionParticipantsByPathway.df_glycolysis_genes
+        df = TestQueries.df_glycolysis_genes
         assert not ((df['Entity'] == 'R-ALL-29370') & (df['Id'] == '456216')).any()
         assert ((df['Entity'] == 'R-ALL-29370') & (df['Id'] == 'ADP')).any()
         assert not ((df['Entity'] == 'R-ALL-29926') & (df['Id'] == '18420')).any()
@@ -148,7 +150,7 @@ class TestGetReactionParticipantsByPathway:
 
     # Test: Get pathway participants as proteins
     def test_query_for_pathway_participants_as_proteins(self):
-        df = TestGetReactionParticipantsByPathway.df_glycolysis_proteins
+        df = TestQueries.df_glycolysis_proteins
         assert not ((df['Entity'] == 'R-HSA-5696062') & (df['Id'] == 'ADPGK')).any()
         assert ((df['Entity'] == 'R-HSA-5696062') & (df['Id'] == 'Q9BRR6')).any()
 
@@ -159,7 +161,7 @@ class TestGetReactionParticipantsByPathway:
         assert ((df['Entity'] == 'R-HSA-70412') & (df['Id'] == 'P52790')).any()
 
     def test_query_for_pathway_participants_as_proteins_implicit_parameter(self):
-        df = TestGetReactionParticipantsByPathway.df_glycolysis_proteins
+        df = TestQueries.df_glycolysis_proteins
         assert not ((df['Entity'] == 'R-HSA-5696062') & (df['Id'] == 'ADPGK')).any()
         assert ((df['Entity'] == 'R-HSA-5696062') & (df['Id'] == 'Q9BRR6')).any()
 
@@ -170,7 +172,63 @@ class TestGetReactionParticipantsByPathway:
         assert ((df['Entity'] == 'R-HSA-70412') & (df['Id'] == 'P52790')).any()
 
     def test_query_for_pathway_participants_as_proteins_complex_should_not_be_in_records(self):
-        df = TestGetReactionParticipantsByPathway.df_glycolysis_proteins
+        df = TestQueries.df_glycolysis_proteins
         assert not (df["Entity"] == "R-HSA-5696043").any()
         assert not (df["Name"] == "BPGM dimer [cytosol]").any()
         assert not (df["Entity"] == "R-HSA-6799598").any()
+
+    def test_get_pathways(self):
+        df = get_pathways()
+
+        assert type(df) == pd.DataFrame
+        assert len(df) == 2362
+        assert "stId" in df.columns
+        assert "displayName" in df.columns
+        assert ((df['stId'] == "R-HSA-9612973") & (df["displayName"] == "Autophagy")).any()
+        assert ((df['stId'] == "R-HSA-3000480") & (df["displayName"] == "Scavenging by Class A Receptors")).any()
+
+    def test_get_reactions(self):
+        result = get_reactions()
+        assert len(result) == 12915
+
+    def test_get_complexes(self):
+        result = get_complexes()
+        assert len(result) == 12678
+
+    def test_get_complex_components_returns_components(self):
+        result = get_complex_components_by_complex("R-HSA-983126", "genes", True)
+        assert type(result) == pd.DataFrame
+        assert len(result) == 264
+        assert ((result['Entity'] == 'R-HSA-141412') & (result['Id'] == 'CDC20')).any()
+        assert ((result['Entity'] == ' R-HSA-174229') & (result['Id'] == 'ANAPC2')).any()
+        assert ((result['Entity'] == 'R-HSA-939239') & (result['Id'] == 'UBC')).any()
+
+
+    def test_get_complex_components_returns_components_2(self):
+        result = get_complex_components_by_complex("R-HSA-2168879", "genes", True)
+        assert len(result) == 7
+        assert ((result['Entity'] == 'R-HSA-8851656') & (result['Id'] == 'HECW2')).any()
+        assert ((result['Entity'] == 'R-ALL-352327') & (result['Id'] == 'O2')).any()
+        assert ((result['Entity'] == 'R-ALL-917877') & (result['Id'] == 'heme')).any()
+        assert ((result['Entity'] == 'R-HSA-2168862') & (result['Id'] == 'HBA1')).any()
+
+    def test_get_complex_components_with_non_existent_complex_returns_empty_list(self):
+        assert 1 == 2
+
+    def test_get_complex_components_without_small_molecules(self):
+        assert 1 == 2
+
+    def test_get_complex_components_genes_no_small_molecules(self):
+        assert 1 == 2
+
+    def test_get_complex_components_proteins(self):
+        assert 1 == 2
+
+    def test_get_complex_components_proteins_no_small_molecules(self):
+        assert 1 == 2
+
+    def test_get_complex_components_proteoforms(self):
+        assert 1 == 2
+
+    def test_get_complex_components_proteoforms_no_small_molecules(self):
+        assert 1 == 2
