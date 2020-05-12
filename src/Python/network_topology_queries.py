@@ -274,7 +274,7 @@ def get_complex_components_by_complex(complex, level, showSmallMolecules, verbos
         """
     else:
         query = f"""
-        MATCH (c:Complex)-[:hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity)-[:referenceEntity]->(re:ReferenceEntity)
+        MATCH (c:Complex{{stId:"{complex}"}})-[:hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity)-[:referenceEntity]->(re:ReferenceEntity)
         WHERE last(labels(pe)) in ["EntityWithAccessionedSequence" """
         if showSmallMolecules:
             query += ", \"SimpleEntity\""
