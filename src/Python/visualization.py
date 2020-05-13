@@ -44,7 +44,7 @@ def plot_graph(G):
     graph_renderer = from_networkx(G, nx.spring_layout, scale=1, center=(0, 0))
 
     graph_renderer.node_renderer.glyph = Circle(size=10, fill_color="color")
-    graph_renderer.edge_renderer.glyph = MultiLine(line_color="edge_color", line_alpha=0.8, line_width=2)
+    graph_renderer.edge_renderer.glyph = MultiLine(line_color="black", line_alpha=0.8, line_width=2)
     plot.renderers.append(graph_renderer)
 
     # output_file(f"{G.graph['level']}_network.html")
@@ -126,23 +126,25 @@ def plot_pathway_graphs(pathway, graphs, graphs_no_small_molecules, figures_path
         <td id="EntityWithAccessionedSequence" class="color_td"></td>
         <td>Genes, Proteins, Proteoforms</td>
     </tr>
-    <tr>
-        <td id="IO" class="color_td"></td>
-        <td>Input -- Output</td>
-    </tr>
-    <tr>
-        <td id="CO" class="color_td"></td>
-        <td>Catalyst -- Output</td>
-    </tr>
-    <tr>
-        <td id="RO" class="color_td"></td>
-        <td>Regulator -- Output</td>
-    </tr>
-    <tr>
-        <td id="C" class="color_td"></td>
-        <td>Component -- Component</td>
-    </tr>
-</table>
+    """
+    # <tr>
+    #     <td id="IO" class="color_td"></td>
+    #     <td>Input -- Output</td>
+    # </tr>
+    # <tr>
+    #     <td id="CO" class="color_td"></td>
+    #     <td>Catalyst -- Output</td>
+    # </tr>
+    # <tr>
+    #     <td id="RO" class="color_td"></td>
+    #     <td>Regulator -- Output</td>
+    # </tr>
+    # <tr>
+    #     <td id="C" class="color_td"></td>
+    #     <td>Component -- Component</td>
+    # </tr>
+    notes += """
+    </table>
     """
 
     l = layout([
@@ -171,7 +173,7 @@ def plot_low_level_pathways(min_size=5, max_size=20, figures_path="figures/pathw
     plot_pathway_all_levels(pathway, figures_path, graphs_path)
 
 
-plot_pathway_all_levels("R-HSA-165160")
+# plot_pathway_all_levels("R-HSA-165160", "./", "./")
 
 # plot_low_level_pathways(figures_path="../../figures/pathways/", graphs_path="../../reports/pathways/")
 # print("Finished")

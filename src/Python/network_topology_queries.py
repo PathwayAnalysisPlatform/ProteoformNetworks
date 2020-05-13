@@ -245,7 +245,7 @@ def get_complex_components_by_pathway(pathway, level, showSmallMolecules, verbos
 
 
 def get_reactions():
-    query = "MATCH (rle:ReactionLikeEvent{speciesName:\"Homo sapiens\"}) RETURN rle.stId"
+    query = "MATCH (rle:ReactionLikeEvent{speciesName:\"Homo sapiens\"}) RETURN rle.stId as stId"
     return get_query_result(query)
 
 def get_complexes():
@@ -313,5 +313,88 @@ def get_complex_components_by_complex(complex, level, showSmallMolecules, verbos
 
     return df
 
-def get_reaction_participants(level, showSmallMolecules):
-    pass
+def get_reaction_participants_by_reaction(reaction, level, showSmallMolecules, verbose=False):
+    if level not in LEVELS:
+        raise Exception
+
+    if (verbose):
+        print(f"\n\nQuerying {level} participants of reaction {reaction}...\n\n")
+    query = ""
+    if level in ["genes", "proteins"]:
+        query = f"""
+            MATCH p = (rle:ReactionLikeEvent{{stId:"{reaction}"}})-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity),
+                  (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
+            WHERE last(labels(pe)) IN ["EntityWithAccessionedSequence" """
+        if showSmallMolecules:
+            query += ", \"SimpleEntity\""
+        query += """
+            ]
+            RETURN DISTINCT rle.stId as Reaction, 
+                            pe.stId as Entity, 
+                            pe.displayName as Name, 
+                            last(labels(pe)) as Type,
+                            CASE 
+                                WHEN last(labels(pe)) = \"SimpleEntity\" THEN pe.displayName """
+        if level == "genes":
+            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) "
+        else:
+            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier "
+        query += """ 
+                            ELSE re.identifier END as Id,
+                            rd.displayName AS Database, 
+                            head([scores IN relationships(p) | type(scores)]) as Role
+            ORDER BY Reaction, Role, Type
+            """
+    else:
+        query += f"""
+            MATCH p = (rle:ReactionLikeEvent{{stId:"{reaction}"}})-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity),
+                  (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
+            WHERE last(labels(pe)) IN ["EntityWithAccessionedSequence" """
+        if showSmallMolecules:
+            query += ", \"SimpleEntity\""
+        query += """
+            ]
+            WITH DISTINCT rle.stId as Reaction,
+    			  pe, re, 
+                  head([x IN relationships(p) | type(x)]) as Role
+            ORDER BY Reaction, Role
+            OPTIONAL MATCH (pe)-[:hasModifiedResidue]->(tm:TranslationalModification)-[:psiMod]->(mod:PsiMod)
+            WITH DISTINCT Reaction, 
+                          pe.stId as Entity, 
+                          pe.displayName as Name,
+                          last(labels(pe)) as Type,
+                          CASE 
+                            WHEN last(labels(pe)) = "SimpleEntity" THEN pe.displayName  
+                            WHEN last(labels(pe)) = "EntityWithAccessionedSequence" THEN 
+                                CASE 
+                                    WHEN re.variantIdentifier IS NOT NULL THEN re.variantIdentifier 
+                                    ELSE re.identifier
+                                END
+                          END  as Id,
+                          mod.identifier as ptm_type,
+                          tm.coordinate as ptm_coordinate,
+                          re.databaseName as Database,
+                          Role
+            ORDER BY ptm_type, ptm_coordinate
+            WITH DISTINCT Reaction,
+                          Entity,
+                          Name,
+                          Type,
+                          Id,
+                          COLLECT(
+                              ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END
+                          ) AS ptms,
+                          Database,
+                          Role
+            ORDER BY Reaction, Role, Id
+            RETURN DISTINCT Reaction, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id, Database, Role
+    		ORDER BY Reaction, Role
+            """
+
+    if (verbose):
+        print(query)
+
+    df = get_query_result(query)
+    df = fix_neo4j_values(df, level)
+
+    return df
