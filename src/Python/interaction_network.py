@@ -1,13 +1,12 @@
+import os
 from collections import namedtuple
 
 import networkx as nx
 import pandas as pd
-import os
 
-from config import get_entity_color, LEVELS
+from config import LEVELS, get_entity_color
 from network_topology_queries import get_reaction_participants_by_pathway, get_complex_components_by_pathway, \
-    get_pathway_name, get_reactions, get_complexes, get_reaction_participants_by_reaction, \
-    get_complex_components_by_complex
+    get_pathway_name
 
 Pathway_graphs = namedtuple("Graphs",
                             ['genes', "genes_no_small_molecules", "proteins", "proteins_no_small_molecules",
@@ -23,32 +22,37 @@ def add_edges_from_product(G, c1, c2, verbose=False):
                     print(f"Added edge from: {i} to {j}")
 
 
-def add_edges(g, inputs, outputs, catalysts, regulators, reaction, verbose):
+def add_edges(G, inputs, outputs, catalysts, regulators, reaction, verbose):
     if verbose:
         print(
             f"\n\nReaction: {reaction}:\nInputs: {inputs}\nCatalysts: {catalysts}\nOutputs: {outputs}\nRegulators: {regulators}")
-    add_edges_from_product(g, inputs, outputs, verbose)
-    add_edges_from_product(g, catalysts, outputs, verbose)
-    add_edges_from_product(g, regulators, outputs, verbose)
+    add_edges_from_product(G, inputs, outputs, verbose)
+    add_edges_from_product(G, catalysts, outputs, verbose)
+    add_edges_from_product(G, regulators, outputs, verbose)
 
 
-def connect_reaction_participants(g, df, level, verbose):
+def connect_reaction_participants(G, df, level, v):
     if len(df) == 0:
-        return g
+        return G
+    pathway = df.iloc[0]['Pathway']
     reaction = df.iloc[0]['Reaction']
     inputs = set()
     outputs = set()
     catalysts = set()
     regulators = set()
     for index, participant in df.iterrows():
-        g.add_node(participant['Id'],
-                   type=(participant['Type'] if participant["Type"] == "SimpleEntity" else level[:-1]),
-                   role=participant['Role'],
-                   reaction=participant['Reaction'],
-                   color=get_entity_color(participant["Type"], level))
-        if reaction != participant["Reaction"]:
-            add_edges(g, inputs, outputs, catalysts, regulators, reaction, verbose)
-            reaction = participant["Reaction"]
+        if not G.has_node(participant['Id']):
+            G.add_node(participant['Id'],
+                       type=(participant['Type'] if participant['Type'] == 'SimpleEntity' else level),
+                       entity_color=get_entity_color(participant['Type'], level),
+                       roles=set(), reactions=set(), pathways=set(), complexes=set())
+        G.nodes[participant['Id']]['roles'].add(participant['Role'])
+        G.nodes[participant['Id']]['reactions'].add(participant['Reaction'])
+        G.nodes[participant['Id']]['pathways'].add(participant['Pathway'])
+        if reaction != participant['Reaction'] or pathway != participant['Pathway']:
+            add_edges(G, inputs, outputs, catalysts, regulators, reaction, v)
+            reaction = participant['Reaction']
+            pathway = participant['Pathway']
             inputs = set()
             outputs = set()
             catalysts = set()
@@ -62,50 +66,50 @@ def connect_reaction_participants(g, df, level, verbose):
         elif participant['Role'] == 'catalystActivity':
             catalysts.add(participant['Id'])
     reaction = df.iloc[-1]['Reaction']
-    add_edges(g, inputs, outputs, catalysts, regulators, reaction, verbose)
+    pathway = df.iloc[-1]['Pathway']
+    add_edges(G, inputs, outputs, catalysts, regulators, reaction, v)
 
-    if (verbose):
-        print(f"From reactions, added {len(g.nodes)} nodes to the graph.")
-        print(f"From reactions, added {len(g.edges)} edges to the graph.")
+    if (v):
+        print(f"From reactions, added {len(G.nodes)} nodes to the graph.")
+        print(f"From reactions, added {len(G.edges)} edges to the graph.")
 
 
-def connect_complex_components(g, df, level="proteins", verbose=True):
+def connect_complex_components(G, df, level="proteins", v=True):
     if len(df) == 0:
-        return g
-    complex = df.iloc[0]['Complex']
+        return G
+
     components = set()
+    complex = df.iloc[0]['Complex']
+    for index, component in df.iterrows():
+        if not G.has_node(component['Id']):
+            G.add_node(component['Id'],
+                       type=(component['Type'] if component['Type'] == 'SimpleEntity' else level),
+                       entity_color=get_entity_color(component['Type'], level),
+                       roles=set(), reactions=set(), pathways=set(), complexes=set())
+        G.nodes[component['Id']]['complexes'].add(component['Complex'])
 
-    for index, record in df.iterrows():
-        if not g.has_node(record['Id']):
-            g.add_node(record['Id'],
-                       type=(record['Type'] if record["Type"] == "SimpleEntity" else level[:-1]),
-                       complex=record['Complex'],
-                       color=get_entity_color(record["Type"], level))
-
-        if complex != record['Complex']:
-            add_edges_from_product(g, components, components, verbose=verbose)
-            complex = record['Complex']
+        if complex != component['Complex']:
+            add_edges_from_product(G, components, components, verbose=v)
+            complex = component['Complex']
             components = set()
-        components.add(record['Id'])
+        components.add(component['Id'])
     complex = df.iloc[-1]['Complex']
-    add_edges_from_product(g, components, components, verbose=verbose)
+    add_edges_from_product(G, components, components, verbose=v)
 
-    if (verbose):
-        print(f"From complexes, added {len(g.nodes)} nodes to the graph.")
-        print(f"From complexes, added {len(g.edges)} edges to the graph.")
+    if (v):
+        print(f"From complexes, added {len(G.nodes)} nodes to the graph.")
+        print(f"From complexes, added {len(G.edges)} edges to the graph.")
 
 
-
-def create_graph(pathway, level, showSmallMolecules, graphs_path="", verbose=False):
+def create_graph(pathway, level, sm, graphs_path="", v=False):
     """
     Converts a set of reactions with its participants into a graph
 
     :param df_reactions: Pandas dataframe with reactions and its participants
     :param df_complexes: Pandas dataframe with complexes and its components
-    :param showSmallMolecules: False shows only EntityWithAccessionSequence participants
+    :param sm: False shows only EntityWithAccessionSequence participants
     :return: networkx graph with the interaction network representation of the reactions
     """
-
 
     G = nx.Graph()
     name = get_pathway_name(pathway)
@@ -114,19 +118,19 @@ def create_graph(pathway, level, showSmallMolecules, graphs_path="", verbose=Fal
 
     G.graph["stId"] = pathway
     G.graph["level"] = level
-    G.graph["showSmallMolecules"] = showSmallMolecules
+    G.graph["sm"] = sm
 
-    df_reactions = get_reaction_participants_by_pathway(pathway, level, showSmallMolecules, verbose)
-    df_complexes = get_complex_components_by_pathway(pathway, level, showSmallMolecules, verbose)
+    df_reactions = get_reaction_participants_by_pathway(pathway, level, sm, v)
+    df_complexes = get_complex_components_by_pathway(pathway, level, sm, v)
 
-    connect_reaction_participants(G, df_reactions, level, verbose)
-    connect_complex_components(G, df_complexes, level, verbose)
+    connect_reaction_participants(G, df_reactions, level, v)
+    connect_complex_components(G, df_complexes, level, v)
 
-    if verbose:
+    if v:
         print(f"Storing network")
 
     out_file = pathway + "_" + level
-    if not showSmallMolecules:
+    if not sm:
         out_file += "_no_small_molecules"
     out_file += "_edge_list"
 
@@ -136,7 +140,7 @@ def create_graph(pathway, level, showSmallMolecules, graphs_path="", verbose=Fal
     fh = open(os.path.join(str(graphs_path), out_file), 'wb')
     nx.write_edgelist(G, fh, data=True)
 
-    print(f"Created graph {pathway} - {level} - {showSmallMolecules}", flush=True)
+    print(f"Created graph {pathway} - {level} - {sm}", flush=True)
     fh.close()
     return G
 
@@ -146,8 +150,8 @@ def get_pathway_graphs(pathway, graphs_path):
     if len(name) == 0:
         return [nx.Graph(), nx.Graph(), nx.Graph()], [nx.Graph(), nx.Graph(), nx.Graph()]
     else:
-        graphs = [create_graph(pathway, level, True, graphs_path) for level in LEVELS]
-        graphs_no_small_molecules = [create_graph(pathway, level, False, graphs_path) for level in LEVELS]
+        graphs = [create_graph(pathway, level, True, graphs_path, True) for level in LEVELS]
+        graphs_no_small_molecules = [create_graph(pathway, level, False, graphs_path, True) for level in LEVELS]
         return graphs, graphs_no_small_molecules
 
 
@@ -173,56 +177,5 @@ def create_graphs(pathways, graphs_path="../../reports/pathways/"):
     return result
 
 
-def create_full_graph(level, showSmallMolecules, graphs_path="", verbose=False):
-    G = nx.Graph()
-    G.graph["level"] = level
-    G.graph["showSmallMolecules"] = showSmallMolecules
-
-    reactions = get_reactions()
-    complexes = get_complexes()
-
-    reactions = reactions[:5]
-    complexes = complexes[:5]
-
-    index = 0
-    for reaction in reactions['stId']:
-        df_participants = get_reaction_participants_by_reaction(reaction, level, showSmallMolecules, False)
-        connect_reaction_participants(G, df_participants, level, True)
-        index += 1
-        if verbose:
-            print(
-                f"Added reaction {reaction}\t{index}/{len(reactions)}\t\tNodes: {len(G.nodes)}, \t\t Edges: {len(G.edges)}",
-                flush=True)
-
-    index = 0
-    for complex in complexes['stId']:
-        df_components = get_complex_components_by_complex(complex, level, showSmallMolecules, False)
-        connect_complex_components(G, df_components, level, True)
-        index += 1
-        if verbose:
-            print(
-                f"Added complex {complex}\t{index}/{len(complexes)}\t\tNodes: {len(G.nodes)}, \t\t Edges: {len(G.edges)}",
-                flush=True)
-
-    if len(graphs_path) > 0:
-        Path(graphs_path).mkdir(parents=True, exist_ok=True)
-    out_file = graphs_path + level
-    if not showSmallMolecules:
-        out_file += "_no_small_molecules"
-    out_file += "_edge_list.csv"
-
-    if verbose:
-        print(f"Storing network: {out_file}")
-
-    fh = open(out_file, 'wb')
-    nx.write_edgelist(G, out_file, data=True)
-
-
-    return G
-
-# create_graph("R-HSA-9634600", "proteins", True, "hello/")
-
-#
-# print("Started creating the graph:")
-# create_full_graph("genes", True, "", True)
-# print("Finished!!")
+if __name__ == '__main__':
+    create_graph("R-HSA-8981607", "proteins", True)

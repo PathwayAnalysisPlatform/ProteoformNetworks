@@ -134,7 +134,7 @@ for(t1 in traits) {
       #t2.graph.proteoform <- LoadGraphProteoform(t2)
 
       m.g[t1, t2] <- Overlap(t1.graph.genes, t2.graph.genes)
-      #cat(t1, " -- ", m.g[t1, t2], ": " , m.g[t1, t2], "\n")
+      #cat(t1, " -- ", m.G[t1, t2], ": " , m.G[t1, t2], "\n")
       #m.pt[t1, t2] <- Overlap(t1.graph.protein, t2.graph.protein)
       #m.pf[t1, t2] <- Overlap(t1.graph.proteoform, t2.graph.proteoform)
       

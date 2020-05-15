@@ -61,71 +61,59 @@ def fix_neo4j_values(df, level):
     df['Name'] = df['Name'].apply(lambda x: re.sub("\s*\[[\s\w]*\]\s*", '', x))
     return df
 
-
-def get_reaction_participants_by_pathway(pathway, level, showSmallMolecules, verbose=False):
+def get_reaction_participants(level, sm=True, v=False):
     """
-    Get list of participant molecules in the reactions of a pathway from the graph database
+    Get list of participant molecules in the reactions for all pathways in Reactome
 
-    :param pathway: String of the stId of the pathway
-    :param showSmallMolecules: Bool to show simple entities or not
+    :param sm: Bool to show simple entities or not
     :param level: String "genes", "proteins" or "proteoforms"
-    :param verbose: Bool Show extra console messages
+    :param v: Bool Show extra console messages
     :return: pandas dataframe with one participant per record
-    Columns: Reaction, Entity, Name, Type, Id, Database, Role
+    Columns: Pathway, Reaction, Entity, Name, Type, Id, Database, Role
 
     * Notice that records are sorted by reaction for easy traversal later.
     """
     if level not in LEVELS:
         raise Exception
 
-    if (verbose):
-        print(f"\n\nQuerying {level} participants of pathway {pathway}...\n\n")
+    if (v):
+        print(f"\n\nQuerying {level} participants of all pathways...\n\n")
     query = ""
     if level in ["genes", "proteins"]:
         query = f"""
-        MATCH (:Pathway{{stId:"{pathway}"}})-[:hasEvent]->(rle:ReactionLikeEvent),
+        MATCH (pw:Pathway)-[:hasEvent]->(rle:ReactionLikeEvent),
               p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity),
               (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
         WHERE last(labels(pe)) IN ["EntityWithAccessionedSequence" """
-        if showSmallMolecules:
+        if sm:
             query += ", \"SimpleEntity\""
         query += """
         ]
-        RETURN DISTINCT rle.stId as Reaction, 
-                        pe.stId as Entity, 
-                        pe.displayName as Name, 
-                        last(labels(pe)) as Type,
-                        CASE 
+        RETURN DISTINCT pw.stId as Pathway, rle.stId as Reaction, pe.stId as Entity, pe.displayName as Name, 
+                        last(labels(pe)) as Type, CASE 
                             WHEN last(labels(pe)) = \"SimpleEntity\" THEN pe.displayName """
         if level == "genes":
             query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) "
         else:
             query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier "
         query += """ 
-                        ELSE re.identifier END as Id,
-                        rd.displayName AS Database, 
+                        ELSE re.identifier END as Id, rd.displayName AS Database,  
                         head([scores IN relationships(p) | type(scores)]) as Role
-        ORDER BY Reaction, Role, Type
+        ORDER BY Pathway, Reaction, Role, Type
         """
     else:
         query += f"""
-        MATCH (:Pathway{{stId:"{pathway}"}})-[:hasEvent]->(rle:ReactionLikeEvent),
+        MATCH (pw:Pathway)-[:hasEvent]->(rle:ReactionLikeEvent),
               p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity),
               (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
         WHERE last(labels(pe)) IN ["EntityWithAccessionedSequence" """
-        if showSmallMolecules:
+        if sm:
             query += ", \"SimpleEntity\""
         query += """
         ]
-        WITH DISTINCT rle.stId as Reaction,
-			  pe, re, 
-              head([x IN relationships(p) | type(x)]) as Role
-        ORDER BY Reaction, Role
+        WITH DISTINCT pw.stId as Pathway, rle.stId as Reaction, pe, re, head([x IN relationships(p) | type(x)]) as Role
         OPTIONAL MATCH (pe)-[:hasModifiedResidue]->(tm:TranslationalModification)-[:psiMod]->(mod:PsiMod)
-        WITH DISTINCT Reaction, 
-                      pe.stId as Entity, 
-                      pe.displayName as Name,
-                      last(labels(pe)) as Type,
+        WITH DISTINCT Pathway, Reaction, pe.stId as Entity, pe.displayName as Name, last(labels(pe)) as Type,
                       CASE 
                         WHEN last(labels(pe)) = "SimpleEntity" THEN pe.displayName  
                         WHEN last(labels(pe)) = "EntityWithAccessionedSequence" THEN 
@@ -134,27 +122,18 @@ def get_reaction_participants_by_pathway(pathway, level, showSmallMolecules, ver
                                 ELSE re.identifier
                             END
                       END  as Id,
-                      mod.identifier as ptm_type,
-                      tm.coordinate as ptm_coordinate,
-                      re.databaseName as Database,
-                      Role
+                      mod.identifier as ptm_type, tm.coordinate as ptm_coordinate, re.databaseName as Database, Role
         ORDER BY ptm_type, ptm_coordinate
-        WITH DISTINCT Reaction,
-                      Entity,
-                      Name,
-                      Type,
-                      Id,
+        WITH DISTINCT Pathway, Reaction, Entity, Name, Type, Id,
                       COLLECT(
                           ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END
                       ) AS ptms,
-                      Database,
-                      Role
-        ORDER BY Reaction, Role, Id
-        RETURN DISTINCT Reaction, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id, Database, Role
-		ORDER BY Reaction, Role
+                      Database, Role
+        RETURN DISTINCT Pathway, Reaction, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id, Database, Role
+		ORDER BY Pathway, Reaction, Role
         """
 
-    if (verbose):
+    if (v):
         print(query)
 
     df = get_query_result(query)
@@ -162,15 +141,168 @@ def get_reaction_participants_by_pathway(pathway, level, showSmallMolecules, ver
 
     return df
 
+def get_reaction_participants_by_pathway(pathway, level, sm, v=False):
+    """
+    Get list of participant molecules in the reactions of a pathway from the graph database
 
-def get_complex_components_by_pathway(pathway, level, showSmallMolecules, verbose):
+    :param pathway: String of the stId of the pathway
+    :param sm: Bool to show simple entities or not
+    :param level: String "genes", "proteins" or "proteoforms"
+    :param v: Bool Show extra console messages
+    :return: pandas dataframe with one participant per record
+    Columns: Reaction, Entity, Name, Type, Id, Database, Role
+
+    * Notice that records are sorted by reaction for easy traversal later.
+    """
+    if level not in LEVELS:
+        raise Exception
+
+    if (v):
+        print(f"\n\nQuerying {level} participants of pathway {pathway}...\n\n")
+    query = ""
+    if level in ["genes", "proteins"]:
+        query = f"""
+        MATCH (pw:Pathway{{stId:"{pathway}"}})-[:hasEvent]->(rle:ReactionLikeEvent),
+              p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity),
+              (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
+        WHERE last(labels(pe)) IN ["EntityWithAccessionedSequence" """
+        if sm:
+            query += ", \"SimpleEntity\""
+        query += """
+        ]
+        RETURN DISTINCT pw.stId as Pathway, rle.stId as Reaction, pe.stId as Entity, pe.displayName as Name, 
+                        last(labels(pe)) as Type,
+                        CASE 
+                            WHEN last(labels(pe)) = \"SimpleEntity\" THEN pe.displayName """
+        if level == "genes":
+            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) "
+        else:
+            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier "
+        query += """ 
+                        ELSE re.identifier END as Id, rd.displayName AS Database, 
+                        head([scores IN relationships(p) | type(scores)]) as Role
+        ORDER BY Pathway, Reaction, Role, Type
+        """
+    else:
+        query += f"""
+        MATCH (pw:Pathway{{stId:"{pathway}"}})-[:hasEvent]->(rle:ReactionLikeEvent),
+              p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity),
+              (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
+        WHERE last(labels(pe)) IN ["EntityWithAccessionedSequence" """
+        if sm:
+            query += ", \"SimpleEntity\""
+        query += """
+        ]
+        WITH DISTINCT pw.stId as Pathway, rle.stId as Reaction, pe, re, head([x IN relationships(p) | type(x)]) as Role
+        OPTIONAL MATCH (pe)-[:hasModifiedResidue]->(tm:TranslationalModification)-[:psiMod]->(mod:PsiMod)
+        WITH DISTINCT Pathway, Reaction, pe.stId as Entity, pe.displayName as Name, last(labels(pe)) as Type,
+                      CASE 
+                        WHEN last(labels(pe)) = "SimpleEntity" THEN pe.displayName  
+                        WHEN last(labels(pe)) = "EntityWithAccessionedSequence" THEN 
+                            CASE 
+                                WHEN re.variantIdentifier IS NOT NULL THEN re.variantIdentifier 
+                                ELSE re.identifier
+                            END
+                      END  as Id,
+                      mod.identifier as ptm_type, tm.coordinate as ptm_coordinate, re.databaseName as Database, Role
+        ORDER BY ptm_type, ptm_coordinate
+        WITH DISTINCT Pathway, Reaction, Entity, Name, Type, Id,
+                      COLLECT(
+                          ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END
+                      ) AS ptms,
+                      Database, Role
+        RETURN DISTINCT Pathway, Reaction, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id, Database, Role
+		ORDER BY Pathway, Reaction, Role
+        """
+
+    if (v):
+        print(query)
+
+    df = get_query_result(query)
+    df = fix_neo4j_values(df, level)
+
+    return df
+
+def get_complex_components(level, sm=True, v=False):
+    """
+        Get list of complex components participating in all pathways of Reactome
+
+        :param sm: Bool to show simple entities or not
+        :param level: String "genes", "proteins" or "proteoforms"
+        :param v: Bool Show extra console messages
+        :return: pandas dataframe with one component per record
+        Columns: Pathway, Reaction, Entity, Name, Type, Id, Database, Role
+
+        * Notice that records are sorted by complex for easy traversal later.
+        """
+
+    if level in ["genes", "proteins"]:
+        query = f"""
+            MATCH (c:Complex{{speciesName:"Homo sapiens"}})-[:hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity)-[:referenceEntity]->(re:ReferenceEntity)
+            WHERE last(labels(pe)) in ["EntityWithAccessionedSequence" """
+        if sm:
+            query += ", \"SimpleEntity\""
+        query += """
+        ]
+        RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName AS Name, last(labels(pe)) as Type, 
+        CASE WHEN last(labels(pe)) = \"SimpleEntity\" THEN pe.displayName """
+        if level == "genes":
+            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) "
+        else:
+            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier "
+        query += """ 
+            ELSE re.identifier END as Id
+            ORDER BY Complex
+            """
+    else:
+        query = f"""
+            MATCH (c:Complex{{speciesName:"Homo sapiens"}})-[:hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity)-[:referenceEntity]->(re:ReferenceEntity)
+            WHERE last(labels(pe)) in ["EntityWithAccessionedSequence" """
+        if sm:
+            query += ", \"SimpleEntity\""
+        query += """
+            ]
+            WITH DISTINCT c, pe, last(labels(pe)) as Type, re
+            OPTIONAL MATCH (pe)-[:hasModifiedResidue]->(tm:TranslationalModification)-[:psiMod]->(mod:PsiMod)
+            WITH DISTINCT c.stId as Complex, 
+                          pe.stId AS Entity, 
+                          pe.displayName AS Name,
+                          Type,
+                          CASE 
+                            WHEN Type = "SimpleEntity" THEN pe.displayName  
+                            WHEN Type = "EntityWithAccessionedSequence" THEN 
+                                CASE 
+                                    WHEN re.variantIdentifier IS NOT NULL THEN re.variantIdentifier 
+                                    ELSE re.identifier
+                                END
+                          END  as Id,
+                          mod.identifier as ptm_type,
+                          tm.coordinate as ptm_coordinate
+            ORDER BY ptm_type, ptm_coordinate
+            WITH DISTINCT Complex, Entity, Name, Type, Id,
+                            COLLECT(
+                                ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END
+                            ) AS ptms   
+            RETURN DISTINCT Complex, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id
+            ORDER BY Complex
+            """
+
+    if (v):
+        print(query)
+
+    df = get_query_result(query)
+    df = fix_neo4j_values(df, level)
+
+    return df
+
+def get_complex_components_by_pathway(pathway, level, sm, v):
     """
     Get list of complex components participating in the pathway from the graph database
 
     :param pathway: String of the stId of the pathway
-    :param showSmallMolecules: Bool to show simple entities or not
+    :param sm: Bool to show simple entities or not
     :param level: String "genes", "proteins" or "proteoforms"
-    :param verbose: Bool Show extra console messages
+    :param v: Bool Show extra console messages
     :return: pandas dataframe with one component per record
     Columns: Reaction, Entity, Name, Type, Id, Database, Role
 
@@ -186,7 +318,7 @@ def get_complex_components_by_pathway(pathway, level, showSmallMolecules, verbos
         WITH c
         MATCH (c)-[:hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity)-[:referenceEntity]->(re:ReferenceEntity)
         WHERE last(labels(pe)) in ["EntityWithAccessionedSequence" """
-        if showSmallMolecules:
+        if sm:
             query += ", \"SimpleEntity\""
         query += """
         ]
@@ -206,7 +338,7 @@ def get_complex_components_by_pathway(pathway, level, showSmallMolecules, verbos
         p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(c:Complex),
         (c)-[:hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity)-[:referenceEntity]->(re:ReferenceEntity)
         WHERE last(labels(pe)) in ["EntityWithAccessionedSequence" """
-        if showSmallMolecules:
+        if sm:
             query += ", \"SimpleEntity\""
         query += """
         ]
@@ -235,7 +367,7 @@ def get_complex_components_by_pathway(pathway, level, showSmallMolecules, verbos
         ORDER BY Complex
         """
 
-    if (verbose):
+    if (v):
         print(query)
 
     df = get_query_result(query)

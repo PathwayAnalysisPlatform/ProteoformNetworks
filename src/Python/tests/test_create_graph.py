@@ -10,7 +10,7 @@ from network_topology_queries import get_pathways
 
 @pytest.fixture
 def glycolysis_graph(tmpdir):
-    return create_graph("R-HSA-70171", level="proteins", showSmallMolecules=True, graphs_path=tmpdir)
+    return create_graph("R-HSA-70171", level="proteins", sm=True, graphs_path=tmpdir)
 
 
 @pytest.fixture(scope="session")
