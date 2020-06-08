@@ -17,7 +17,7 @@ def glycolysis_genes_no_sm():
 
 @pytest.fixture(scope="session")
 def glycolysis_proteins():
-    return get_reaction_participants_by_pathway("R-HSA-70171", "proteins", True)
+    return get_reaction_participants_by_pathway("R-HSA-70171", "proteins", True, True)
 
 @pytest.fixture(scope="session")
 def glycolysis_proteins_no_sm():
@@ -171,6 +171,15 @@ def test_query_for_pathway_participants_as_proteins(glycolysis_proteins):
 
     assert not ((df['Entity'] == 'R-HSA-70412') & (df['Id'] == 'HK3')).any()
     assert ((df['Entity'] == 'R-HSA-70412') & (df['Id'] == 'P52790')).any()
+
+def test_query_for_pathway_participants_as_proteins_returns_genes(glycolysis_proteins):
+    df = glycolysis_proteins
+    assert 'Gene' in df.columns
+    assert ((df['Id'] == 'Q9BRR6') & (df['Gene'] == 'ADPGK')).any()
+    assert ((df['Id'] == 'P07738') & (df['Gene'] == 'BPGM')).any()
+    assert ((df['Id'] == 'Mg2+') & (pd.isnull(df['Gene']))).any()
+    assert ((df['Id'] == 'ADP') & (df['Gene'] != 'ADP')).any()
+
 
 def test_query_for_pathway_participants_as_proteins_implicit_parameter(glycolysis_proteins):
     df = glycolysis_proteins

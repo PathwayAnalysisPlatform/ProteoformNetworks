@@ -7,7 +7,7 @@ from interaction_network import create_graph
 def glycolysis_graph(tmpdir_factory):
     # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
     graphs_path = tmpdir_factory.mktemp("tmpdir")
-    return create_graph("R-HSA-9634600", "proteins", True, graphs_path)
+    return create_graph("R-HSA-9634600", "proteins", True, graphs_path, v=True)
 
 
 @pytest.fixture(scope="session")
@@ -51,7 +51,6 @@ def test_connects_input_genes_with_small_outputs_not_when_is_same_molecule(glyco
 
 
 def test_connects_catalysts_with_outputs(glycolysis_graph):
-
     # Catalysts to output interactions for reaction R-HSA-163773:
     assert ("P17612", "P16118") in glycolysis_graph.edges
     assert ("P17612", "ADP") in glycolysis_graph.edges
@@ -119,3 +118,13 @@ def test_connects_components_of_same_complex(glycolysis_graph):
     assert ("Q14738", "P30154") in glycolysis_graph.edges
     assert ("Q14738", "P30153") in glycolysis_graph.edges
     assert ("Q14738", "P62714") in glycolysis_graph.edges
+
+
+def test_nodes_have_gene_attribute(glycolysis_graph):
+    for node in glycolysis_graph.nodes:
+        assert 'prevId' in glycolysis_graph.nodes[node]
+
+def test_nodes_have_correct_gene_attribute(glycolysis_graph):
+    assert glycolysis_graph.nodes['P30153']['prevId'] == 'PPP2R1A'
+    assert glycolysis_graph.nodes['ADP']['prevId'] == 'ADP'
+    assert glycolysis_graph.nodes['P16118']['prevId'] == 'PFKFB1'

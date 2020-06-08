@@ -7,7 +7,7 @@ from interaction_network import create_graph
 def glycolysis_graph(tmpdir_factory):
     # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
     graphs_path = tmpdir_factory.mktemp("tmpdir")
-    return create_graph("R-HSA-9634600", "proteoforms", True, graphs_path)
+    return create_graph("R-HSA-9634600", "proteoforms", True, graphs_path, v=True)
 
 
 @pytest.fixture(scope="session")
@@ -178,3 +178,13 @@ def test_connect_components_of_same_complex_2(signal_graph):
 
     assert ("P55075-1", "P09038") in signal_graph.edges
     assert ("O60258-1", "Q9GZV9;00164:178") in signal_graph.edges
+
+
+def test_nodes_have_protein_attribute(glycolysis_graph):
+    for node in glycolysis_graph.nodes:
+        assert 'prevId' in glycolysis_graph.nodes[node]
+
+def test_nodes_have_correct_protein_attribute(glycolysis_graph):
+    assert glycolysis_graph.nodes['P16118;00046:33']['prevId'] == 'P16118'
+    assert glycolysis_graph.nodes['ADP']['prevId'] == 'ADP'
+    assert glycolysis_graph.nodes['P62714']['prevId'] == 'P62714'

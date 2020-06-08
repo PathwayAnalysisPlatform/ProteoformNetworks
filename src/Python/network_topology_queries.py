@@ -93,11 +93,11 @@ def get_reaction_participants(level, sm=True, v=False):
                         last(labels(pe)) as Type, CASE 
                             WHEN last(labels(pe)) = \"SimpleEntity\" THEN pe.displayName """
         if level == "genes":
-            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) "
+            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) ELSE re.identifier END as Id, "
         else:
-            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier "
+            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier ELSE re.identifier END as Id, head(re.geneName) as Gene, "
         query += """ 
-                        ELSE re.identifier END as Id, rd.displayName AS Database,  
+                        rd.displayName AS Database,  
                         head([scores IN relationships(p) | type(scores)]) as Role
         ORDER BY Pathway, Reaction, Role, Type
         """
@@ -124,12 +124,12 @@ def get_reaction_participants(level, sm=True, v=False):
                       END  as Id,
                       mod.identifier as ptm_type, tm.coordinate as ptm_coordinate, re.databaseName as Database, Role
         ORDER BY ptm_type, ptm_coordinate
-        WITH DISTINCT Pathway, Reaction, Entity, Name, Type, Id,
+        WITH DISTINCT Pathway, Reaction, Entity, Name, Type, Id, Id as PrevId,
                       COLLECT(
                           ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END
                       ) AS ptms,
                       Database, Role
-        RETURN DISTINCT Pathway, Reaction, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id, Database, Role
+        RETURN DISTINCT Pathway, Reaction, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id, PrevId, Database, Role
 		ORDER BY Pathway, Reaction, Role
         """
 
@@ -175,11 +175,11 @@ def get_reaction_participants_by_pathway(pathway, level, sm, v=False):
                         CASE 
                             WHEN last(labels(pe)) = \"SimpleEntity\" THEN pe.displayName """
         if level == "genes":
-            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) "
+            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) ELSE re.identifier END as Id,"
         else:
-            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier "
+            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier ELSE re.identifier END as Id, head(re.geneName) as PrevId, "
         query += """ 
-                        ELSE re.identifier END as Id, rd.displayName AS Database, 
+                        rd.displayName AS Database, 
                         head([scores IN relationships(p) | type(scores)]) as Role
         ORDER BY Pathway, Reaction, Role, Type
         """
@@ -206,12 +206,12 @@ def get_reaction_participants_by_pathway(pathway, level, sm, v=False):
                       END  as Id,
                       mod.identifier as ptm_type, tm.coordinate as ptm_coordinate, re.databaseName as Database, Role
         ORDER BY ptm_type, ptm_coordinate
-        WITH DISTINCT Pathway, Reaction, Entity, Name, Type, Id,
+        WITH DISTINCT Pathway, Reaction, Entity, Name, Type, Id, Id as PrevId,
                       COLLECT(
                           ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END
                       ) AS ptms,
                       Database, Role
-        RETURN DISTINCT Pathway, Reaction, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id, Database, Role
+        RETURN DISTINCT Pathway, Reaction, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id, PrevId, Database, Role
 		ORDER BY Pathway, Reaction, Role
         """
 
@@ -247,11 +247,10 @@ def get_complex_components(level, sm=True, v=False):
         RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName AS Name, last(labels(pe)) as Type, 
         CASE WHEN last(labels(pe)) = \"SimpleEntity\" THEN pe.displayName """
         if level == "genes":
-            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) "
+            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) ELSE re.identifier END as Id "
         else:
-            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier "
+            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier ELSE re.identifier END as Id, head(re.geneName) as PrevId "
         query += """ 
-            ELSE re.identifier END as Id
             ORDER BY Complex
             """
     else:
@@ -279,11 +278,11 @@ def get_complex_components(level, sm=True, v=False):
                           mod.identifier as ptm_type,
                           tm.coordinate as ptm_coordinate
             ORDER BY ptm_type, ptm_coordinate
-            WITH DISTINCT Complex, Entity, Name, Type, Id,
+            WITH DISTINCT Complex, Entity, Name, Type, Id, Id as PrevId,
                             COLLECT(
                                 ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END
                             ) AS ptms   
-            RETURN DISTINCT Complex, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id
+            RETURN DISTINCT Complex, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id, PrevId
             ORDER BY Complex
             """
 
@@ -325,11 +324,10 @@ def get_complex_components_by_pathway(pathway, level, sm, v):
         RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName AS Name, last(labels(pe)) as Type, 
         CASE WHEN last(labels(pe)) = \"SimpleEntity\" THEN pe.displayName """
         if level == "genes":
-            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) "
+            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) ELSE re.identifier END as Id "
         else:
-            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier "
+            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier ELSE re.identifier END as Id, head(re.geneName) as PrevId "
         query += """ 
-        ELSE re.identifier END as Id
         ORDER BY Complex
         """
     else:
@@ -359,11 +357,11 @@ def get_complex_components_by_pathway(pathway, level, sm, v):
                       mod.identifier as ptm_type,
                       tm.coordinate as ptm_coordinate
         ORDER BY ptm_type, ptm_coordinate
-        WITH DISTINCT Complex, Entity, Name, Type, Id,
+        WITH DISTINCT Complex, Entity, Name, Type, Id, Id as PrevId,
                         COLLECT(
                             ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END
                         ) AS ptms   
-        RETURN DISTINCT Complex, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id
+        RETURN DISTINCT Complex, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id, PrevId
         ORDER BY Complex
         """
 
@@ -397,11 +395,10 @@ def get_complex_components_by_complex(complex, level, showSmallMolecules, verbos
         RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName AS Name, last(labels(pe)) as Type, 
         CASE WHEN last(labels(pe)) = \"SimpleEntity\" THEN pe.displayName """
         if level == "genes":
-            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) "
+            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) ELSE re.identifier END as Id "
         else:
-            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier "
+            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier ELSE re.identifier END as Id, head(re.geneName) as PrevId "
         query += """ 
-        ELSE re.identifier END as Id
         ORDER BY Complex
         """
     else:
@@ -429,11 +426,11 @@ def get_complex_components_by_complex(complex, level, showSmallMolecules, verbos
                       mod.identifier as ptm_type,
                       tm.coordinate as ptm_coordinate
         ORDER BY ptm_type, ptm_coordinate
-        WITH DISTINCT Complex, Entity, Name, Type, Id,
+        WITH DISTINCT Complex, Entity, Name, Type, Id, Id as PrevId,
                         COLLECT(
                             ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END
                         ) AS ptms   
-        RETURN DISTINCT Complex, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id
+        RETURN DISTINCT Complex, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id, PrevId
         ORDER BY Complex
         """
 
@@ -468,11 +465,10 @@ def get_reaction_participants_by_reaction(reaction, level, showSmallMolecules, v
                             CASE 
                                 WHEN last(labels(pe)) = \"SimpleEntity\" THEN pe.displayName """
         if level == "genes":
-            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) "
+            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) ELSE re.identifier END as Id, "
         else:
-            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier "
+            query += "      WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier ELSE re.identifier END as Id, head(re.geneName) as PrevId, "
         query += """ 
-                            ELSE re.identifier END as Id,
                             rd.displayName AS Database, 
                             head([scores IN relationships(p) | type(scores)]) as Role
             ORDER BY Reaction, Role, Type
@@ -512,14 +508,14 @@ def get_reaction_participants_by_reaction(reaction, level, showSmallMolecules, v
                           Entity,
                           Name,
                           Type,
-                          Id,
+                          Id, Id as PrevId, 
                           COLLECT(
                               ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END
                           ) AS ptms,
                           Database,
                           Role
             ORDER BY Reaction, Role, Id
-            RETURN DISTINCT Reaction, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id, Database, Role
+            RETURN DISTINCT Reaction, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id, PrevId, Database, Role
     		ORDER BY Reaction, Role
             """
 

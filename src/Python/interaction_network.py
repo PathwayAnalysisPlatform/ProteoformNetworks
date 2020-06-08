@@ -32,6 +32,14 @@ def add_edges(G, inputs, outputs, catalysts, regulators, reaction, verbose):
 
 
 def connect_reaction_participants(G, df, level, v):
+    """
+    G must contain all the nodes specified by the edges
+    :param G:
+    :param df:
+    :param level:
+    :param v:
+    :return:
+    """
     if len(df) == 0:
         return G
     pathway = df.iloc[0]['Pathway']
@@ -41,11 +49,6 @@ def connect_reaction_participants(G, df, level, v):
     catalysts = set()
     regulators = set()
     for index, participant in df.iterrows():
-        if not G.has_node(participant['Id']):
-            G.add_node(participant['Id'],
-                       type=(participant['Type'] if participant['Type'] == 'SimpleEntity' else level),
-                       entity_color=get_entity_color(participant['Type'], level),
-                       roles=set(), reactions=set(), pathways=set(), complexes=set())
         G.nodes[participant['Id']]['roles'].add(participant['Role'])
         G.nodes[participant['Id']]['reactions'].add(participant['Reaction'])
         G.nodes[participant['Id']]['pathways'].add(participant['Pathway'])
@@ -81,11 +84,6 @@ def connect_complex_components(G, df, level="proteins", v=True):
     components = set()
     complex = df.iloc[0]['Complex']
     for index, component in df.iterrows():
-        if not G.has_node(component['Id']):
-            G.add_node(component['Id'],
-                       type=(component['Type'] if component['Type'] == 'SimpleEntity' else level),
-                       entity_color=get_entity_color(component['Type'], level),
-                       roles=set(), reactions=set(), pathways=set(), complexes=set())
         G.nodes[component['Id']]['complexes'].add(component['Complex'])
 
         if complex != component['Complex']:
@@ -99,6 +97,29 @@ def connect_complex_components(G, df, level="proteins", v=True):
     if (v):
         print(f"From complexes, added {len(G.nodes)} nodes to the graph.")
         print(f"From complexes, added {len(G.edges)} edges to the graph.")
+
+
+def add_nodes(G, df, level):
+    for index, entity in df.iterrows():
+        G.add_node(entity['Id'],
+                   id=entity['Id'],
+                   type=(entity['Type'] if entity['Type'] == 'SimpleEntity' else level),
+                   entity_color=get_entity_color(entity['Type'], level),
+                   roles=set(),
+                   reactions=set(),
+                   pathways=set(),
+                   complexes=set(),
+                   )
+        if level == 'proteins':
+            if (G.nodes[entity['Id']]['type'] == "SimpleEntity"):
+                G.nodes[entity['Id']]['prevId'] = entity['Id']
+            else:
+                G.nodes[entity['Id']]['prevId'] = entity['PrevId']
+        elif level == 'proteoforms':
+            if (G.nodes[entity['Id']]['type'] == "SimpleEntity"):
+                G.nodes[entity['Id']]['prevId'] = entity['Id']
+            else:
+                G.nodes[entity['Id']]['prevId'] = entity['PrevId']
 
 
 def create_graph(pathway, level, sm, graphs_path="", v=False):
@@ -123,6 +144,9 @@ def create_graph(pathway, level, sm, graphs_path="", v=False):
     df_reactions = get_reaction_participants_by_pathway(pathway, level, sm, v)
     df_complexes = get_complex_components_by_pathway(pathway, level, sm, v)
 
+    add_nodes(G, df_reactions, level)
+    add_nodes(G, df_complexes, level)
+
     connect_reaction_participants(G, df_reactions, level, v)
     connect_complex_components(G, df_complexes, level, v)
 
@@ -145,13 +169,22 @@ def create_graph(pathway, level, sm, graphs_path="", v=False):
     return G
 
 
-def get_pathway_graphs(pathway, graphs_path):
+def create_pathway_graphs(pathway, graphs_path="../../reports/pathways/", v=False):
+    """
+    Creates graphs for the pathway in all three levels, with and wihout small molecules
+
+    If pathway does not exists, then returns empty graphs.
+    :param pathway: Pathway stId string
+    :param graphs_path:
+    :return: Get two lists of 3 pathways.
+    """
+
     name = get_pathway_name(pathway)
     if len(name) == 0:
         return [nx.Graph(), nx.Graph(), nx.Graph()], [nx.Graph(), nx.Graph(), nx.Graph()]
     else:
-        graphs = [create_graph(pathway, level, True, graphs_path, True) for level in LEVELS]
-        graphs_no_small_molecules = [create_graph(pathway, level, False, graphs_path, True) for level in LEVELS]
+        graphs = [create_graph(pathway, level, True, graphs_path, v) for level in LEVELS]
+        graphs_no_small_molecules = [create_graph(pathway, level, False, graphs_path, v) for level in LEVELS]
         return graphs, graphs_no_small_molecules
 
 
@@ -168,13 +201,29 @@ def create_graphs(pathways, graphs_path="../../reports/pathways/"):
             name = get_pathway_name(pathway)
             name = name.iloc[0]['Name']
             print(f"Creating networks for pathway {pathway}")
-            graphs, graphs_no_small_molecules = get_pathway_graphs(pathway, graphs_path)
+            graphs, graphs_no_small_molecules = create_pathway_graphs(pathway, graphs_path)
 
             gs = Pathway_graphs(graphs[0], graphs_no_small_molecules[0], graphs[1], graphs_no_small_molecules[1],
                                 graphs[2],
                                 graphs_no_small_molecules[2])
             result.append(gs)
     return result
+
+
+def merge_graphs(graphs):
+    # How does the resulting graph look like?
+    # - Vertices: Composition of nodes in all graphs
+    #    - Merge: sets of Reactions, Pathways, Complexes
+    #    - Copy value of: Id, Type, Entity Color
+    # - Edges: Composition of edges in all graphs
+    full_graph = nx.compose_all(graphs)  # Add all nodes setting  Id, Type, and entity_color
+
+    for graph in graphs:
+        for node in graph.nodes:
+            full_graph.nodes[node]['reactions'].update(graph.nodes[node]['reactions'])
+            full_graph.nodes[node]['pathways'].update(graph.nodes[node]['pathways'])
+            full_graph.nodes[node]['roles'].update(graph.nodes[node]['roles'])
+            full_graph.nodes[node]['complexes'].update(graph.nodes[node]['complexes'])
 
 
 if __name__ == '__main__':

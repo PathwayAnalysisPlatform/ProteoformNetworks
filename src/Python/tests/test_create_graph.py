@@ -56,19 +56,19 @@ def test_create_graphs_returns_empty_result_when_no_pathway_arguments():
     assert len(result) == 0
 
 
-def test_create_graphs_returns_the_correct_number_of_results(some_graphs):
-
-    assert type(some_graphs.graphs) == list
-    assert len(some_graphs.graphs) == 3
-
-    for entry in some_graphs.graphs:
-        assert type(entry) == Pathway_graphs
-        assert "genes" in entry._fields
-        assert "genes_no_small_molecules" in entry._fields
-        assert "proteins" in entry._fields
-        assert "proteins_no_small_molecules" in entry._fields
-        assert "proteoforms" in entry._fields
-        assert "proteoforms_no_small_molecules" in entry._fields
+# def test_create_graphs_returns_the_correct_number_of_results(some_graphs):
+#
+#     assert type(some_graphs.graphs) == list
+#     assert len(some_graphs.graphs) == 3
+#
+#     for entry in some_graphs.graphs:
+#         assert type(entry) == Pathway_graphs
+#         assert "genes" in entry._fields
+#         assert "genes_no_small_molecules" in entry._fields
+#         assert "proteins" in entry._fields
+#         assert "proteins_no_small_molecules" in entry._fields
+#         assert "proteoforms" in entry._fields
+#         assert "proteoforms_no_small_molecules" in entry._fields
 
 
 # def test_create_graphs_stores_the_graphs(some_graphs):
