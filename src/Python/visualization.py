@@ -93,7 +93,7 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
         }
 
         source = ColumnDataSource(data=data)
-        f.circle(x='x_values', y='y_values', color='entity_color', size=10, legend_field='type', source=source)
+        f.circle(x='x_values', y='y_values', color='entity_color', size=10, legend_field='type', source=source, name='node')
 
     elif coloring == Coloring.REACTION:
 
@@ -123,7 +123,7 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
             w = f.wedge(x=x, y=y, radius=radius,
                         start_angle=cumsum('angle', include_zero=True),
                         end_angle=cumsum('angle'),
-                        line_color="white", fill_color='reaction_color', legend_field='reaction', source=data)
+                        line_color="white", fill_color='reaction_color', legend_field='reaction', source=data, name='node')
             wedges.append(w)
 
     else:
@@ -152,7 +152,7 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
             w = f.wedge(x=x, y=y, radius=radius,
                         start_angle=cumsum('angle', include_zero=True),
                         end_angle=cumsum('angle'),
-                        line_color="white", fill_color='pathway_color', legend_field='pathway', source=data)
+                        line_color="white", fill_color='pathway_color', legend_field='pathway', source=data, name='node')
             wedges.append(w)
 
     f.legend.title = coloring.value
@@ -165,7 +165,7 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
                 <span style="font-size: 12px; font-weight: bold; color: @entity_color;">Type: @type</span>
             </div>
         """
-    node_hover_tool = HoverTool(tooltips=TOOLTIPS)
+    node_hover_tool = HoverTool(tooltips=TOOLTIPS, names=['node'])
     f.add_tools(node_hover_tool, BoxZoomTool(), ResetTool())
 
     # output_file(f"{G.graph['level']}_network.html")
