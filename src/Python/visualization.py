@@ -8,7 +8,7 @@ from bokeh.io import output_file
 from bokeh.io import show
 from bokeh.layouts import layout
 from bokeh.models import (BoxZoomTool, HoverTool,
-                          Range1d, ResetTool, ColumnDataSource)
+                          Range1d, ResetTool, ColumnDataSource, Legend, LegendItem)
 from bokeh.models import Div
 from bokeh.palettes import cividis
 # Prepare Data
@@ -79,22 +79,42 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
 
     if coloring == Coloring.ENTITY_TYPE:
 
-        x_values = [pos[k][0] for k in G.nodes]
-        y_values = [pos[k][1] for k in G.nodes]
-        entity_colors = [G.nodes[k]['entity_color'] for k in G.nodes]
-        types = [G.nodes[k]['type'] for k in G.nodes]
-        ids = [G.nodes[k]['id'] for k in G.nodes]
-        data = {
-            'id': ids,
-            'type': types,
-            'x_values': x_values,
-            'y_values': y_values,
-            'entity_color': entity_colors
-        }
+        x_values = []
+        y_values = []
+        entity_colors = []
+        types = []
+        ids = []
 
-        source = ColumnDataSource(data=data)
-        f.circle(x='x_values', y='y_values', color='entity_color', size=10, legend_field='type', source=source, name='node')
+        x_values_se = []
+        y_values_se = []
+        entity_colors_se = []
+        types_se = []
+        ids_se = []
 
+        for id in G.nodes:
+            if G.nodes[id]['type'] == "SimpleEntity":
+                x_values_se.append(pos[id][0])
+                y_values_se.append(pos[id][1])
+                entity_colors_se.append(G.nodes[id]['entity_color'])
+                types_se.append(G.nodes[id]['type'])
+                ids_se.append(G.nodes[id]['id'])
+            else:
+                x_values.append(pos[id][0])
+                y_values.append(pos[id][1])
+                entity_colors.append(G.nodes[id]['entity_color'])
+                types.append(G.nodes[id]['type'])
+                ids.append(G.nodes[id]['id'])
+
+        data = {'id': ids, 'type': types, 'x_values': x_values, 'y_values': y_values, 'entity_color': entity_colors}
+
+        data_se = {'id': ids_se, 'type': types_se, 'x_values': x_values_se, 'y_values': y_values_se,
+                   'entity_color': entity_colors_se}
+        if len(data_se['id']) > 0:
+            f.oval(x='x_values', y='y_values', color='entity_color', height=0.1, width=0.17, line_color='black',
+               source=ColumnDataSource(data=data_se), name='node', legend_label="Small Molecules")
+        f.rect(x='x_values', y='y_values', color='entity_color', height=0.08, width=0.11, line_color='black',
+               source=ColumnDataSource(data=data), name='node', legend_label=G.graph["level"].title())
+        f.legend.title = coloring.value
     elif coloring == Coloring.REACTION:
 
         # Display nodes
@@ -103,7 +123,7 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
             for reaction in G.nodes[k]['reactions']:
                 reactions.add(reaction)
 
-        radius = kwargs['radius'] if 'radius' in kwargs else 0.05
+        radius = kwargs['radius'] if 'radius' in kwargs else 0.1
         color_palette = kwargs['color_palette'] if 'color_palette' in kwargs else cividis
         wedges = []
         for k in G.nodes:
@@ -123,8 +143,18 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
             w = f.wedge(x=x, y=y, radius=radius,
                         start_angle=cumsum('angle', include_zero=True),
                         end_angle=cumsum('angle'),
-                        line_color="white", fill_color='reaction_color', legend_field='reaction', source=data, name='node')
+                        line_color="white", fill_color='reaction_color', legend_field='reaction', source=data,
+                        name='node')
             wedges.append(w)
+        if 'legend_location' in kwargs:
+            if kwargs['legend_location'] == 'right':
+                legend = Legend(items=f.legend.items, location='top_right', title=coloring.value)
+                f.legend.visible = False
+                f.add_layout(legend, 'right')
+            elif kwargs['legend_location']:
+                f.legend.location = kwargs['legend_location']
+            else:
+                f.legend.visible = False
 
     else:
         # Display nodes
@@ -132,7 +162,7 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
         for k in G.nodes:
             pathways.update(G.nodes[k]['pathways'])
 
-        radius = kwargs['radius'] if 'radius' in kwargs else 0.05
+        radius = kwargs['radius'] if 'radius' in kwargs else 0.09
         color_palette = kwargs['color_palette'] if 'color_palette' in kwargs else cividis
         wedges = []
         for k in G.nodes:
@@ -152,10 +182,19 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
             w = f.wedge(x=x, y=y, radius=radius,
                         start_angle=cumsum('angle', include_zero=True),
                         end_angle=cumsum('angle'),
-                        line_color="white", fill_color='pathway_color', legend_field='pathway', source=data, name='node')
+                        line_color="white", fill_color='pathway_color', legend_field='pathway', source=data,
+                        name='node')
             wedges.append(w)
 
-    f.legend.title = coloring.value
+        if 'legend_location' in kwargs:
+            if kwargs['legend_location'] == 'right':
+                legend = Legend(items=f.legend.items, location='top_right', title=coloring.value)
+                f.legend.visible = False
+                f.add_layout(legend, 'right')
+            elif kwargs['legend_location']:
+                f.legend.location = kwargs['legend_location']
+            else:
+                f.legend.visible = False
 
     TOOLTIPS = """
             <div>
@@ -195,7 +234,7 @@ def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", gra
                             coloring=Coloring.ENTITY_TYPE,
                             graphs=None,
                             v=False):
-    name = get_pathway_name(pathway)
+    name = get_pathway_name(pathway)['Name'][0]
     if len(name) == 0:
         return
 
@@ -204,6 +243,14 @@ def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", gra
     pos_all = [nx.spring_layout(g) for g in graphs_sm]
     node_set_all = [set(g.nodes) for g in graphs_sm]
     fixed_all = [set(), set(), set()]
+    titles_sm = ['A', 'B', 'C']
+    titles_no_sm = ['D', 'E', 'F']
+    plot_size = 400
+    legend_location_all = [None, None, 'right']
+    plot_widths = [plot_size, plot_size, plot_size + 160]
+    if coloring == Coloring.ENTITY_TYPE:
+        legend_location_all = ['top_right', 'top_right', 'top_right']
+        plot_widths = [plot_size, plot_size, plot_size]
 
     # For each node in the gene graph, assign it's position to the first node with that id in the protein network
     for i in range(2):
@@ -215,8 +262,17 @@ def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", gra
                 fixed_all[i + 1].add(node)
         pos_all[i + 1] = nx.spring_layout(graphs_sm[i + 1], pos=pos_all[i + 1], fixed=fixed_all[i + 1])
 
-    figures_sm = [plot_interaction_network(graphs_sm[i], coloring=coloring, pos=pos_all[i]) for i in range(3)]
-    figures_no_sm = [plot_interaction_network(graphs_no_sm[i], coloring=coloring, pos=pos_all[i]) for i in range(3)]
+    figures_sm = [
+        plot_interaction_network(graphs_sm[i], coloring=coloring, pos=pos_all[i], plot_width=plot_widths[i], plot_height=plot_size,
+                                 toolbar_location=None, title=titles_sm[i], legend_location=legend_location_all[i]) for i in range(3)
+    ]
+    if coloring != Coloring.ENTITY_TYPE:
+        legend_location_all = [None, None, None]
+        plot_widths = [plot_size, plot_size, plot_size]
+    figures_no_sm = [
+        plot_interaction_network(graphs_no_sm[i], coloring=coloring, pos=pos_all[i], plot_width=plot_widths[i], plot_height=plot_size,
+                                 toolbar_location=None, title=titles_no_sm[i], legend_location=legend_location_all[i]) for i in range(3)
+    ]
 
     if v:
         import os
@@ -298,7 +354,6 @@ def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", gra
         [Div(text=f"{title}")],
         # [Div(text=notes)],
         figures_sm,
-        [Div(text=f"<p>Without small molecules:</p>")],
         figures_no_sm
     ])
 
