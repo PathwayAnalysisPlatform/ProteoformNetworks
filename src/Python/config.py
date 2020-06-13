@@ -2,10 +2,10 @@ import os
 import sys
 
 LEVELS = ["genes", "proteins", "proteoforms"]
-LEVELS_COLOR = {"genes": "teal", "proteins": "teal", "proteoforms": "teal"}
+LEVELS_COLOR = {"genes": "#67A9CF", "proteins": "#F1A340", "proteoforms": "#7FBF7B"}
 
 PATH_REACTOME = "resources/reactome/v72/"
-FILE_REACTOME_GENES = "genes/all_genes_v72.csv"         # these paths are the suffix of PATH_REACTOME
+FILE_REACTOME_GENES = "genes/all_genes_v72.csv"  # these paths are the suffix of PATH_REACTOME
 FILE_REACTOME_PROTEINS = "proteins/all_proteins_v72.csv"
 FILE_REACTOME_PROTEOFORMS = "proteoforms/all_proteoforms_v72.csv"
 FILE_REACTOME_GENE_INTERACTIONS = "genes/geneInternalEdges.tsv"
@@ -16,6 +16,7 @@ FILE_PROTEOFORMS_SEARCH = "proteoforms/search.tsv"
 PATH_RESOURCES = "resources/"
 FILE_PATHWAYMATCHER = "PathwayMatcher.jar"
 URL_PATHWAYMATCHER = "https://github.com/PathwayAnalysisPlatform/PathwayMatcher/releases/latest/download/PathwayMatcher.jar"
+
 
 def set_root_wd():
     """Moves to one diretory above the location of the interpreter
@@ -28,9 +29,10 @@ def set_root_wd():
 
 def get_entity_color(type, level):
     if type == "SimpleEntity":
-        return '#8DC7C5'
+        return '#BDBDBD'
     else:
         return LEVELS_COLOR[level]
+
 
 COLOR_IO = "black"
 COLOR_CO = "orange"

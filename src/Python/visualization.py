@@ -10,7 +10,7 @@ from bokeh.layouts import layout
 from bokeh.models import (BoxZoomTool, HoverTool,
                           Range1d, ResetTool, ColumnDataSource, Legend, LegendItem)
 from bokeh.models import Div
-from bokeh.palettes import cividis
+from bokeh.palettes import plasma, cividis
 # Prepare Data
 from bokeh.plotting import figure
 from bokeh.transform import cumsum
@@ -61,9 +61,11 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
                toolbar_location=toolbar_location)
     f.title.text = kwargs['title'] if 'title' in kwargs else G.graph['level'].title()
     f.title.text_font_size = '12pt'
+    f.title.align = 'center'
     f.axis.visible = False
     f.axis.axis_label = None
     f.grid.grid_line_color = None
+    f.outline_line_width = kwargs['outline_line_width'] if 'outline_line_width' in kwargs else 0
 
     pos = kwargs['pos'] if 'pos' in kwargs else nx.spring_layout(G)
     if v:
@@ -124,7 +126,7 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
                 reactions.add(reaction)
 
         radius = kwargs['radius'] if 'radius' in kwargs else 0.1
-        color_palette = kwargs['color_palette'] if 'color_palette' in kwargs else cividis
+        color_palette = kwargs['color_palette'] if 'color_palette' in kwargs else plasma
         wedges = []
         for k in G.nodes:
             x, y = pos[k]
@@ -163,7 +165,7 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
             pathways.update(G.nodes[k]['pathways'])
 
         radius = kwargs['radius'] if 'radius' in kwargs else 0.09
-        color_palette = kwargs['color_palette'] if 'color_palette' in kwargs else cividis
+        color_palette = kwargs['color_palette'] if 'color_palette' in kwargs else plasma
         wedges = []
         for k in G.nodes:
             x, y = pos[k]
@@ -241,7 +243,7 @@ def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", gra
     graphs_sm, graphs_no_sm = graphs or create_pathway_graphs(pathway, graphs_path)
 
     pos_all = [nx.spring_layout(g) for g in graphs_sm]
-    node_set_all = [set(g.nodes) for g in graphs_sm]
+    node_set_unasigned = [set(g.nodes) for g in graphs_sm]
     fixed_all = [set(), set(), set()]
     titles_sm = ['A', 'B', 'C']
     titles_no_sm = ['D', 'E', 'F']
@@ -253,14 +255,14 @@ def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", gra
         plot_widths = [plot_size, plot_size, plot_size]
 
     # For each node in the gene graph, assign it's position to the first node with that id in the protein network
-    for i in range(2):
-        for node in graphs_sm[i + 1].nodes:
-            prevId = graphs_sm[i + 1].nodes[node]['prevId']
-            if prevId in node_set_all[i]:
-                pos_all[i + 1][node] = pos_all[i][prevId]
-                node_set_all[i].remove(prevId)
-                fixed_all[i + 1].add(node)
-        pos_all[i + 1] = nx.spring_layout(graphs_sm[i + 1], pos=pos_all[i + 1], fixed=fixed_all[i + 1])
+    for i in reversed(range(2)):
+        for node in graphs_sm[i + 1].nodes:                     # For each node in the larger network
+            prevId = graphs_sm[i + 1].nodes[node]['prevId']     # Get the predecesor
+            if prevId in node_set_unasigned[i]:                 # If predecesor has no position yet
+                pos_all[i][prevId] = pos_all[i + 1][node]
+                node_set_unasigned[i].remove(prevId)            # Mark predecesor as assigned to a position
+                fixed_all[i].add(prevId)
+        pos_all[i] = nx.spring_layout(graphs_sm[i], pos=pos_all[i], fixed=fixed_all[i])
 
     figures_sm = [
         plot_interaction_network(graphs_sm[i], coloring=coloring, pos=pos_all[i], plot_width=plot_widths[i], plot_height=plot_size,
