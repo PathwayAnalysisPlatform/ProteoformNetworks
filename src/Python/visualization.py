@@ -8,9 +8,9 @@ from bokeh.io import output_file
 from bokeh.io import show
 from bokeh.layouts import layout
 from bokeh.models import (BoxZoomTool, HoverTool,
-                          Range1d, ResetTool, ColumnDataSource, Legend, LegendItem)
+                          Range1d, ResetTool, ColumnDataSource, Legend)
 from bokeh.models import Div
-from bokeh.palettes import plasma, cividis
+from bokeh.palettes import plasma
 # Prepare Data
 from bokeh.plotting import figure
 from bokeh.transform import cumsum
@@ -113,81 +113,83 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
                    'entity_color': entity_colors_se}
         if len(data_se['id']) > 0:
             f.oval(x='x_values', y='y_values', color='entity_color', height=0.1, width=0.17, line_color='black',
-               source=ColumnDataSource(data=data_se), name='node', legend_label="Small Molecules")
+                   source=ColumnDataSource(data=data_se), name='node', legend_label="Small Molecules")
         f.rect(x='x_values', y='y_values', color='entity_color', height=0.08, width=0.11, line_color='black',
                source=ColumnDataSource(data=data), name='node', legend_label=G.graph["level"].title())
         f.legend.title = coloring.value
-    elif coloring == Coloring.REACTION:
 
+    else:
+        if coloring == Coloring.REACTION:
+            event = 'reaction'
+        else:
+            event = 'pathway'
         # Display nodes
-        reactions = set()
+        events = set()
         for k in G.nodes:
-            for reaction in G.nodes[k]['reactions']:
-                reactions.add(reaction)
+            for e in G.nodes[k][event + 's']:
+                events.add(e)
 
         radius = kwargs['radius'] if 'radius' in kwargs else 0.1
         color_palette = kwargs['color_palette'] if 'color_palette' in kwargs else plasma
-        wedges = []
+
+        ######## Create fake wedge to create full legend
+        data = pd.Series(
+            {e: 1 for e in events}).reset_index(name='value').rename(columns={'index': event})
+        data['id'] = "-"
+        data['type'] = "SimpleEntity"
+        data['entity_color'] = get_entity_color("SimpleEntity", "genes")
+        data['angle'] = data['value'] / data['value'].sum() * 2 * pi
+        data[event + '_color'] = color_palette(len(events))
+
+        f.wedge(x=0, y=0, radius=0,
+                start_angle=cumsum('angle', include_zero=True),
+                end_angle=cumsum('angle'),
+                line_color="white", fill_color=event + '_color', legend_field=event, source=data,
+                name='node', visible=False)
+
+        ######## Add all nodes
+
         for k in G.nodes:
             x, y = pos[k]
             if v:
                 print(f"Node {k} has position {x}, {y}")
-                print(f"Belongs to reactions {G.nodes[k]['reactions']}")
+                print(f"Belongs to {event}s {G.nodes[k][event + 's']}")
             data = pd.Series(
-                {reaction: 1 if reaction in G.nodes[k]['reactions'] else 0 for reaction in reactions}).reset_index(
+                {e: 1 if e in G.nodes[k][f"{event}s"] else 0 for e in events}).reset_index(
                 name='value').rename(
-                columns={'index': 'reaction'})
+                columns={'index': event})
             data['id'] = k
             data['type'] = G.nodes[k]['type']
             data['entity_color'] = G.nodes[k]['entity_color']
             data['angle'] = data['value'] / data['value'].sum() * 2 * pi
-            data['reaction_color'] = color_palette(len(reactions))
-            w = f.wedge(x=x, y=y, radius=radius,
+            data[event+'_color'] = color_palette(len(events))
+
+            i = 0
+            count = 0
+            index = 0
+            for e in data['value']:
+                if e == 1:
+                    count += 1
+                    index = i
+                i += 1
+
+            if count != 1:
+                f.wedge(x=x, y=y, radius=radius,
                         start_angle=cumsum('angle', include_zero=True),
                         end_angle=cumsum('angle'),
-                        line_color="white", fill_color='reaction_color', legend_field='reaction', source=data,
+                        line_color="white", fill_color=event+'_color', legend_field=event, source=data,
                         name='node')
-            wedges.append(w)
-        if 'legend_location' in kwargs:
-            if kwargs['legend_location'] == 'right':
-                legend = Legend(items=f.legend.items, location='top_right', title=coloring.value)
-                f.legend.visible = False
-                f.add_layout(legend, 'right')
-            elif kwargs['legend_location']:
-                f.legend.location = kwargs['legend_location']
             else:
-                f.legend.visible = False
+                data = {
+                    'id': [k], 'type': [G.nodes[k]['type']],
+                    event+'_color': [data[event+'_color'][index]],
+                    'entity_color': [G.nodes[k]['entity_color']]
+                }
+                f.circle(x=x, y=y, radius=radius,
+                         line_color='white', fill_color=event+'_color',
+                         source=ColumnDataSource(data=data), name='node')
 
-    else:
-        # Display nodes
-        pathways = set()
-        for k in G.nodes:
-            pathways.update(G.nodes[k]['pathways'])
-
-        radius = kwargs['radius'] if 'radius' in kwargs else 0.09
-        color_palette = kwargs['color_palette'] if 'color_palette' in kwargs else plasma
-        wedges = []
-        for k in G.nodes:
-            x, y = pos[k]
-            if v:
-                print(f"Node {k} has position {x}, {y}")
-                print(f"Belongs to pathways {G.nodes[k]['pathways']}")
-            data = pd.Series(
-                {pathway: 1 if pathway in G.nodes[k]['pathways'] else 0 for pathway in pathways}).reset_index(
-                name='value').rename(
-                columns={'index': 'pathway'})
-            data['id'] = k
-            data['type'] = G.nodes[k]['type']
-            data['entity_color'] = G.nodes[k]['entity_color']
-            data['angle'] = data['value'] / data['value'].sum() * 2 * pi
-            data['pathway_color'] = color_palette(len(pathways))
-            w = f.wedge(x=x, y=y, radius=radius,
-                        start_angle=cumsum('angle', include_zero=True),
-                        end_angle=cumsum('angle'),
-                        line_color="white", fill_color='pathway_color', legend_field='pathway', source=data,
-                        name='node')
-            wedges.append(w)
-
+        ###### Relocate the legend
         if 'legend_location' in kwargs:
             if kwargs['legend_location'] == 'right':
                 legend = Legend(items=f.legend.items, location='top_right', title=coloring.value)
@@ -256,24 +258,28 @@ def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", gra
 
     # For each node in the gene graph, assign it's position to the first node with that id in the protein network
     for i in reversed(range(2)):
-        for node in graphs_sm[i + 1].nodes:                     # For each node in the larger network
-            prevId = graphs_sm[i + 1].nodes[node]['prevId']     # Get the predecesor
-            if prevId in node_set_unasigned[i]:                 # If predecesor has no position yet
+        for node in graphs_sm[i + 1].nodes:  # For each node in the larger network
+            prevId = graphs_sm[i + 1].nodes[node]['prevId']  # Get the predecesor
+            if prevId in node_set_unasigned[i]:  # If predecesor has no position yet
                 pos_all[i][prevId] = pos_all[i + 1][node]
-                node_set_unasigned[i].remove(prevId)            # Mark predecesor as assigned to a position
+                node_set_unasigned[i].remove(prevId)  # Mark predecesor as assigned to a position
                 fixed_all[i].add(prevId)
         pos_all[i] = nx.spring_layout(graphs_sm[i], pos=pos_all[i], fixed=fixed_all[i])
 
     figures_sm = [
-        plot_interaction_network(graphs_sm[i], coloring=coloring, pos=pos_all[i], plot_width=plot_widths[i], plot_height=plot_size,
-                                 toolbar_location=None, title=titles_sm[i], legend_location=legend_location_all[i]) for i in range(3)
+        plot_interaction_network(graphs_sm[i], coloring=coloring, pos=pos_all[i], plot_width=plot_widths[i],
+                                 plot_height=plot_size,
+                                 toolbar_location=None, title=titles_sm[i], legend_location=legend_location_all[i]) for
+        i in range(3)
     ]
     if coloring != Coloring.ENTITY_TYPE:
         legend_location_all = [None, None, None]
         plot_widths = [plot_size, plot_size, plot_size]
     figures_no_sm = [
-        plot_interaction_network(graphs_no_sm[i], coloring=coloring, pos=pos_all[i], plot_width=plot_widths[i], plot_height=plot_size,
-                                 toolbar_location=None, title=titles_no_sm[i], legend_location=legend_location_all[i]) for i in range(3)
+        plot_interaction_network(graphs_no_sm[i], coloring=coloring, pos=pos_all[i], plot_width=plot_widths[i],
+                                 plot_height=plot_size,
+                                 toolbar_location=None, title=titles_no_sm[i], legend_location=legend_location_all[i])
+        for i in range(3)
     ]
 
     if v:
