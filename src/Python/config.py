@@ -1,8 +1,12 @@
 import os
 import sys
 
+from bokeh.palettes import Colorblind
+
 LEVELS = ["genes", "proteins", "proteoforms"]
-LEVELS_COLOR = {"genes": "#67A9CF", "proteins": "#F1A340", "proteoforms": "#7FBF7B"}
+
+# LEVELS_COLOR = {"genes": "#67A9CF", "proteins": "#F1A340", "proteoforms": "#7FBF7B"}
+LEVELS_COLOR = {"genes": Colorblind[4][0], "proteins": Colorblind[4][1], "proteoforms": Colorblind[4][3]}
 
 PATH_REACTOME = "resources/reactome/v72/"
 FILE_REACTOME_GENES = "genes/all_genes_v72.csv"  # these paths are the suffix of PATH_REACTOME

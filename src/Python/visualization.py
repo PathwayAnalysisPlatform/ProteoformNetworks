@@ -10,7 +10,7 @@ from bokeh.layouts import layout
 from bokeh.models import (BoxZoomTool, HoverTool,
                           Range1d, ResetTool, ColumnDataSource, Legend)
 from bokeh.models import Div
-from bokeh.palettes import plasma
+from bokeh.palettes import Colorblind
 # Prepare Data
 from bokeh.plotting import figure
 from bokeh.transform import cumsum
@@ -41,6 +41,15 @@ def plot_pathway(pathway, level="proteins", sm=True, coloring=Coloring.ENTITY_TY
     G = create_graph(pathway, level, sm, "", v)
     P = plot_interaction_network(G, coloring)
     return P
+
+
+def getDefaultPalette(n):
+    if n == 1:
+        return [Colorblind[3][0]]
+    elif n == 2:
+        return [Colorblind[3][0], Colorblind[3][1]]
+    else:
+        return Colorblind[n]
 
 
 def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs):
@@ -130,7 +139,7 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
                 events.add(e)
 
         radius = kwargs['radius'] if 'radius' in kwargs else 0.1
-        color_palette = kwargs['color_palette'] if 'color_palette' in kwargs else plasma
+        color_palette = kwargs['color_palette'] if 'color_palette' in kwargs else getDefaultPalette(len(events))
 
         ######## Create fake wedge to create full legend
         data = pd.Series(
@@ -139,13 +148,11 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
         data['type'] = "SimpleEntity"
         data['entity_color'] = get_entity_color("SimpleEntity", "genes")
         data['angle'] = data['value'] / data['value'].sum() * 2 * pi
-        data[event + '_color'] = color_palette(len(events))
+        data[event + '_color'] = color_palette
 
         f.wedge(x=0, y=0, radius=0,
                 start_angle=cumsum('angle', include_zero=True),
-                end_angle=cumsum('angle'),
-                line_color="white", fill_color=event + '_color', legend_field=event, source=data,
-                name='node', visible=False)
+                end_angle=cumsum('angle'), legend_field=event, source=data, visible=False)
 
         ######## Add all nodes
 
@@ -162,7 +169,7 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
             data['type'] = G.nodes[k]['type']
             data['entity_color'] = G.nodes[k]['entity_color']
             data['angle'] = data['value'] / data['value'].sum() * 2 * pi
-            data[event+'_color'] = color_palette(len(events))
+            data[event + '_color'] = color_palette
 
             i = 0
             count = 0
@@ -177,16 +184,16 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, v=False, **kwargs
                 f.wedge(x=x, y=y, radius=radius,
                         start_angle=cumsum('angle', include_zero=True),
                         end_angle=cumsum('angle'),
-                        line_color="white", fill_color=event+'_color', legend_field=event, source=data,
+                        line_color="black", fill_color=event + '_color', legend_field=event, source=data,
                         name='node')
             else:
                 data = {
                     'id': [k], 'type': [G.nodes[k]['type']],
-                    event+'_color': [data[event+'_color'][index]],
+                    event + '_color': [data[event + '_color'][index]],
                     'entity_color': [G.nodes[k]['entity_color']]
                 }
                 f.circle(x=x, y=y, radius=radius,
-                         line_color='white', fill_color=event+'_color',
+                         line_color='black', fill_color=event + '_color',
                          source=ColumnDataSource(data=data), name='node')
 
         ###### Relocate the legend
