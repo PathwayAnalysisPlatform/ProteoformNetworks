@@ -11,6 +11,9 @@ struct module_bimaps {
 struct modules {
     vb group_to_members;
     vb member_to_groups;
+
+    [[nodiscard]] int numMembers() const { return member_to_groups.size(); };
+    [[nodiscard]] int numGroups() const { return group_to_members.size(); }
 };
 
 struct bidirectional_mapping {
@@ -20,9 +23,8 @@ struct bidirectional_mapping {
 
 // A hash function used to hash a pair of any kind
 struct hash_pair {
-    template <class T1, class T2>
-    size_t operator()(const std::pair<T1, T2>& p) const
-    {
+    template<class T1, class T2>
+    size_t operator()(const std::pair<T1, T2> &p) const {
         auto hash1 = std::hash<T1>{}(p.first);
         auto hash2 = std::hash<T2>{}(p.second);
         return hash1 ^ hash2;
@@ -30,6 +32,6 @@ struct hash_pair {
 };
 
 template<typename T>
-using pair_map = std::unordered_map<std::pair<int, int>, T,hash_pair>;
+using pair_map = std::unordered_map<std::pair<int, int>, T, hash_pair>;
 
 #endif //PROTEOFORMNETWORKS_OVERLAP_TYPES_HPP

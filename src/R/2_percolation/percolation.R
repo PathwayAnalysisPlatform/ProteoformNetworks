@@ -155,7 +155,7 @@ GetPercolationCurvePoints <- function(graph, label,
   #'  DefineMeasures: function to calculate breaks sequence
   #'  type: string with percolation type: Node|Link
   #'  relative: string with relative calculation of the lcc: Order|Size
-  #'  verbose: if TRUE print messages at each step
+  #'  v: if TRUE print messages at each step
   #' 
   #' Returns:
   #'   Data frame with three columns: (Sizes|Orders), Completeness and Relative(Size|Order)Lcc

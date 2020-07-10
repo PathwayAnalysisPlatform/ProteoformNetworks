@@ -25,11 +25,13 @@ struct get_entities_result {
     bimap_str_int genes;
     bimap_str_int proteins;
     bimap_str_int proteoforms;
+    bimap_str_int small_molecules;
 };
 
 get_entities_result get_entities(std::string_view path_file_reactome_genes,
                                  std::string_view path_file_reactome_proteins,
-                                 std::string_view path_file_reactome_proteoforms);
+                                 std::string_view path_file_reactome_proteoforms,
+                                 std::string_view path_file_reactome_small_molecules);
 
 inline bool file_exists(const std::string &name) {
     struct stat buffer;
@@ -43,8 +45,12 @@ get_or_create_modules(const std::string &path_modules, std::string_view path_fil
                       std::string_view path_file_mapping_proteins_to_genes,
                       std::string_view path_file_protein_interactions,
                       std::string_view path_file_mapping_proteins_to_proteoforms,
-                      std::string_view path_file_proteoform_interactions, const bimap_str_int &genes,
-                      const bimap_str_int &proteins, const bimap_str_int &proteoforms, const bimap_str_int &traits,
+                      std::string_view path_file_proteoform_interactions,
+                      const bimap_str_int &genes,
+                      const bimap_str_int &proteins,
+                      const bimap_str_int &proteoforms,
+                      const bimap_str_int &small_molecules,
+                      const bimap_str_int &traits,
                       bool keep_disconnected_nodes);
 
 struct score_maps {
@@ -67,6 +73,7 @@ void doOverlapAnalysis(
         std::string_view path_file_genes,
         std::string_view path_file_proteins,
         std::string_view path_file_proteoforms,
+        std::string_view path_file_small_molecules,
         std::string_view path_file_gene_interactions,
         std::string_view path_file_protein_interactions,
         std::string_view path_file_proteoform_interactions,

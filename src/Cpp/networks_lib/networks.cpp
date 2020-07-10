@@ -29,12 +29,12 @@ vusi loadInteractionNetwork(std::string_view path_file_interactions,
             interactions[index_e1].insert(index_e2);
             interactions[index_e2].insert(index_e1);
         } else {
-//            if (!hasKey(entities.str_to_int, e1)) {
-//                std::cerr << "Not found entity: **" << e1 << "**" << std::endl;
-//            }
-//            if (!hasKey(entities.str_to_int, e2)) {
-//                std::cerr << "Not found entity: **" << e2 << "**" << std::endl;
-//            }
+            if (!hasKey(entities.str_to_int, e1)) {
+                std::cerr << "Not found entity: **" << e1 << "**" << std::endl;
+            }
+            if (!hasKey(entities.str_to_int, e2)) {
+                std::cerr << "Not found entity: **" << e2 << "**" << std::endl;
+            }
         }
     }
 
@@ -172,14 +172,11 @@ std::string get_file_name_for_module(std::string module_name) {
 }
 
 // Creates a file with all the modules: to read all modules at once
-void writeModulesSingleFile(std::string_view path_file_modules, std::string_view level, std::string_view suffix,
+void writeModulesSingleFile(std::string_view path_file_modules,
                             const modules &entity_modules, const bimap_str_int &groups,
                             const bimap_str_int &members) {
-    std::string all_traits_file_path = path_file_modules.data();
-    all_traits_file_path += level;
-    all_traits_file_path += suffix;
-
-    std::ofstream file_all_traits(all_traits_file_path); // File for all modules
+    std::cerr << "Writing modules to file: " << path_file_modules << std::endl;
+    std::ofstream file_all_traits(path_file_modules.data()); // File for all modules
     if (!file_all_traits.is_open()) {
         throw std::runtime_error("Problem opening modules file for writing.\n");
     }
@@ -241,7 +238,7 @@ void writeModulesManyFiles(std::string_view path_file_modules, std::string_view 
     }
 }
 
-// Calculates and create a file with the sizes of all trait modules at a level (genes, proteins or proteoforms)
+// Calculates and create a file with the sizes of all trait modules at all levels (genes, proteins or proteoforms)
 std::map<const std::string, um<int, int>> calculate_and_report_sizes(std::string_view path_reports,
                                                                      const std::map<const std::string, const modules> &all_modules,
                                                                      const bimap_str_int &groups) {

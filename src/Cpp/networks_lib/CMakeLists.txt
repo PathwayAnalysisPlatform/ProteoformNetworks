@@ -17,6 +17,6 @@ set(SOURCE_FILES
         conversions.cpp
         scores.cpp
         phegeni.cpp
-        networks.cpp)
+        networks.cpp strings.hpp)
 
 add_library(networks_lib STATIC ${SOURCE_FILES} ${HEADER_FILES})

@@ -156,13 +156,3 @@ m.pf <- read.csv("m_pf.txt", sep = " ")
 rownames(m.g) <- colnames(m.g)
 rownames(m.pt) <- colnames(m.pt)
 rownames(m.pf) <- colnames(m.pf)
-
-# Compare each pair of phenotypes for overlap in the protein and proteoform (Version 2) ---- 
-
-library("Rcpp")
-cppFunction("
-            bool isOddCpp(int num = 10) {
-              bool result = (num % 2 == 1);
-              return result;
-            }")
-isOddCpp(42L)

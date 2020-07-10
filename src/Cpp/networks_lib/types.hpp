@@ -40,6 +40,8 @@ using umsb = um<std::string, base::dynamic_bitset<>>;
 struct bimap_str_int {
     vs int_to_str;
     umsi str_to_int;
+
+    int size() const { return int_to_str.size(); }
 };
 
 #endif // ! TYPES_HPP

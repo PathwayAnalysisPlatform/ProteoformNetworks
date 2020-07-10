@@ -30,7 +30,7 @@ load_modules_result loadModules(std::string_view path_file_modules,
 std::string get_file_name_for_module(std::string module_name);
 
 // Creates a file with all the modules: to read all modules at once
-void writeModulesSingleFile(std::string_view path_file_modules, std::string_view level, std::string_view suffix,
+void writeModulesSingleFile(std::string_view path_file_modules,
                             const modules &entity_modules,
                             const bimap_str_int &groups,
                             const bimap_str_int &members

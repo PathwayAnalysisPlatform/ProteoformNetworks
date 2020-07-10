@@ -3,7 +3,7 @@
 using namespace std;
 
 // Read the genes and traits of PheGenI data file.
-// Creates two bimaps: genes and traits
+// Creates two bimaps: genes and traits. The returned genes are a subset of the genes in the parameter gene set.
 // The gene list are those genes in the dataset that are also contained in the acceptable gene list.
 module_bimaps loadPheGenIGenesAndTraits(
         string_view path_file_phegeni,
@@ -62,10 +62,10 @@ module_bimaps loadPheGenIGenesAndTraits(
 // - trait strings to gene bitsets.
 // - gene strings to trait bitsets
 // The two mappings define the trait modules (also called, phenotype modules or disease modules)
-modules createAndLoadPheGenIGeneModules(std::string_view path_file_phegeni, const bimap_str_int &genes,
-                                        const bimap_str_int &traits, const std::string &path_file_gene_interactions,
-                                        const std::string &path_modules, const std::string &suffix,
-                                        bool keep_disconnected_nodes) {
+modules createGeneModules(std::string_view path_file_phegeni,
+                          const bimap_str_int &genes, const bimap_str_int &small_molecules, const bimap_str_int &traits,
+                          const std::string &path_file_gene_interactions,
+                          const std::string &path_modules, const std::string &suffix, bool keep_disconnected_nodes) {
     ifstream file_phegen(path_file_phegeni.data());
     string line, field, trait, gene, gene2;
     string p_value_str;
@@ -79,10 +79,11 @@ modules createAndLoadPheGenIGeneModules(std::string_view path_file_phegeni, cons
 
     // Initialize modules
     modules modules;
+    int total_num_members = genes.size() + small_molecules.size();
     for (int trait_index = 0; trait_index < traits.int_to_str.size(); trait_index++)
-        modules.group_to_members.push_back(base::dynamic_bitset<>(genes.int_to_str.size()));
+        modules.group_to_members.push_back(base::dynamic_bitset<>(total_num_members));
     for (int gene_index = 0; gene_index < genes.int_to_str.size(); gene_index++)
-        modules.member_to_groups.push_back(base::dynamic_bitset<>(traits.int_to_str.size()));
+        modules.member_to_groups.push_back(base::dynamic_bitset<>(traits.size()));
 
     std::cerr << "Initialized modules:\n"
               << "Genes to traits: " << modules.member_to_groups.size()
@@ -119,13 +120,14 @@ modules createAndLoadPheGenIGeneModules(std::string_view path_file_phegeni, cons
     // Load interaction network
     std::cout << "Reading gene interaction network..." << std::endl;
 
+    auto interactions = loadInteractionNetwork(path_file_gene_interactions, genes, true);
     if (!keep_disconnected_nodes) {
         std::cout << "Removing disconnected genes from modules..." << std::endl;
-        auto interactions = loadInteractionNetwork(path_file_gene_interactions, genes, true);
         removeDisconnectedMembers(modules, traits, genes, interactions);
-        writeModulesSingleFile(path_modules, "genes", suffix, modules, traits, genes);
-        writeModulesManyFiles(path_modules, "genes", ".tsv", modules, traits, genes, interactions);
     }
+
+    writeModulesSingleFile(path_modules + "genes" + suffix, modules, traits, genes);
+    writeModulesManyFiles(path_modules, "genes", ".tsv", modules, traits, genes, interactions);
 
     cerr << "Number of traits with gene members as bitset: " << modules.group_to_members.size() << "\n";
     cerr << "Number of genes with traits they belong as bitset: " << modules.member_to_groups.size() << "\n";
@@ -136,10 +138,13 @@ modules createAndLoadPheGenIGeneModules(std::string_view path_file_phegeni, cons
 // Creates modules of proteins and proteoforms.
 // Converts the modules from gene --> protein or protein --> proteoform, and then removes the disconnected vertices
 // It applies the logic that, some nodes should not be in the network module, because there are no connection to others
-modules createAndLoadPheGenIModules(const modules &prev_modules, const bimap_str_int &prev_entities,
-                                    const bimap_str_int &entities, const bimap_str_int &traits, const ummss &mapping,
-                                    const std::string &path_file_entity_interactions, const std::string &path_modules,
-                                    const std::string &level, const std::string &suffix, bool keep_disconnected_nodes) {
+modules createProteinOrProteoformModules(const modules &prev_modules, const bimap_str_int &prev_entities,
+                                         const bimap_str_int &entities, const bimap_str_int &traits,
+                                         const ummss &mapping,
+                                         const std::string &path_file_entity_interactions,
+                                         const std::string &path_modules,
+                                         const std::string &level, const std::string &suffix,
+                                         bool keep_disconnected_nodes) {
     // Convert gene modules to protein modules using the mapping from entities to genes
     modules result_modules = convertModulesWithMapping(prev_modules, prev_entities, entities, traits, mapping);
 

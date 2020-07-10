@@ -1,4 +1,5 @@
 #include "bimap_str_int.hpp"
+#include "strings.hpp"
 
 // Creates a bimap of string to int and viceversa.
 // The int index assigned to each string corresponds to the lexicographic order.
@@ -65,7 +66,7 @@ vs createIntToStr(std::string_view path_file, bool has_header, int selected_colu
             std::getline(map_file, entity, '\t');
             std::getline(map_file, leftover, '\n');
         }
-        temp_set.insert(entity);
+        temp_set.insert(rtrim(entity));
         current_column = 0;
     }
     index_to_entities = convert_uss_to_vs(temp_set);

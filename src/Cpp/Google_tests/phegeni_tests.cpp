@@ -10,9 +10,9 @@ protected:
         genes = createBimap(path_file_genes);
         auto ret = loadPheGenIGenesAndTraits(path_file_phegeni, genes);
         traits = ret.groups;
-        gene_modules = createAndLoadPheGenIGeneModules(path_file_phegeni, genes, traits,
-                                                       path_file_gene_interactions,
-                                                       "../../../../reports/modules/", ".tsv", false);
+        gene_modules = createGeneModules(path_file_phegeni, genes, traits,
+                                         path_file_gene_interactions,
+                                         "../../../../reports/modules/", ".tsv", false);
         std::cerr << traits.str_to_int.size() << " === " << traits.int_to_str.size() << "\n";
     }
 
@@ -130,8 +130,8 @@ protected:
         mapping = readMapping(path_file_mapping);
         auto ret = loadPheGenIGenesAndTraits(path_file_phegeni, genes);
         traits = ret.groups;
-        gene_modules = createAndLoadPheGenIGeneModules(path_file_phegeni, genes, traits, path_file_gene_interactions,
-                                                       "../../../../reports/modules/", ".tsv", false);
+        gene_modules = createGeneModules(path_file_phegeni, genes, traits, path_file_gene_interactions,
+                                         "../../../../reports/modules/", ".tsv", false);
         protein_modules = convertModulesWithMapping(gene_modules,
                                                     genes,
                                                     proteins,
@@ -223,24 +223,26 @@ protected:
         auto ret = loadPheGenIGenesAndTraits(path_file_phegeni_modules, genes);
         traits = ret.groups;
 
-        gene_modules = createAndLoadPheGenIGeneModules(path_file_phegeni_modules, genes, traits,
-                                                       path_file_gene_interactions, "../../../../reports/modules/",
-                                                       ".tsv", false);
+        gene_modules = createGeneModules(path_file_phegeni_modules, genes, traits,
+                                         path_file_gene_interactions, "../../../../reports/modules/",
+                                         ".tsv", false);
 
         bidirectional_mapping mapping_genes_to_proteins = readMapping(path_file_mapping_genes_to_proteins,
                                                                       true, false);
-        protein_modules = createAndLoadPheGenIModules(gene_modules, genes, proteins, traits,
-                                                      mapping_genes_to_proteins.first_to_second,
-                                                      path_file_protein_interactions,
-                                                      "../../../../reports/modules/", "proteins", ".tsv", false);
+        protein_modules = createProteinOrProteoformModules(gene_modules, genes, proteins, traits,
+                                                           mapping_genes_to_proteins.first_to_second,
+                                                           path_file_protein_interactions,
+                                                           "../../../../reports/modules/", "proteins", ".tsv",
+                                                           false);
 
         bidirectional_mapping mapping_proteins_to_proteoforms = readMapping(path_file_mapping_proteins_to_proteoforms,
                                                                             true,
                                                                             true);
-        proteoform_modules = createAndLoadPheGenIModules(protein_modules, proteins, proteoforms, traits,
-                                                         mapping_proteins_to_proteoforms.first_to_second,
-                                                         path_file_proteoform_interactions,
-                                                         "../../../../reports/modules/", "proteoforms", ".tsv", false);
+        proteoform_modules = createProteinOrProteoformModules(protein_modules, proteins, proteoforms, traits,
+                                                              mapping_proteins_to_proteoforms.first_to_second,
+                                                              path_file_proteoform_interactions,
+                                                              "../../../../reports/modules/", "proteoforms",
+                                                              ".tsv", false);
     }
 
     bimap_str_int genes, proteins, proteoforms, traits;

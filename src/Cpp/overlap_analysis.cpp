@@ -9,6 +9,7 @@ void doOverlapAnalysis(
         std::string_view path_file_genes,
         std::string_view path_file_proteins,
         std::string_view path_file_proteoforms,
+        std::string_view path_file_small_molecules,
         std::string_view path_file_gene_interactions,
         std::string_view path_file_protein_interactions,
         std::string_view path_file_proteoform_interactions,
@@ -17,9 +18,12 @@ void doOverlapAnalysis(
         std::string path_reports) {
 
     std::cout << "Reading genes, proteins and proteoforms.\n\n";
-    const auto[genes, proteins, proteoforms] = get_entities(path_file_genes,
-                                                            path_file_proteins,
-                                                            path_file_proteoforms);
+    const auto[genes, proteins, proteoforms, small_molecules] = get_entities(
+            path_file_genes,
+            path_file_proteins,
+            path_file_proteoforms,
+            path_file_small_molecules);
+
 
     // Read traits and genes in Phegeni file. The genes in the PhegenI file are ignored,
     // the universe set of genes used is the one of Reactome
@@ -27,10 +31,9 @@ void doOverlapAnalysis(
     const auto[traits, phegen_genes] = loadPheGenIGenesAndTraits(path_file_modules, genes);
 
     // Create or read module files at the three levels: all in one, and single module files.
-
-    std::cout << "Creating modules keeping disconnected nodes...\n\n";
+    std::cout << "Creating modules\n\n";
     std::string path_modules = path_reports;
-    path_modules += "modules_keep_disconnected/";
+
     auto all_modules = get_or_create_modules(
             path_modules,
             path_file_modules,
@@ -39,7 +42,7 @@ void doOverlapAnalysis(
             path_file_protein_interactions,
             path_file_mapping_proteins_to_proteoforms,
             path_file_proteoform_interactions,
-            genes, proteins, proteoforms,
+            genes, proteins, proteoforms, small_molecules,
             traits, true);
 
     int num_modules = all_modules.begin()->second.group_to_members.size();
@@ -59,7 +62,7 @@ void doOverlapAnalysis(
             path_file_protein_interactions,
             path_file_mapping_proteins_to_proteoforms,
             path_file_proteoform_interactions,
-            genes, proteins, proteoforms,
+            genes, proteins, proteoforms, small_molecules,
             traits, false);
 
     num_modules = all_modules.begin()->second.group_to_members.size();
@@ -69,7 +72,7 @@ void doOverlapAnalysis(
     }
     calculate_and_report_sizes(path_reports, all_modules, traits);
 
-//     Calculate scores with Overlap Similarity
+    // Calculate scores with Overlap Similarity
     std::cout << "Reading interaction networks...\n";
     const std::map<const std::string, const vusi> interactions = {
             {LEVELS.at(0), loadInteractionNetwork(path_file_gene_interactions, genes, true)},
@@ -127,63 +130,63 @@ get_or_create_modules(const std::string &path_modules, std::string_view path_fil
                       std::string_view path_file_mapping_proteins_to_genes,
                       std::string_view path_file_protein_interactions,
                       std::string_view path_file_mapping_proteins_to_proteoforms,
-                      std::string_view path_file_proteoform_interactions, const bimap_str_int &genes,
-                      const bimap_str_int &proteins, const bimap_str_int &proteoforms, const bimap_str_int &traits,
+                      std::string_view path_file_proteoform_interactions,
+                      const bimap_str_int &genes,
+                      const bimap_str_int &proteins,
+                      const bimap_str_int &proteoforms,
+                      const bimap_str_int &small_molecules,
+                      const bimap_str_int &traits,
                       bool keep_disconnected_nodes) {
-    std::string suffix = "_modules.tsv";
     modules gene_modules, protein_modules, proteoform_modules;
+    std::string suffix = "_modules.tsv";
 
-    std::string all_traits_genes_file_name = path_modules + "genes" + suffix;
-    std::string all_traits_proteins_file_name = path_modules + "proteins" + suffix;
-    std::string all_traits_proteoforms_file_name = path_modules + "proteoforms" + suffix;
-
-    std::cerr << "Checking if file " << all_traits_genes_file_name << " exists." << std::endl;
-    if (file_exists(all_traits_genes_file_name)) {
+    // Genes
+    std::string modules_file_name = path_modules + LEVELS.at(0) + suffix;
+    if (file_exists(modules_file_name)) {
         std::cout << "Reading gene modules." << std::endl;
-        gene_modules = loadModules(all_traits_genes_file_name, traits, genes).entity_modules;
+        gene_modules = loadModules(modules_file_name, traits, genes).entity_modules;
     } else {
         std::cout << "Creating gene modules." << std::endl;
-        gene_modules = createAndLoadPheGenIGeneModules(path_file_phegeni, genes, traits,
-                                                       path_file_gene_interactions.data(),
-                                                       path_modules, suffix, keep_disconnected_nodes);
+        gene_modules = createGeneModules(path_file_phegeni, genes, small_molecules, traits,
+                                         path_file_gene_interactions.data(),
+                                         path_modules, suffix, keep_disconnected_nodes);
     }
 
-    std::cerr << "Checking if file " << all_traits_proteins_file_name << " exists." << std::endl;
-    if (file_exists(all_traits_proteins_file_name)) {
+    // Proteins
+    modules_file_name = path_modules + LEVELS.at(1) + suffix;
+    if (file_exists(modules_file_name)) {
         std::cout << "Reading protein modules." << std::endl;
-        protein_modules = loadModules(all_traits_proteins_file_name, traits, proteins).entity_modules;
+        protein_modules = loadModules(modules_file_name, traits, proteins).entity_modules;
     } else {
         std::cout << "Creating protein modules." << std::endl;
         bidirectional_mapping mapping_genes_to_proteins = readMapping(path_file_mapping_proteins_to_genes,
                                                                       true, false);
-        protein_modules = createAndLoadPheGenIModules(gene_modules, genes, proteins, traits,
-                                                      mapping_genes_to_proteins.second_to_first,
-                                                      path_file_protein_interactions.data(),
-                                                      path_modules, "proteins", suffix, keep_disconnected_nodes);
+        protein_modules = createProteinOrProteoformModules(gene_modules, genes, proteins, traits,
+                                                           mapping_genes_to_proteins.second_to_first,
+                                                           path_file_protein_interactions.data(),
+                                                           path_modules, "proteins", suffix,
+                                                           keep_disconnected_nodes);
     }
 
-    std::cerr << "Checking if file " << all_traits_proteoforms_file_name << " exists." << std::endl;
-    if (file_exists(all_traits_proteoforms_file_name)) {
+    // Proteoforms
+    modules_file_name = path_modules + LEVELS.at(2) + suffix;
+    if (file_exists(modules_file_name)) {
         std::cout << "Reading proteoform modules." << std::endl;
-        proteoform_modules = loadModules(all_traits_proteoforms_file_name, traits, proteoforms).entity_modules;
+        proteoform_modules = loadModules(modules_file_name, traits, proteoforms).entity_modules;
     } else {
         std::cout << "Creating proteoform modules." << std::endl;
         bidirectional_mapping mapping_proteins_to_proteoforms = readMapping(path_file_mapping_proteins_to_proteoforms,
                                                                             true, true);
-        proteoform_modules = createAndLoadPheGenIModules(protein_modules, proteins, proteoforms, traits,
-                                                         mapping_proteins_to_proteoforms.second_to_first,
-                                                         path_file_proteoform_interactions.data(),
-                                                         path_modules, "proteoforms", suffix, keep_disconnected_nodes);
+        proteoform_modules = createProteinOrProteoformModules(protein_modules, proteins, proteoforms, traits,
+                                                              mapping_proteins_to_proteoforms.second_to_first,
+                                                              path_file_proteoform_interactions.data(),
+                                                              path_modules, "proteoforms", suffix,
+                                                              keep_disconnected_nodes);
     }
 
-    return {
-            {
-                    LEVELS.at(0), gene_modules},
-            {
-                    LEVELS.at(1), protein_modules},
-            {
-                    LEVELS.at(2), proteoform_modules}
-    };
+    return {{LEVELS.at(0), gene_modules},
+            {LEVELS.at(1), protein_modules},
+            {LEVELS.at(2), proteoform_modules}};
 }
 
 
@@ -202,17 +205,20 @@ void printMembers(std::ostream &output, const uss &members) {
 // Read Reactome genes, proteins and proteoforms. Take them as universe set of acceptable identifiers.
 get_entities_result get_entities(std::string_view path_file_reactome_genes,
                                  std::string_view path_file_reactome_proteins,
-                                 std::string_view path_file_reactome_proteoforms) {
+                                 std::string_view path_file_reactome_proteoforms,
+                                 std::string_view path_file_reactome_small_molecules) {
 
     std::cout << "Loading genes..." << std::endl;
-    const bimap_str_int genes = createBimap(path_file_reactome_genes, true);
+    const bimap_str_int genes = createBimap(path_file_reactome_genes, false);
     std::cout << "Loading proteins..." << std::endl;
-    const bimap_str_int proteins = createBimap(path_file_reactome_proteins, true);
+    const bimap_str_int proteins = createBimap(path_file_reactome_proteins, false);
     std::cout << "Loading proteoforms..." << std::endl;
     const bimap_str_int proteoforms = createBimap(path_file_reactome_proteoforms, false);
+    std::cout << "Loading small molecules..." << std::endl;
+    const bimap_str_int small_molecules = createBimap(path_file_reactome_small_molecules, false);
 
     std::cout << "Entities loaded.\n";
-    return {genes, proteins, proteoforms};
+    return {genes, proteins, proteoforms, small_molecules};
 }
 
 /**
