@@ -1,11 +1,10 @@
-import codecs
-import os
 from pathlib import Path
 
 import networkx as nx
 
 from config import LEVELS
-from interaction_network import connect_reaction_participants, connect_complex_components, add_nodes, save_graph
+from interaction_network import connect_reaction_participants, connect_complex_components, add_nodes, save_graph, \
+    read_graph
 from network_topology_queries import get_reaction_participants, get_complex_components
 
 
@@ -21,8 +20,6 @@ def read_or_create_full_graph(level, sm=True, graphs_path="", v=True):
     :return: networkx complete graph using all genes, proteins or proteoforms
     """
 
-    G = nx.Graph()
-
     graphs_path = Path(graphs_path)
 
     vertices_file = graphs_path / (level + "_vertices.tsv")
@@ -32,31 +29,10 @@ def read_or_create_full_graph(level, sm=True, graphs_path="", v=True):
     # Check if files exist
     if Path(edges_file).exists() and Path(vertices_file).exists() and (
             (sm and Path(small_molecules_file).exists()) or not sm):
-
-        print("Reading graph")
-
-        G = nx.read_adjlist(edges_file.as_posix())
-        G.graph['num_' + level] = 0
-        G.graph['num_small_molecules'] = 0
-
-        with vertices_file.open() as fh:
-            entity = fh.readline()
-            while entity:
-                attrs = {entity.strip(): {'type': level}}
-                nx.set_node_attributes(G, attrs)
-                G.graph['num_' + level] += 1
-                entity = fh.readline()
-        if sm:
-            with small_molecules_file.open() as fh:
-                small_molecule = fh.readline()
-                while small_molecule:
-                    attrs = {small_molecule.strip(): {'type': "SimpleEntity"}}
-                    nx.set_node_attributes(G, attrs)
-                    G.graph['num_small_molecules'] += 1
-                    small_molecule = fh.readline()
+        G = read_graph(graphs_path.as_posix(), "", level)
     else:
         print("Creating graph")
-
+        G = nx.Graph()
         G.graph['num_' + level] = 0
         G.graph['num_small_molecules'] = 0
 
@@ -82,9 +58,10 @@ def read_or_create_full_graph(level, sm=True, graphs_path="", v=True):
 
 
 if __name__ == '__main__':
-    graphs_path = "full_graphs/"
-    graphs = [read_or_create_full_graph(l, True, graphs_path) for l in LEVELS]
-
+    graphs_path = "../../resources/Reactome/"
+    graphs = {l: read_or_create_full_graph(l, True, graphs_path) for l in LEVELS}
+    for l in LEVELS:
+        print(len(graphs[l]))
     # graphs_no_sm = [read_or_create_full_graph(level, False, graphs_path, v=False) for level in LEVELS]
 
     print("Finished!!")

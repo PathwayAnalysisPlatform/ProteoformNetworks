@@ -138,6 +138,50 @@ def add_nodes(G, df, level):
                 G.nodes[entity['Id']]['prevId'] = entity['PrevId']
 
 
+def read_graph(graphs_path, file_preffix, level):
+    graphs_path = Path(graphs_path)
+
+    vertices_file = graphs_path / ((file_preffix + "_" if len(file_preffix) > 0 else "") + level + "_vertices.tsv")
+    edges_file = graphs_path / ((file_preffix + "_" if len(file_preffix) > 0 else "") + level + "_interactions.tsv")
+    small_molecules_file = graphs_path / ((file_preffix + "_" if len(file_preffix) > 0 else "") + level + "_small_molecules_vertices.tsv")
+
+    if not Path(vertices_file).exists() or not Path(edges_file).exists() or not Path(small_molecules_file).exists():
+        print("Graph files not found:")
+        print(f"-- {vertices_file}")
+        print(f"-- {edges_file}")
+        print(f"-- {small_molecules_file}")
+
+    print(f"    Reading {edges_file}")
+    G = nx.read_adjlist(edges_file.as_posix())
+    G.graph["level"] = level
+    G.graph['num_' + level] = 0
+    G.graph['num_small_molecules'] = 0
+
+    print(f"    Reading {vertices_file}")
+    with vertices_file.open() as fh:
+        entity = fh.readline()
+        while entity:
+            attrs = {entity.strip(): {'type': level}}
+            nx.set_node_attributes(G, attrs)
+            G.graph['num_' + level] += 1
+            entity = fh.readline()
+
+    print(f"    Reading {small_molecules_file}")
+    with small_molecules_file.open() as fh:
+        small_molecule = fh.readline()
+        while small_molecule:
+            attrs = {small_molecule.strip(): {'type': "SimpleEntity"}}
+            nx.set_node_attributes(G, attrs)
+            G.graph['num_small_molecules'] += 1
+            small_molecule = fh.readline()
+
+    print(f"        Graph edges: {G.size()}")
+    print(f"        Graph nodes: {len(G.nodes)}")
+    print(f"        Graph {level} nodes: {G.graph['num_' + level]}")
+    print(f"        Graph small molecule nodes: {G.graph['num_small_molecules']}")
+    return G
+
+
 def save_graph(G, level, graphs_path="", label=""):
     print(f"Storing network level: {level}")
 
@@ -204,7 +248,7 @@ def create_graph(pathway, level, sm, graphs_path="", v=False, save=False):
     connect_complex_components(G, df_complexes, level, v)
 
     if save:
-        save_graph(G, level, graphs_path, label=pathway + "_" + ("no_sm_" if not sm else ""))
+        save_graph(G, level, graphs_path, label=pathway + ("_no_sm" if not sm else ""))
 
     print(f"Created graph {pathway} - {level} - {sm}", flush=True)
     return G
@@ -268,4 +312,10 @@ def merge_graphs(graphs):
 
 
 if __name__ == '__main__':
-    create_graph("R-HSA-8981607", "proteins", True)
+    create_graph("R-HSA-8981607", "proteins", True, save=True)
+
+    G = read_graph("", "R-HSA-8981607", "proteins")
+    print(G.nodes)
+
+    G = read_graph("../../resources/Reactome/", "", "genes")
+    print(list(G)[:10])
