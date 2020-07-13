@@ -1,5 +1,7 @@
+import codecs
 import os
 from collections import namedtuple
+from pathlib import Path
 
 import networkx as nx
 import pandas as pd
@@ -101,15 +103,29 @@ def connect_complex_components(G, df, level="proteins", v=True):
 
 def add_nodes(G, df, level):
     for index, entity in df.iterrows():
-        G.add_node(entity['Id'],
-                   id=entity['Id'],
-                   type=(entity['Type'] if entity['Type'] == 'SimpleEntity' else level),
-                   entity_color=get_entity_color(entity['Type'], level),
-                   roles=set(),
-                   reactions=set(),
-                   pathways=set(),
-                   complexes=set(),
-                   )
+        # print(f"Adding node {index} of entity {entity}")
+        if entity['Id'] not in G.nodes:
+            G.add_node(entity['Id'],
+                       id=entity['Id'],
+                       type=(entity['Type'] if entity['Type'] == 'SimpleEntity' else level),
+                       entity_color=get_entity_color(entity['Type'], level),
+                       roles=set(),
+                       reactions=set(),
+                       pathways=set(),
+                       complexes=set(),
+                       )
+            if entity['Type'] == 'SimpleEntity':
+                G.graph['num_small_molecules'] += 1
+            else:
+                G.graph['num_' + level] += 1
+
+        if 'Complex' in df.columns:
+            G.nodes[entity['Id']]['complexes'].add(entity['Complex'])
+        elif 'Role' in df.columns:
+            G.nodes[entity['Id']]['roles'].add(entity['Role'])
+            G.nodes[entity['Id']]['reactions'].add(entity['Reaction'])
+            G.nodes[entity['Id']]['pathways'].add(entity['Pathway'])
+
         if level == 'proteins':
             if (G.nodes[entity['Id']]['type'] == "SimpleEntity"):
                 G.nodes[entity['Id']]['prevId'] = entity['Id']
@@ -122,7 +138,42 @@ def add_nodes(G, df, level):
                 G.nodes[entity['Id']]['prevId'] = entity['PrevId']
 
 
-def create_graph(pathway, level, sm, graphs_path="", v=False):
+def save_graph(G, level, graphs_path="", label=""):
+    print(f"Storing network level: {level}")
+
+    graphs_path = Path(graphs_path)
+
+    if len(label) > 0:
+        label = label + "_"
+
+    vertices_file = graphs_path / (label + level + "_vertices.tsv")
+    edges_file = graphs_path / (label + level + "_interactions.tsv")
+    small_molecules_file = graphs_path / (label + level + "_small_molecules_vertices.tsv")
+
+    if len(str(graphs_path)) > 0:
+        if not os.path.exists(graphs_path):
+            Path(graphs_path).mkdir(parents=True, exist_ok=True)
+    fh = open(edges_file, 'wb')
+    nx.write_adjlist(G, fh, delimiter="\t")
+
+    print(f"Created edges file for {level}")
+    fh.close()
+
+    with codecs.open(vertices_file, 'w', "utf-8") as fh:
+        for n, t in G.nodes(data='type'):
+            if t != "SimpleEntity":
+                fh.write('%s\n' % n)
+    print(f"Created entity vertices file for {level}")
+
+    with codecs.open(small_molecules_file, 'w', "utf-8") as fh:
+        for n, t in G.nodes(data='type'):
+            if t == "SimpleEntity":
+                fh.write('%s\n' % n)
+                G.graph['num_small_molecules'] += 1
+    print(f"Created small molecule vertices file for {level}")
+
+
+def create_graph(pathway, level, sm, graphs_path="", v=False, save=False):
     """
     Converts a set of reactions with its participants into a graph
 
@@ -140,6 +191,8 @@ def create_graph(pathway, level, sm, graphs_path="", v=False):
     G.graph["stId"] = pathway
     G.graph["level"] = level
     G.graph["sm"] = sm
+    G.graph['num_' + level] = 0
+    G.graph['num_small_molecules'] = 0
 
     df_reactions = get_reaction_participants_by_pathway(pathway, level, sm, v)
     df_complexes = get_complex_components_by_pathway(pathway, level, sm, v)
@@ -150,22 +203,10 @@ def create_graph(pathway, level, sm, graphs_path="", v=False):
     connect_reaction_participants(G, df_reactions, level, v)
     connect_complex_components(G, df_complexes, level, v)
 
-    if v:
-        print(f"Storing network")
-
-    out_file = pathway + "_" + level
-    if not sm:
-        out_file += "_no_small_molecules"
-    out_file += "_edge_list"
-
-    if len(str(graphs_path)) > 0:
-        if not os.path.exists(graphs_path):
-            os.mkdir(graphs_path)
-    fh = open(os.path.join(str(graphs_path), out_file), 'wb')
-    nx.write_edgelist(G, fh, data=True)
+    if save:
+        save_graph(G, level, graphs_path, label=pathway + "_" + ("no_sm_" if not sm else ""))
 
     print(f"Created graph {pathway} - {level} - {sm}", flush=True)
-    fh.close()
     return G
 
 
@@ -183,8 +224,8 @@ def create_pathway_graphs(pathway, graphs_path="../../reports/pathways/", v=Fals
     if len(name) == 0:
         return [nx.Graph(), nx.Graph(), nx.Graph()], [nx.Graph(), nx.Graph(), nx.Graph()]
     else:
-        graphs = [create_graph(pathway, level, True, graphs_path, v) for level in LEVELS]
-        graphs_no_small_molecules = [create_graph(pathway, level, False, graphs_path, v) for level in LEVELS]
+        graphs = [create_graph(pathway, level, True, graphs_path, v, True) for level in LEVELS]
+        graphs_no_small_molecules = [create_graph(pathway, level, False, graphs_path, v, True) for level in LEVELS]
         return graphs, graphs_no_small_molecules
 
 

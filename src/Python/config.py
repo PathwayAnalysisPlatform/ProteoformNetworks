@@ -8,13 +8,13 @@ LEVELS = ["genes", "proteins", "proteoforms"]
 # LEVELS_COLOR = {"genes": "#67A9CF", "proteins": "#F1A340", "proteoforms": "#7FBF7B"}
 LEVELS_COLOR = {"genes": Colorblind[4][0], "proteins": Colorblind[4][1], "proteoforms": Colorblind[4][3]}
 
-PATH_REACTOME = "resources/reactome/v72/"
-FILE_REACTOME_GENES = "genes/all_genes_v72.csv"  # these paths are the suffix of PATH_REACTOME
-FILE_REACTOME_PROTEINS = "proteins/all_proteins_v72.csv"
-FILE_REACTOME_PROTEOFORMS = "proteoforms/all_proteoforms_v72.csv"
-FILE_REACTOME_GENE_INTERACTIONS = "genes/geneInternalEdges.tsv"
-FILE_REACTOME_PROTEIN_INTERACTIONS = "proteins/proteinInternalEdges.tsv"
-FILE_REACTOME_PROTEOFORM_INTERACTIONS = "proteoforms/proteoformInternalEdges.tsv"
+PATH_REACTOME = "resources/reactome/"
+FILE_REACTOME_GENES = "genes_vertices.tsv"  # these paths are the suffix of PATH_REACTOME
+FILE_REACTOME_PROTEINS = "proteins_vertices.tsv"
+FILE_REACTOME_PROTEOFORMS = "proteoforms_vertices.tsv"
+FILE_REACTOME_GENE_INTERACTIONS = "genes_interactions.tsv"
+FILE_REACTOME_PROTEIN_INTERACTIONS = "proteins_interactions.tsv"
+FILE_REACTOME_PROTEOFORM_INTERACTIONS = "proteoforms_interactions.tsv"
 FILE_PROTEOFORMS_SEARCH = "proteoforms/search.tsv"
 
 PATH_RESOURCES = "resources/"

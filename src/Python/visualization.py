@@ -4,7 +4,7 @@ from math import pi
 
 import networkx as nx
 import pandas as pd
-from bokeh.io import output_file
+from bokeh.io import output_file, save
 from bokeh.io import show
 from bokeh.layouts import layout
 from bokeh.models import (BoxZoomTool, HoverTool,
@@ -373,7 +373,7 @@ def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", gra
     ])
 
     # show(l)
-    # save(l)
+    save(l)
     return l
 
 
@@ -382,14 +382,14 @@ def plot_low_level_pathways(min_size=5, max_size=20, figures_path="figures/pathw
     for pathway in pathways['stId']:
         name = get_pathway_name(pathway)
         name = name.iloc[0]['Name']
-        print(f"Creating networks for pathway {pathway}")
-        G = create_graph(pathway, "genes", True, graphs_path)
+
+        G = create_graph(pathway, "genes", True, graphs_path, save=False)
 
         if min_size <= len(G.nodes) <= max_size:
+            print(f"-- Plotting pathway \"{pathway}\" with size {len(G.nodes)}")
             plot_pathway_all_levels(pathway, figures_path, graphs_path)
-
-    print(f"Plot {pathway}")
-    plot_pathway_all_levels(pathway, figures_path, graphs_path)
+        # else:
+        #     print(f"Skipping pathway: \"{pathway}\" with size {len(G.nodes)}")
 
 
 def plot_pathways(pathways, level, sm, coloring, v=False):
@@ -411,18 +411,17 @@ def plot_pathways(pathways, level, sm, coloring, v=False):
     return f
 
 
-# plot_pathway_all_levels("R-HSA-165160", "./", "./")
-# plot_low_level_pathways(figures_path="../../figures/pathways/", graphs_path="../../reports/pathways/")
-
 def main():
     pathway = "R-HSA-9634600"
     graphs = create_pathway_graphs(pathway)
     p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.ENTITY_TYPE)
-    show(p)
+    # show(p)
     p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.REACTION)
-    show(p)
+    # show(p)
     p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.PATHWAY)
-    show(p)
+    # show(p)
+
+    # plot_low_level_pathways(10, 20, "../../figures/pathways/", "../../reports/pathways/")
     print("Finished")
 
 
