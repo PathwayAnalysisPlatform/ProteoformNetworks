@@ -27,6 +27,7 @@ packages/
 *.ipr
 *.eml
 *.xml
+build/
 
 ## Compiled Object files
 *.slo
@@ -74,3 +75,5 @@ src/Python/learning/
 !.idea/runConfigurations/
 .idea/misc.xml
 /src/Cpp/Google_tests/lib/gtest/
+.idea/misc.xml
+.idea/runConfigurations/ProteoformNetwork_run.xml
