@@ -1,17 +1,12 @@
 # Library with functions for percolation analysis
 import copy
-from enum import Enum
+import itertools
 import random
 
+import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import pandas as pd
-import itertools
-
-
-class PercolationType(Enum):
-    LINK = 1
-    NODE = 2
 
 
 def getCompletenessValues(n):
@@ -33,17 +28,17 @@ def sampleWithNodePercolation(P, G, r):
         :param P: list of network completeness values
         :param G: networkx graph
         :param r: number of replicates for each completeness to average the value of the module size
-        :return: pandas dataframe with columns ["Completeness", "Size"]
+        :return: pandas dataframe with columns ['Completeness', 'Relative Size']
         """
 
     P = sorted(P, reverse=True)
 
     completenesses = list(itertools.chain.from_iterable(itertools.repeat(P, r)))
     sizes = []
-    replicates = list(itertools.chain.from_iterable(itertools.repeat(x, len(P)) for x in range(r)))
+    # replicates = list(itertools.chain.from_iterable(itertools.repeat(x, len(P)) for x in range(r)))
     for replicate in range(r):
         g = copy.deepcopy(G)
-        print(f"Replicate {replicate} starting with {g.number_of_nodes()} nodes")
+        # print(f"Replicate {replicate} starting with {g.number_of_nodes()} nodes")
 
         original_num_nodes = g.number_of_nodes()
         for p in P:
@@ -54,33 +49,80 @@ def sampleWithNodePercolation(P, G, r):
                 g.remove_nodes_from(random.sample(list(g.nodes()), nodes_to_remove))
             size_of_lcc = len(max(nx.connected_components(g))) if g.number_of_nodes() > 0 else 0
             sizes.append(size_of_lcc)
-    print("Completeness:")
-    print(completenesses)
-    print("Sizes:")
-    print(sizes)
-    print("Replicates:")
-    print(replicates)
-    df = pd.DataFrame(zip(completenesses, sizes, replicates), columns=['Completeness', 'Relative Size', 'replicate'])
+    # print("Completeness:")
+    # print(completenesses)
+    # print("Sizes:")
+    # print(sizes)
+    df = pd.DataFrame(zip(completenesses, sizes), columns=['Completeness', 'Relative Size'])
+    # print(df)
+    df = df.groupby('Completeness').mean()
+    df = df.reset_index()
+    # print(df)
+    return df
+
+def sampleWithLinkPercolation(P, G, r):
+    """
+        Calculates relative size of the largest connected component at different network completeness values with r
+        replicates to average the value.
+
+        :param P: list of network completeness values
+        :param G: networkx graph
+        :param r: number of replicates for each completeness to average the value of the module size
+        :return: pandas dataframe with columns ['Completeness', 'Relative Size']
+        """
+
+    P = sorted(P, reverse=True)
+
+    completenesses = list(itertools.chain.from_iterable(itertools.repeat(P, r)))
+    sizes = []
+    for replicate in range(r):
+        g = copy.deepcopy(G)
+        # print(f"Replicate {replicate} starting with {g.number_of_nodes()} nodes")
+
+        original_num_edges = g.number_of_edges()
+        for p in P:
+            desired_num_edges = int(p * original_num_edges)
+            num_edges_to_remove = g.number_of_edges() - desired_num_edges
+            if num_edges_to_remove > 0:
+                g.remove_edges_from(random.sample(list(g.edges()), num_edges_to_remove))
+            size_of_lcc = len(max(nx.connected_components(g)))
+            sizes.append(size_of_lcc)
+            print(f"\tCompleteness: {p} \t Graph edges: {desired_num_edges} \t Size of lcc: {size_of_lcc}")
+    # print("Completeness:")
+    # print(completenesses)
+    # print("Sizes:")
+    # print(sizes)
+    df = pd.DataFrame(zip(completenesses, sizes), columns=['Completeness', 'Relative Size'])
     print(df)
-    return df.groupby('Completeness').mean()
+    df = df.groupby('Completeness').mean()
+    df = df.reset_index()
+    print(df)
+    return df
+
+fig, (ax1, ax2) = plt.subplots(2, 1)
+fig.subplots_adjust(hspace=0.8, wspace=0.4)
+
+G = nx.fast_gnp_random_graph(100, 0.2, seed=1, directed=False)
+
+P = getCompletenessValues(20)
+df_node = sampleWithNodePercolation(P, G, 3)
+print("Node percolation values:")
+print(df_node)
+
+df_link = sampleWithLinkPercolation(P, G, 3)
+print("Link percolation values:")
+print(df_link)
+
+ax1.set_title("Node percolation")
+ax1.plot(df_node['Completeness'], df_node['Relative Size'], 'o-')
+ax1.set_xlabel('Completeness')
+ax1.set_ylabel('Relative Size')
+# df.plot(kind='scatter', x='Completeness', y='Relative Size')
+
+ax2.set_title("Link percolation")
+ax2.plot(df_link['Completeness'], df_link['Relative Size'], 'o-')
+ax2.set_xlabel('Completeness')
+ax2.set_ylabel('Relative Size')
 
 
-def sampleModuleSizeAtCompletenessLevels(P, G, t, r):
-    """
-    Calculates relative size of the largest connected component at different network completeness values with r
-    replicates to average the value.
-
-    :param P: list of network completeness values
-    :param G: networkx graph
-    :param t: percolation type, link or node
-    :param r: number of replicates for each completeness to average the value of the module size
-    :return: pandas dataframe with columns ["Completeness", "Size"]
-    """
-
-    if t == PercolationType.NODE:
-        return sampleWithNodePercolation(P, G, r)
-
-G = nx.complete_graph(9)
-P = getCompletenessValues(5)
-df = sampleModuleSizeAtCompletenessLevels(P, G, PercolationType.NODE, 3)
-print(df)
+plt.show()
