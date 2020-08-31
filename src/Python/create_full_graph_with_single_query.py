@@ -8,7 +8,7 @@ from interaction_network import connect_reaction_participants, connect_complex_c
 from network_topology_queries import get_reaction_participants, get_complex_components
 
 
-def read_or_create_full_graph(level, sm=True, graphs_path="", v=True):
+def read_or_create_full_graph(level, sm=True, graphs_path="", v=False):
     """
     Creates the full interaction network (graph) and stores it in three .tsv files: entity nodes (vertices type 1),
     small molecule nodes (vertices type 2) and interactions (edges)
@@ -50,10 +50,11 @@ def read_or_create_full_graph(level, sm=True, graphs_path="", v=True):
     G.graph["level"] = level
     G.graph["sm"] = sm
 
-    print(f"Graph edges: {G.size()}")
-    print(f"Graph nodes: {len(G.nodes)}")
-    print(f"Graph {level} nodes: {G.graph['num_' + level]}")
-    print(f"Graph small molecule nodes: {G.graph['num_small_molecules']}")
+    if v:
+        print(f"Graph edges: {G.size()}")
+        print(f"Graph nodes: {len(G.nodes)}")
+        print(f"Graph {level} nodes: {G.graph['num_' + level]}")
+        print(f"Graph small molecule nodes: {G.graph['num_small_molecules']}")
     return G
 
 

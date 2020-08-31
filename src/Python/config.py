@@ -21,6 +21,8 @@ PATH_RESOURCES = "resources/"
 FILE_PATHWAYMATCHER = "PathwayMatcher.jar"
 URL_PATHWAYMATCHER = "https://github.com/PathwayAnalysisPlatform/PathwayMatcher/releases/latest/download/PathwayMatcher.jar"
 
+GRAPHS_PATH = "resources/Reactome"
+
 
 def set_root_wd():
     """Moves to one diretory above the location of the interpreter
