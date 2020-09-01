@@ -58,7 +58,8 @@ def sampleLinkPercolationWithPoints(G, r, P, v=False):
 def sampleLinkPercolationWithPercentages(G, r, s=0.1, v=False):
     """
         Calculates relative size of the largest connected component at multiple network completeness values with
-        r replicates.
+        r replicates. This method makes sure to return the completeness value for Relative Size of Lcc at 0.5 for each
+        replicate.
 
         :param s: step size; percentage of edges (links) to remove at each iteration. Float value in [0, 1]
         :param G: networkx graph

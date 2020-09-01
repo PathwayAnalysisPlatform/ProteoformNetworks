@@ -7,6 +7,7 @@ LEVELS = ["genes", "proteins", "proteoforms"]
 
 # LEVELS_COLOR = {"genes": "#67A9CF", "proteins": "#F1A340", "proteoforms": "#7FBF7B"}
 LEVELS_COLOR = {"genes": Colorblind[4][0], "proteins": Colorblind[4][1], "proteoforms": Colorblind[4][3]}
+PROTEOFORMS_SUBGRAPHS_COLOR = {"mm": Colorblind[6][5], "uu": Colorblind[6][2], "um": Colorblind[6][1]}
 
 PATH_REACTOME = "resources/reactome/"
 FILE_REACTOME_GENES = "genes_vertices.tsv"  # these paths are the suffix of PATH_REACTOME
