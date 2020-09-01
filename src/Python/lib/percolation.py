@@ -77,7 +77,6 @@ def sampleLinkPercolationWithPercentages(G, r, s=0.1, v=False):
         original_num_edges = g.number_of_edges()
         while g.number_of_edges() > 0:
             desired_num_edges = int((1 - s) * g.number_of_edges())  # How many edges should be after this iteration
-            print(f"Desired: {desired_num_edges}")
             num_edges_to_remove = max(g.number_of_edges() - desired_num_edges, 0)
             g.remove_edges_from(random.sample(list(g.edges()), num_edges_to_remove))  # Remove the edges
             rel_size_lcc = len(max(nx.connected_components(g))) / original_size_lcc
@@ -86,6 +85,7 @@ def sampleLinkPercolationWithPercentages(G, r, s=0.1, v=False):
             completenesses.append(p)
             replicates.append(replicate)
             if v: print(f"\tCompleteness: {p} \t Graph edges: {desired_num_edges} \t Size of lcc: {rel_size_lcc}")
+        print(f"Done replicate {replicate}")
 
     df = pd.DataFrame(zip(completenesses, sizes, replicates), columns=['Completeness', 'Relative Size', 'Replicate'])
     df = df.reset_index()
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     G_1 = nx.fast_gnp_random_graph(50, 0.2, seed=1, directed=False)
     G_2 = nx.fast_gnp_random_graph(150, 0.2, seed=1, directed=False)
 
-    P = getCompletenessValues(5)
+    # P = getCompletenessValues(5)
     df_1 = sampleLinkPercolationWithPercentages(G_1, 20, 0.1)
     df_2 = sampleLinkPercolationWithPercentages(G_2, 20, 0.1)
     print("Link percolation values 1:")
