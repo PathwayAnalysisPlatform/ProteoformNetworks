@@ -1,7 +1,7 @@
 import networkx as nx
 import os
 
-from interaction_network import connect_reaction_participants, connect_complex_components
+from interaction_network import add_edges_reaction_participants, add_edges_complex_components
 from network_topology_queries import get_reactions, get_complexes, get_reaction_participants_by_reaction, \
     get_complex_components_by_complex
 
@@ -20,7 +20,7 @@ def create_full_graph_with_reactions_and_complexes(level, showSmallMolecules, gr
     index = 0
     for reaction in reactions['stId']:
         df_participants = get_reaction_participants_by_reaction(reaction, level, showSmallMolecules, False)
-        connect_reaction_participants(G, df_participants, level, False)
+        add_edges_reaction_participants(G, df_participants, level, False)
         index += 1
         if verbose:
             print(
@@ -30,7 +30,7 @@ def create_full_graph_with_reactions_and_complexes(level, showSmallMolecules, gr
     index = 0
     for complex in complexes['stId']:
         df_components = get_complex_components_by_complex(complex, level, showSmallMolecules, False)
-        connect_complex_components(G, df_components, level, False)
+        add_edges_complex_components(G, df_components, level, False)
         index += 1
         if verbose:
             print(

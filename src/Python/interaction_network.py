@@ -15,32 +15,32 @@ Pathway_graphs = namedtuple("Graphs",
                              "proteoforms", "proteoforms_no_small_molecules"])
 
 
-def add_edges_from_product(G, c1, c2, verbose=False):
+def add_edges_from_product(G, c1, c2, v=False):
     for i in c1:
         for j in c2:
             if i != j:
                 G.add_edge(i, j)
-                if verbose:
+                if v:
                     print(f"Added edge from: {i} to {j}")
 
 
-def add_edges(G, inputs, outputs, catalysts, regulators, reaction, verbose):
-    if verbose:
+def add_edges(G, inputs, outputs, catalysts, regulators, reaction, v=False):
+    if v:
         print(
             f"\n\nReaction: {reaction}:\nInputs: {inputs}\nCatalysts: {catalysts}\nOutputs: {outputs}\nRegulators: {regulators}")
-    add_edges_from_product(G, inputs, outputs, verbose)
-    add_edges_from_product(G, catalysts, outputs, verbose)
-    add_edges_from_product(G, regulators, outputs, verbose)
+    add_edges_from_product(G, inputs, outputs, v)
+    add_edges_from_product(G, catalysts, outputs, v)
+    add_edges_from_product(G, regulators, outputs, v)
 
 
-def connect_reaction_participants(G, df, level, v):
+def add_edges_reaction_participants(G, df, v=False):
     """
-    G must contain all the nodes specified by the edges
-    :param G:
-    :param df:
-    :param level:
-    :param v:
-    :return:
+    Add the edges inferred from the reaction participants in the records of the dataframe.
+
+    :param G: Networkx graph with the participants or reactions. The nodes should be already in the graph.
+    :param df: The dataframe with all the participants, their role, the reaction and pathway where they participate.
+    :param v: v; show extra information messages
+    :return: The same graph G with the edges added
     """
     if len(df) == 0:
         return G
@@ -51,9 +51,10 @@ def connect_reaction_participants(G, df, level, v):
     catalysts = set()
     regulators = set()
     for index, participant in df.iterrows():
-        G.nodes[participant['Id']]['roles'].add(participant['Role'])
-        G.nodes[participant['Id']]['reactions'].add(participant['Reaction'])
-        G.nodes[participant['Id']]['pathways'].add(participant['Pathway'])
+        unique_id = 'sm_' + participant['Id'] if participant['Type'] == 'SimpleEntity' else participant['Id']
+        G.nodes[unique_id]['roles'].add(participant['Role'])
+        G.nodes[unique_id]['reactions'].add(participant['Reaction'])
+        G.nodes[unique_id]['pathways'].add(participant['Pathway'])
         if reaction != participant['Reaction'] or pathway != participant['Pathway']:
             add_edges(G, inputs, outputs, catalysts, regulators, reaction, v)
             reaction = participant['Reaction']
@@ -63,13 +64,13 @@ def connect_reaction_participants(G, df, level, v):
             catalysts = set()
             regulators = set()
         if participant['Role'] == 'input':
-            inputs.add(participant['Id'])
+            inputs.add(unique_id)
         elif participant['Role'] == 'output':
-            outputs.add(participant['Id'])
+            outputs.add(unique_id)
         elif participant['Role'] == 'regulatedBy':
-            regulators.add(participant['Id'])
+            regulators.add(unique_id)
         elif participant['Role'] == 'catalystActivity':
-            catalysts.add(participant['Id'])
+            catalysts.add(unique_id)
     reaction = df.iloc[-1]['Reaction']
     pathway = df.iloc[-1]['Pathway']
     add_edges(G, inputs, outputs, catalysts, regulators, reaction, v)
@@ -79,22 +80,30 @@ def connect_reaction_participants(G, df, level, v):
         print(f"From reactions, added {len(G.edges)} edges to the graph.")
 
 
-def connect_complex_components(G, df, level="proteins", v=True):
+def add_edges_complex_components(G, df, v=False):
+    """
+    Add the edges inferred from the complex components in the records of the dataframe.
+
+    :param G: Networkx graph with the components of the complexes. The nodes should be already in the graph.
+    :param df: The dataframe with all the components and the column of the complex to which they belong.
+    :param v: v; show extra information messages
+    :return: The same graph G with the edges added
+    """
     if len(df) == 0:
         return G
 
     components = set()
     complex = df.iloc[0]['Complex']
-    for index, component in df.iterrows():
-        G.nodes[component['Id']]['complexes'].add(component['Complex'])
+    for index, record in df.iterrows():
+        unique_id = 'sm_' + record['Id'] if record['Type'] == 'SimpleEntity' else record['Id']
+        G.nodes[unique_id]['complexes'].add(record['Complex'])
 
-        if complex != component['Complex']:
-            add_edges_from_product(G, components, components, verbose=v)
-            complex = component['Complex']
+        if complex != record['Complex']:
+            add_edges_from_product(G, components, components, v=v)
+            complex = record['Complex']
             components = set()
-        components.add(component['Id'])
-    complex = df.iloc[-1]['Complex']
-    add_edges_from_product(G, components, components, verbose=v)
+        components.add(unique_id)
+    add_edges_from_product(G, components, components, v=v)
 
     if (v):
         print(f"From complexes, added {len(G.nodes)} nodes to the graph.")
@@ -102,17 +111,33 @@ def connect_complex_components(G, df, level="proteins", v=True):
 
 
 def add_nodes(G, df, level):
+    """
+    Add the nodes represented by a dataframe records to the graph G
+
+    :param G: Networkx graph to add the nodes
+    :param df: Dataframe with the records resulting from the cypher query for participants of reactions or components
+    of complexes
+    :param level: genes, proteins or proteoforms. To handle the renaming of some fields accordingly
+    :return: The same graph G with the added nodes
+    """
     for index, entity in df.iterrows():
+
+        # Each node has an id, label, type, entity_color, role, reactions, pathways, complexes.
+        # id: unique identifier across all levels and entity types. For example, to avoid duplicated nodes when a gene
+        # or a small molecule are called the same.
+        # label: gene name, small molecule name, protein name, and for proteoforms the protein name with possible manual
+        # annotation of modifications.
         # print(f"Adding node {index} of entity {entity}")
-        if entity['Id'] not in G.nodes:
-            G.add_node(entity['Id'],
-                       id=entity['Id'],
+        unique_id = 'sm_' + entity['Id'] if entity['Type'] == 'SimpleEntity' else entity['Id']
+        if unique_id not in G.nodes:
+            G.add_node(unique_id,
+                       label=entity['Id'],
                        type=(entity['Type'] if entity['Type'] == 'SimpleEntity' else level),
                        entity_color=get_entity_color(entity['Type'], level),
                        roles=set(),
                        reactions=set(),
                        pathways=set(),
-                       complexes=set(),
+                       complexes=set()
                        )
             if entity['Type'] == 'SimpleEntity':
                 G.graph['num_small_molecules'] += 1
@@ -120,22 +145,19 @@ def add_nodes(G, df, level):
                 G.graph['num_' + level] += 1
 
         if 'Complex' in df.columns:
-            G.nodes[entity['Id']]['complexes'].add(entity['Complex'])
+            G.nodes[unique_id]['complexes'].add(entity['Complex'])
         elif 'Role' in df.columns:
-            G.nodes[entity['Id']]['roles'].add(entity['Role'])
-            G.nodes[entity['Id']]['reactions'].add(entity['Reaction'])
-            G.nodes[entity['Id']]['pathways'].add(entity['Pathway'])
+            G.nodes[unique_id]['roles'].add(entity['Role'])
+            G.nodes[unique_id]['reactions'].add(entity['Reaction'])
+            G.nodes[unique_id]['pathways'].add(entity['Pathway'])
 
-        if level == 'proteins':
-            if (G.nodes[entity['Id']]['type'] == "SimpleEntity"):
-                G.nodes[entity['Id']]['prevId'] = entity['Id']
-            else:
-                G.nodes[entity['Id']]['prevId'] = entity['PrevId']
-        elif level == 'proteoforms':
-            if (G.nodes[entity['Id']]['type'] == "SimpleEntity"):
-                G.nodes[entity['Id']]['prevId'] = entity['Id']
-            else:
-                G.nodes[entity['Id']]['prevId'] = entity['PrevId']
+        if (G.nodes[unique_id]['type'] == "SimpleEntity") or G.nodes[entity['Id']]['type'] == "genes":
+            G.nodes[unique_id]['prevId'] = entity['Id']
+        elif G.nodes[unique_id]['type'] == "proteins" or G.nodes[entity['Id']]['type'] == "proteoforms":
+            G.nodes[unique_id]['prevId'] = entity['PrevId']
+
+    print(f"{level}: {G.graph['num_small_molecules']}")
+    print(f"{level}: {G.graph['num_' + level]}")
 
 
 def read_graph(graphs_path, file_preffix, level):
@@ -143,7 +165,8 @@ def read_graph(graphs_path, file_preffix, level):
 
     vertices_file = graphs_path / ((file_preffix + "_" if len(file_preffix) > 0 else "") + level + "_vertices.tsv")
     edges_file = graphs_path / ((file_preffix + "_" if len(file_preffix) > 0 else "") + level + "_interactions.tsv")
-    small_molecules_file = graphs_path / ((file_preffix + "_" if len(file_preffix) > 0 else "") + level + "_small_molecules_vertices.tsv")
+    small_molecules_file = graphs_path / (
+            (file_preffix + "_" if len(file_preffix) > 0 else "") + level + "_small_molecules_vertices.tsv")
 
     if not Path(vertices_file).exists() or not Path(edges_file).exists() or not Path(small_molecules_file).exists():
         print("Graph files not found:")
@@ -244,8 +267,8 @@ def create_graph(pathway, level, sm, graphs_path="", v=False, save=False):
     add_nodes(G, df_reactions, level)
     add_nodes(G, df_complexes, level)
 
-    connect_reaction_participants(G, df_reactions, level, v)
-    connect_complex_components(G, df_complexes, level, v)
+    add_edges_reaction_participants(G, df_reactions, level, v)
+    add_edges_complex_components(G, df_complexes, level, v)
 
     if save:
         save_graph(G, level, graphs_path, label=pathway + ("_no_sm" if not sm else ""))

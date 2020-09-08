@@ -1,11 +1,14 @@
 from pathlib import Path
 
 import networkx as nx
+import pandas as pd
 
 from config import LEVELS
-from interaction_network import connect_reaction_participants, connect_complex_components, add_nodes, save_graph, \
+from interaction_network import add_edges_reaction_participants, add_edges_complex_components, add_nodes, save_graph, \
     read_graph
-from network_topology_queries import get_reaction_participants, get_complex_components
+from lib.graph_database import get_query_result
+from network_topology_queries import get_reaction_participants, get_complex_components, QUERIES_PARTICIPANTS, \
+    fix_neo4j_values, QUERIES_COMPONENTS
 
 
 def read_or_create_full_graph(level, sm=True, graphs_path="", v=False):
@@ -36,14 +39,23 @@ def read_or_create_full_graph(level, sm=True, graphs_path="", v=False):
         G.graph['num_' + level] = 0
         G.graph['num_small_molecules'] = 0
 
-        participants = get_reaction_participants(level, sm, True)
-        components = get_complex_components(level, sm, True)
+        participants = get_reaction_participants(level, True)
+        components = get_complex_components(level, True)
 
-        add_nodes(G, participants, level)
-        add_nodes(G, components, level)
+        if sm:
+            sm_participants = get_query_result(QUERIES_PARTICIPANTS['sm'])
+            sm_participants = fix_neo4j_values(sm_participants, level)
+            participants = pd.concat([sm_participants, participants])
 
-        connect_reaction_participants(G, participants, level, False)
-        connect_complex_components(G, components, level, False)
+            sm_components = get_query_result(QUERIES_COMPONENTS['sm'])
+            sm_components = fix_neo4j_values(sm_components, level)
+            components = pd.concat([sm_components, components])
+
+        records = pd.concat([participants, components])
+        add_nodes(G, records, level)
+
+        add_edges_reaction_participants(G, participants)
+        add_edges_complex_components(G, components)
 
         save_graph(G, level, graphs_path)
 

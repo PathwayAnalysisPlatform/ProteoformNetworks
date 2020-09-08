@@ -35,7 +35,7 @@ def plot_pathway(pathway, level="proteins", sm=True, coloring=Coloring.ENTITY_TY
     :param level: string {"genes", "proteins", "proteoforms"}
     :param sm: bool, show small molecules in the network
     :param coloring: Coloring instance
-    :param v: bool verbose
+    :param v: bool v
     :return: bokeh plot
     """
     G = create_graph(pathway, level, sm, "", v)

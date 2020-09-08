@@ -5,7 +5,7 @@ import networkx as nx
 import pandas as pd
 
 from config import LEVELS
-from interaction_network import add_nodes, connect_reaction_participants, connect_complex_components
+from interaction_network import add_nodes, add_edges_reaction_participants, add_edges_complex_components
 from lib.dictionaries import convert_tab_to_dict
 from network_topology_queries import get_reaction_participants, get_complex_components
 

@@ -157,7 +157,7 @@ def fix_neo4j_values(df, level):
     return df
 
 
-def get_reaction_participants(level, sm=True, v=False):
+def get_reaction_participants(level, v=False):
     """
     Get list of participant molecules in the reactions for all pathways in Reactome
 
@@ -172,21 +172,13 @@ def get_reaction_participants(level, sm=True, v=False):
     if level not in LEVELS:
         raise Exception
 
-    if (v):
-        print(f"\n\nQuerying {level} participants of all pathways...\n\n")
-
     query = QUERIES_PARTICIPANTS[level]
-
     if (v):
         print(query)
 
     df = get_query_result(query)
     df = fix_neo4j_values(df, level)
 
-    if sm:
-        df_sm = get_query_result(QUERIES_PARTICIPANTS['sm'])
-        df_sm = fix_neo4j_values(df_sm, level)
-        df = pd.concat([df, df_sm])
     return df
 
 
@@ -273,7 +265,7 @@ def get_reaction_participants_by_pathway(pathway, level, sm, v=False):
     return df
 
 
-def get_complex_components(level, sm=True, v=False):
+def get_complex_components(level, v=False):
     """
         Get list of complex components participating in all pathways of Reactome
 
@@ -290,11 +282,6 @@ def get_complex_components(level, sm=True, v=False):
 
     df = get_query_result(QUERIES_COMPONENTS[level])
     df = fix_neo4j_values(df, level)
-
-    if sm:
-        df_sm = get_query_result(QUERIES_COMPONENTS['sm'])
-        df_sm = fix_neo4j_values(df_sm, level)
-        df = pd.concat([df, df_sm])
 
     return df
 

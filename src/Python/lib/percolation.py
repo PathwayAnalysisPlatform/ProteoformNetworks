@@ -32,7 +32,7 @@ def sampleLinkPercolationWithPoints(G, r, P, v=False):
         """
 
     P = sorted(P, reverse=True)
-
+    replicates = list()
     completenesses = list(itertools.chain.from_iterable(itertools.repeat(P, r)))
     sizes = []
     for replicate in range(r):
@@ -41,6 +41,7 @@ def sampleLinkPercolationWithPoints(G, r, P, v=False):
 
         original_num_nodes = len(max(nx.connected_components(g)))
         original_num_edges = g.number_of_edges()
+
         for p in P:
             desired_num_edges = int(p * original_num_edges)
             num_edges_to_remove = g.number_of_edges() - desired_num_edges
@@ -49,8 +50,9 @@ def sampleLinkPercolationWithPoints(G, r, P, v=False):
             rel_size_of_lcc = len(max(nx.connected_components(g))) / original_num_nodes
             sizes.append(rel_size_of_lcc)
             if v: print(f"\tCompleteness: {p} \t Graph edges: {desired_num_edges} \t Size of lcc: {rel_size_of_lcc}")
+            replicates.append(replicate)
 
-    df = pd.DataFrame(zip(completenesses, sizes), columns=['Completeness', 'Relative Size'])
+    df = pd.DataFrame(zip(completenesses, sizes, replicates), columns=['Completeness', 'Relative Size', 'Replicate'])
     df = df.reset_index()
     return df
 
