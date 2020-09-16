@@ -1,4 +1,5 @@
 import codecs
+import json
 import os
 from collections import namedtuple
 from pathlib import Path
@@ -6,6 +7,7 @@ from pathlib import Path
 import networkx as nx
 import pandas as pd
 
+import config
 from config import LEVELS, get_entity_color
 from network_topology_queries import get_reaction_participants_by_pathway, get_complex_components_by_pathway, \
     get_pathway_name
@@ -75,6 +77,12 @@ def add_edges_reaction_participants(G, df, v=False):
     pathway = df.iloc[-1]['Pathway']
     add_edges(G, inputs, outputs, catalysts, regulators, reaction, v)
 
+    # Convert the reaction set of each node into a list
+    for n in G.nodes:
+        G.nodes[n]['reactions'] = list(G.nodes[n]['reactions'])
+        G.nodes[n]['pathways'] = list(G.nodes[n]['pathways'])
+        G.nodes[n]['roles'] = list(G.nodes[n]['roles'])
+
     if (v):
         print(f"From reactions, added {len(G.nodes)} nodes to the graph.")
         print(f"From reactions, added {len(G.edges)} edges to the graph.")
@@ -104,6 +112,10 @@ def add_edges_complex_components(G, df, v=False):
             components = set()
         components.add(unique_id)
     add_edges_from_product(G, components, components, v=v)
+
+    # Convert the complex set of each node into a list
+    for n in G.nodes:
+        G.nodes[n]['complexes'] = list(G.nodes[n]['complexes'])
 
     if (v):
         print(f"From complexes, added {len(G.nodes)} nodes to the graph.")
@@ -160,71 +172,57 @@ def add_nodes(G, df, level):
     print(f"{level}: {G.graph['num_' + level]}")
 
 
-def read_graph(graphs_path, file_preffix, level):
-    graphs_path = Path(graphs_path)
+def read_graph(json_file):
+    """
+    Read interaction network in the json file into a networkx graph instance
 
-    vertices_file = graphs_path / ((file_preffix + "_" if len(file_preffix) > 0 else "") + level + "_vertices.tsv")
-    edges_file = graphs_path / ((file_preffix + "_" if len(file_preffix) > 0 else "") + level + "_interactions.tsv")
-    small_molecules_file = graphs_path / (
-            (file_preffix + "_" if len(file_preffix) > 0 else "") + level + "_small_molecules_vertices.tsv")
+    :param json_file:
+    :return: networkx Graph
+    """
+    G = nx.Graph()
+    with open(json_file) as f:
+        data = json.load(f)
+        G = nx.json_graph.node_link_graph(data)
 
-    if not Path(vertices_file).exists() or not Path(edges_file).exists() or not Path(small_molecules_file).exists():
-        print("Graph files not found:")
-        print(f"-- {vertices_file}")
-        print(f"-- {edges_file}")
-        print(f"-- {small_molecules_file}")
-
-    print(f"    Reading {edges_file}")
-    G = nx.read_adjlist(edges_file.as_posix())
-    G.graph["level"] = level
-    G.graph['num_' + level] = 0
-    G.graph['num_small_molecules'] = 0
-
-    print(f"    Reading {vertices_file}")
-    with vertices_file.open() as fh:
-        entity = fh.readline()
-        while entity:
-            attrs = {entity.strip(): {'type': level}}
-            nx.set_node_attributes(G, attrs)
-            G.graph['num_' + level] += 1
-            entity = fh.readline()
-
-    print(f"    Reading {small_molecules_file}")
-    with small_molecules_file.open() as fh:
-        small_molecule = fh.readline()
-        while small_molecule:
-            attrs = {small_molecule.strip(): {'type': "SimpleEntity"}}
-            nx.set_node_attributes(G, attrs)
-            G.graph['num_small_molecules'] += 1
-            small_molecule = fh.readline()
-
-    print(f"        Graph edges: {G.size()}")
-    print(f"        Graph nodes: {len(G.nodes)}")
-    print(f"        Graph {level} nodes: {G.graph['num_' + level]}")
-    print(f"        Graph small molecule nodes: {G.graph['num_small_molecules']}")
     return G
 
-
 def save_graph(G, level, graphs_path="", label=""):
-    print(f"Storing network level: {level}")
+    """
+    Create the json file with all attributes.
+    Creates a vertices file for the accessioned entities.
+    Creates a vertices file for the simple entities.
+    Creates an edges file for the interactions.
+    If the level is proteins write the mapping from proteins to genes
+    If the level is proteoforms write the mapping from proteins to proteoforms
 
-    graphs_path = Path(graphs_path)
+    :param G: networkx file with the
+    :param level: genes, proteins or protoeforms
+    :param graphs_path: directory where to store the files
+    :param label: string phrase for the file names
+    :return: void
+    """
+    print(f"Storing network level: {level} at directory: {graphs_path}")
 
     if len(label) > 0:
         label = label + "_"
 
-    vertices_file = graphs_path / (label + level + "_vertices.tsv")
-    edges_file = graphs_path / (label + level + "_interactions.tsv")
-    small_molecules_file = graphs_path / (label + level + "_small_molecules_vertices.tsv")
+    json_file = Path(graphs_path + label + level + ".json")
+    vertices_file = Path(graphs_path + label + level + "_vertices.tsv")
+    edges_file = Path(graphs_path + label + level + "_interactions.tsv")
+    small_molecules_file = Path(graphs_path + label + level + "_small_molecules.tsv")
 
     if len(str(graphs_path)) > 0:
         if not os.path.exists(graphs_path):
             Path(graphs_path).mkdir(parents=True, exist_ok=True)
-    fh = open(edges_file, 'wb')
-    nx.write_adjlist(G, fh, delimiter="\t")
 
+    with open(json_file, 'w') as outfile:
+        data = nx.json_graph.node_link_data(G)
+        json.dump(data, outfile)
+    print(f"Created json file.")
+
+    with open(edges_file, 'wb') as fh:
+        nx.write_edgelist(G, fh)
     print(f"Created edges file for {level}")
-    fh.close()
 
     with codecs.open(vertices_file, 'w', "utf-8") as fh:
         for n, t in G.nodes(data='type'):
@@ -238,6 +236,20 @@ def save_graph(G, level, graphs_path="", label=""):
                 fh.write('%s\n' % n)
                 G.graph['num_small_molecules'] += 1
     print(f"Created small molecule vertices file for {level}")
+
+    if level == "proteins":
+        mapping_proteins_to_genes = graphs_path / config.MAPPING_FILE.replace('level', 'genes')
+        with codecs.open(mapping_proteins_to_genes) as map_file:
+            for n, t in G.nodes(data='type'):
+                if t == "proteins":
+                    map_file.write(f"{n}\t{G.nodes[n]['prevId']}\n")
+
+    if level == "proteoforms":
+        mapping_proteins_to_proteoforms = graphs_path / config.MAPPING_FILE.replace('level', 'proteoforms')
+        with codecs.open(mapping_proteins_to_proteoforms) as map_file:
+            for n, t in G.nodes(data='type'):
+                if t == 'proteins':
+                    map_file.write(f"{n}\t{G.nodes[n]['prevId']}")
 
 
 def create_graph(pathway, level, sm, graphs_path="", v=False, save=False):
