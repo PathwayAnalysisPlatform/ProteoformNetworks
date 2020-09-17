@@ -186,6 +186,7 @@ def read_graph(json_file):
 
     return G
 
+
 def save_graph(G, level, graphs_path="", label=""):
     """
     Create the json file with all attributes.
@@ -238,18 +239,20 @@ def save_graph(G, level, graphs_path="", label=""):
     print(f"Created small molecule vertices file for {level}")
 
     if level == "proteins":
-        mapping_proteins_to_genes = graphs_path / config.MAPPING_FILE.replace('level', 'genes')
-        with codecs.open(mapping_proteins_to_genes) as map_file:
+        mapping_file = graphs_path + config.MAPPING_FILE.replace('level', 'genes')
+        with codecs.open(mapping_file, 'w', "utf-8") as map_file:
             for n, t in G.nodes(data='type'):
-                if t == "proteins":
+                if t != "SimpleEntity":
                     map_file.write(f"{n}\t{G.nodes[n]['prevId']}\n")
+        print(f"Created mapping proteins to genes file.")
 
     if level == "proteoforms":
-        mapping_proteins_to_proteoforms = graphs_path / config.MAPPING_FILE.replace('level', 'proteoforms')
-        with codecs.open(mapping_proteins_to_proteoforms) as map_file:
+        mapping_file = graphs_path + config.MAPPING_FILE.replace('level', 'proteoforms')
+        with codecs.open(mapping_file, 'w', "utf-8") as map_file:
             for n, t in G.nodes(data='type'):
-                if t == 'proteins':
-                    map_file.write(f"{n}\t{G.nodes[n]['prevId']}")
+                if t != "SimpleEntity":
+                    map_file.write(f"{G.nodes[n]['prevId']}\t{n}\n")
+        print(f"Created mapping proteins to proteoforms file.")
 
 
 def create_graph(pathway, level, sm, graphs_path="", v=False, save=False):
@@ -347,10 +350,4 @@ def merge_graphs(graphs):
 
 
 if __name__ == '__main__':
-    create_graph("R-HSA-8981607", "proteins", True, save=True)
-
-    G = read_graph("", "R-HSA-8981607", "proteins")
-    print(G.nodes)
-
-    G = read_graph("../../resources/Reactome/", "", "genes")
-    print(list(G)[:10])
+    print(f"hello from interaction_networks.py")

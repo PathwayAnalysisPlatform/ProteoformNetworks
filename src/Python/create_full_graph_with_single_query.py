@@ -1,8 +1,10 @@
+import codecs
 from pathlib import Path
 
 import networkx as nx
 import pandas as pd
 
+import config
 from interaction_network import add_edges_reaction_participants, add_edges_complex_components, add_nodes, save_graph, \
     read_graph
 from lib.graph_database import get_query_result
@@ -32,12 +34,21 @@ def read_or_create_full_graph(level, sm=True, graphs_path="", v=False):
     vertices_file = Path(graphs_path + level + "_vertices.tsv")
     small_molecules_file = Path(graphs_path + level + "_small_molecules.tsv")
     edges_file = Path(graphs_path + level + "_interactions.tsv")
+    mapping_proteins_to_genes = graphs_path + config.MAPPING_FILE.replace('level', 'genes')
+    mapping_proteins_to_proteoforms = graphs_path + config.MAPPING_FILE.replace('level', 'proteoforms')
+
+
 
     # Check if files exist
-    if Path(json_file).exists() \
-            and Path(edges_file).exists() \
-            and Path(vertices_file).exists() \
-            and Path(small_molecules_file).exists():
+    if Path(json_file).exists():
+            # and Path(edges_file).exists() \
+            # and Path(vertices_file).exists() \
+            # and Path(small_molecules_file).exists():
+            # and (
+            #     level == "genes" or
+            #     (level == 'proteins' and Path(mapping_proteins_to_genes).exists()) or
+            #     (level == "proteoforms" and Path(mapping_proteins_to_proteoforms).exists())
+            # )\
         G = read_graph(json_file)
     else:
         print("Creating graph")
@@ -73,11 +84,10 @@ def read_or_create_full_graph(level, sm=True, graphs_path="", v=False):
         print(f"Graph nodes: {len(G.nodes)}")
         print(f"Graph {level} nodes: {G.graph['num_' + level]}")
         print(f"Graph small molecule nodes: {G.graph['num_small_molecules']}")
-
     return G
 
 
 if __name__ == '__main__':
     graphs_path = "../../resources/Reactome/"
-    G = read_or_create_full_graph("genes", True, graphs_path)
+    G = read_or_create_full_graph("proteoforms", True, graphs_path)
     print(f"The final result is: {len(list(G.nodes))}")
