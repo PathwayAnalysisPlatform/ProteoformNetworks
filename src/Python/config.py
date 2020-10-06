@@ -1,5 +1,6 @@
 import os
 import sys
+import pandas as pd
 
 from bokeh.palettes import Colorblind
 
@@ -49,3 +50,5 @@ COLOR_CC = "dodgerblue"
 
 EDGES_WEIGHT_IN_REACTION = 1
 EDGES_WEIGHT_IN_COMPLEX = 50
+
+pd.options.display.float_format = "{:,.2f}".format

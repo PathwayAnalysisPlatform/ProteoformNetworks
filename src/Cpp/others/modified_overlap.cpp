@@ -191,7 +191,7 @@ namespace modified_overlap {
 			path_file_modified_overlap_pathway_proteins,
 			path_file_modified_overlap_pathway_proteoforms);
 
-		// Part 2: Find examples of disease modules that overlap only in modified proteins
+		// Part 2: Find examples of disease All_modules that overlap only in modified proteins
 		reportPhenotypePairs(path_file_gene_search,
 			path_file_protein_search,
 			path_file_proteoform_search,

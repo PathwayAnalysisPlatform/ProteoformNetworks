@@ -4,8 +4,8 @@ from collections import namedtuple
 import pandas as pd
 import pytest
 
-from interaction_network import create_graph, create_graphs, Pathway_graphs
-from network_topology_queries import get_pathways
+from networks import create_graph, create_graphs, Pathway_graphs
+from queries import get_pathways
 
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def glycolysis_graph(tmpdir):
 def some_graphs(tmpdir_factory):
     pathways = get_pathways()
     graphs_path = tmpdir_factory.mktemp("tmpdir")
-    Result = namedtuple("Result", "graphs graphs_path pathways")
+    Result = namedtuple("Result", "interactomes graphs_path pathways")
     return Result(create_graphs(pathways[:3], graphs_path), graphs_path, pathways)
 
 
@@ -58,10 +58,10 @@ def test_create_graphs_returns_empty_result_when_no_pathway_arguments():
 
 # def test_create_graphs_returns_the_correct_number_of_results(some_graphs):
 #
-#     assert type(some_graphs.graphs) == list
-#     assert len(some_graphs.graphs) == 3
+#     assert type(some_graphs.interactomes) == list
+#     assert len(some_graphs.interactomes) == 3
 #
-#     for entry in some_graphs.graphs:
+#     for entry in some_graphs.interactomes:
 #         assert type(entry) == Pathway_graphs
 #         assert "genes" in entry._fields
 #         assert "genes_no_small_molecules" in entry._fields
@@ -72,7 +72,7 @@ def test_create_graphs_returns_empty_result_when_no_pathway_arguments():
 
 
 # def test_create_graphs_stores_the_graphs(some_graphs):
-#     # Check graphs exist
+#     # Check interactomes exist
 #     assert os.path.exists(some_graphs.graphs_path)
 #     for pathway in some_graphs.pathways:
 #         assert os.path.exists(os.path.join(str(some_graphs.graphs_path), pathway + "_genes_edge_list"))

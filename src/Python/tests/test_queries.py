@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from network_topology_queries import get_reaction_participants_by_pathway, get_low_level_pathways, \
+from queries import get_reaction_participants_by_pathway, get_low_level_pathways, \
     get_reactions_by_pathway, fix_neo4j_values, get_pathways, get_reactions, get_complexes, \
     get_complex_components_by_complex
 

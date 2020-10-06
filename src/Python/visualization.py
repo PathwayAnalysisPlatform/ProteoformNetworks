@@ -16,9 +16,9 @@ from bokeh.plotting import figure
 from bokeh.transform import cumsum
 
 from config import get_entity_color, COLOR_IO, COLOR_CO, COLOR_RO, COLOR_CC
-from interaction_network import create_graph, merge_graphs
-from interaction_network import create_pathway_graphs
-from network_topology_queries import get_pathway_name, get_low_level_pathways
+from networks import create_graph, merge_graphs
+from networks import create_pathway_graphs
+from queries import get_pathway_name, get_low_level_pathways
 
 
 class Coloring(Enum):

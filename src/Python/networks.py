@@ -9,7 +9,7 @@ import pandas as pd
 
 import config
 from config import LEVELS, get_entity_color
-from network_topology_queries import get_reaction_participants_by_pathway, get_complex_components_by_pathway, \
+from queries import get_reaction_participants_by_pathway, get_complex_components_by_pathway, \
     get_pathway_name
 
 Pathway_graphs = namedtuple("Graphs",
@@ -294,9 +294,9 @@ def create_graph(pathway, level, sm, graphs_path="", v=False, save=False):
 
 def create_pathway_graphs(pathway, graphs_path="../../reports/pathways/", v=False):
     """
-    Creates graphs for the pathway in all three levels, with and wihout small molecules
+    Creates interactomes for the pathway in all three levels, with and wihout small molecules
 
-    If pathway does not exists, then returns empty graphs.
+    If pathway does not exists, then returns empty interactomes.
     :param pathway: Pathway stId string
     :param graphs_path:
     :return: Get two lists of 3 pathways.
@@ -335,10 +335,10 @@ def create_graphs(pathways, graphs_path="../../reports/pathways/"):
 
 def merge_graphs(graphs):
     # How does the resulting graph look like?
-    # - Vertices: Composition of nodes in all graphs
+    # - Vertices: Composition of nodes in all interactomes
     #    - Merge: sets of Reactions, Pathways, Complexes
     #    - Copy value of: Id, Type, Entity Color
-    # - Edges: Composition of edges in all graphs
+    # - Edges: Composition of edges in all interactomes
     full_graph = nx.compose_all(graphs)  # Add all nodes setting  Id, Type, and entity_color
 
     for graph in graphs:

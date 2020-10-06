@@ -94,6 +94,20 @@ QUERIES_COMPONENTS = {
     """
 }
 
+QUERY_REACTIONS_ONLY_WITH_EWAS_PARTICIPANTS = """
+MATCH p = (rle:ReactionLikeEvent{speciesName:"Homo sapiens"})-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity)
+WITH DISTINCT rle.stId as Reaction, collect(pe.stId) as Entity, collect(last(labels(pe))) as Type, collect( pe.displayName) as names
+WHERE size(Type) = 1 AND "EntityWithAccessionedSequence" in Type
+RETURN Reaction, Entity, Type, names
+"""
+
+QUERY_REACTIONS_WITH_ONLY_SMALL_MOLECULE_PARTICIPANTS = """
+MATCH p = (rle:ReactionLikeEvent{speciesName:"Homo sapiens"})-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity)
+WITH DISTINCT rle.stId as Reaction,  collect(DISTINCT pe.stId) as Entity, collect(DISTINCT last(labels(pe))) as Type, collect(DISTINCT pe.displayName) as names
+WHERE size(Type) <= 1 AND "SimpleEntity" in Type
+RETURN Reaction, Entity, Type, names
+"""
+
 
 def get_pathway_name(pathway):
     query = f"MATCH (p:Pathway{{stId:\"{pathway}\", speciesName:\"Homo sapiens\"}}) RETURN p.displayName as Name"

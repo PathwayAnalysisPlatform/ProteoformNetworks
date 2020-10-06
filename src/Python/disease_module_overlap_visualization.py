@@ -35,7 +35,7 @@ def getScoreLabel(file_name):
 
 
 def plot_module_pair(trait1, trait2, level, path_to_modules, path_to_figures):
-    """Visualize the pair of modules in an interactive graph."""
+    """Visualize the pair of All_modules in an interactive graph."""
     # Prepare the graph
     G = nx.Graph()
     print("Creating graph 1")
@@ -114,7 +114,7 @@ def create_overlap_graph(trait1, trait2, level, path_to_modules, only_interface=
 
     traits = [trait1, trait2]
     graphs = {trait: get_graph(trait, level, path_to_modules) for trait in traits}
-    [graph_complete.add_edges_from(graph.edges) for graph in graphs.values()]  # Merge both graphs
+    [graph_complete.add_edges_from(graph.edges) for graph in graphs.values()]  # Merge both interactomes
 
     CROSSING_EDGES, IN_MODULE_1_EDGES, IN_MODULE_2_EDGES, IN_OVERLAP_EDGES = "orange", "darkgreen", "darkblue", "red"
 
@@ -167,7 +167,7 @@ def create_overlap_graph(trait1, trait2, level, path_to_modules, only_interface=
 
 
 def plot_module_pair(trait1, trait2, path_to_modules, path_to_figures):
-    """Visualize the pair of modules in an interactive graph.
+    """Visualize the pair of All_modules in an interactive graph.
 
     trait1, trait2: names of the two sets as strings
     path_to_modules: directory where to find the input files

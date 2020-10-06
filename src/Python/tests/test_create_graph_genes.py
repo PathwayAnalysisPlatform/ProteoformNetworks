@@ -1,7 +1,7 @@
 import pytest
 
-from interaction_network import create_graph
-from network_topology_queries import get_reaction_participants_by_pathway
+from networks import create_graph
+from queries import get_reaction_participants_by_pathway
 
 
 @pytest.fixture(scope="session")

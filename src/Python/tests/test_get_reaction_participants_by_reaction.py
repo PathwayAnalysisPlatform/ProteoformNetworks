@@ -1,7 +1,7 @@
 import pytest
 from pandas import DataFrame
 
-from network_topology_queries import get_reaction_participants_by_reaction
+from queries import get_reaction_participants_by_reaction
 
 
 @pytest.fixture(scope="session")

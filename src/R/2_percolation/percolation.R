@@ -68,7 +68,7 @@ GetPT <- function (graph) {
 
 GetPercolationThresholdSimplified <- function(graph) {
   
-  #' Get percolation threshold probability approximation for graphs with arbitrary degree distribution
+  #' Get percolation threshold probability approximation for interactomes with arbitrary degree distribution
   #' 
   #' @param graph igraph object
   #' @return Double value of the percolation threshold probability
@@ -410,7 +410,7 @@ MakePercolationAnalysis <- function(graphs, labels, data.path = "data/", plots.p
   # Then it makes many combinations of plots and stores it as png files.
   #
   # Args:
-  #   graphs: list of igraph objects
+  #   interactomes: list of igraph objects
   #   labels: atomic vector with a name for each graph
   #   data.path: where to store the csv files with the data
   #   plots.path: where to store the plots in png format
@@ -418,7 +418,7 @@ MakePercolationAnalysis <- function(graphs, labels, data.path = "data/", plots.p
   #   replicates: integer number of replicates for a same subgraph
   #
   # Returns:
-  #   Nothing in special... just kidding ;) it returns the data frame merging the percolation curve samples for all the graphs
+  #   Nothing in special... just kidding ;) it returns the data frame merging the percolation curve samples for all the interactomes
   
   stopifnot(identical(length(graphs), length(labels)))
   

@@ -1,8 +1,8 @@
 import networkx as nx
 import os
 
-from interaction_network import add_edges_reaction_participants, add_edges_complex_components
-from network_topology_queries import get_reactions, get_complexes, get_reaction_participants_by_reaction, \
+from networks import add_edges_reaction_participants, add_edges_complex_components
+from queries import get_reactions, get_complexes, get_reaction_participants_by_reaction, \
     get_complex_components_by_complex
 
 

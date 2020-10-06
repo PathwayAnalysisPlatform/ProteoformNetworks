@@ -1,4 +1,4 @@
-from interaction_network import create_graph
+from networks import create_graph
 import pytest
 
 @pytest.fixture(scope="session")

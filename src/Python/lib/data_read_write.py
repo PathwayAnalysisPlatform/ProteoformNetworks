@@ -59,7 +59,7 @@ def create_pathwaymatcher_files(path_reactome,
                                 file_proteoform_search,
                                 path_pathwaymatcher, file_pathwaymatcher, url_pathwaymatcher):
     """Create protein interaction network of all Reactome by mapping with PathwayMatcher.
-    Also, creates the search files for genes, proteins and proteoforms, to be used as the sets to create the modules."""
+    Also, creates the search files for genes, proteins and proteoforms, to be used as the sets to create the All_modules."""
 
     assert os.path.exists(path_reactome + file_reactome_genes), f"Missing file: {path_reactome}{file_reactome_genes}"
     assert os.path.exists(

@@ -86,7 +86,7 @@ m.mp <- InitMatrix() # Matrix for modified proteoforms overlap
 
 ## Calculate the overlapping
 
-### Create functions to read the graphs
+### Create functions to read the interactomes
 library(igraph)
 
 LoadGraph <- function(entity) {

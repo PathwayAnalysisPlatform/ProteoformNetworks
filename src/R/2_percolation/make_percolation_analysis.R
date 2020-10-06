@@ -8,8 +8,8 @@ library(plyr)
 source("graphs.R")
 source("degreeDistribution/percolation.R")
 
-# Load undirected graphs
-# (Notice that they are handled as undirected graphs)
+# Load undirected interactomes
+# (Notice that they are handled as undirected interactomes)
 
 source("load_networks.R")
 
