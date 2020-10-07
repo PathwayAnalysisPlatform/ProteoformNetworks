@@ -3,12 +3,12 @@
 
 #include <types.hpp>
 
-struct module_bimaps {
+struct bimaps {
     bimap_str_int groups;
     bimap_str_int members;
 };
 
-struct modules {
+struct All_modules {
     vb group_to_members;
     vb member_to_groups;
 

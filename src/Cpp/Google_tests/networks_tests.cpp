@@ -58,7 +58,7 @@ protected:
     }
 
     std::string path_file_modules = "../../Google_tests/resources/example_modules.csv";
-    modules example_modules;
+    All_modules example_modules;
     bimap_str_int groups, members;
 };
 
@@ -116,7 +116,7 @@ TEST_F(LoadModulesFixture, CorrectGroupsStrToIntValues) {
     EXPECT_EQ(2, groups.str_to_int["C"]);
 }
 
-// Check modules sizes
+// Check All_modules sizes
 TEST_F(LoadModulesFixture, CorrectModulesSizes) {
     EXPECT_EQ(3, example_modules.group_to_members.size());
     for (auto group_entry = example_modules.group_to_members.begin();
@@ -130,7 +130,7 @@ TEST_F(LoadModulesFixture, CorrectModulesSizes) {
     }
 }
 
-// Check modules group --> members
+// Check All_modules group --> members
 TEST_F(LoadModulesFixture, CorrectGroupToMembers) {
     // Correct number of members
     EXPECT_EQ(3, example_modules.group_to_members[groups.str_to_int["A"]].count());
@@ -147,7 +147,7 @@ TEST_F(LoadModulesFixture, CorrectGroupToMembers) {
     EXPECT_TRUE(example_modules.group_to_members[groups.str_to_int["C"]][members.str_to_int["5"]]);
 }
 
-// Check modules member --> groups
+// Check All_modules member --> groups
 TEST_F(LoadModulesFixture, CorrectMemberToGroups) {
     // Correct number of owners
     EXPECT_EQ(1, example_modules.member_to_groups[members.str_to_int["1"]].count());
@@ -227,7 +227,7 @@ TEST_F(RemoveDisconnectedMembersFixture, RemovesDisconnectedMember) {
 class WriteModulesFixture : public ::testing::Test {
     virtual void SetUp() {
         // TODO: Create groups and members bimaps by hand
-        // TODO: Create artificial modules by hand
+        // TODO: Create artificial All_modules by hand
         std::string file_name_output = ::testing::UnitTest::GetInstance()->current_test_info()->name();
         file_name_output += "_modules.txt";
 //        writeModules(file_name_output, ret.entity_modules, ret.groups, ret.members);

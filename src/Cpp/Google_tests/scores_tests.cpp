@@ -30,7 +30,7 @@ protected:
     }
 
     vb sets;
-    modules the_modules;
+    All_modules the_modules;
     bimap_str_int groups, members;
 };
 
@@ -327,7 +327,7 @@ protected:
 
 //
 //    vb sets;
-//    modules the_modules;
+//    All_modules the_modules;
     bimap_str_int groups, members;
 };
 

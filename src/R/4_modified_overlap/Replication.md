@@ -110,7 +110,7 @@ ORDER BY isoform, ptms
 
 Follow the same steps of the gene level only overlap.
 
-# Disease modules
+# Disease All_modules
 
 * Download the data of all GWAS from https://www.ncbi.nlm.nih.gov/gap/phegeni and store it at resources/PheGenI/
 

@@ -12,6 +12,9 @@
 #include "others/uniprot.hpp"
 #include "reactome.hpp"
 
+#include <windows.h>
+#include "config.hpp"
+
 const int MAX_MODULE_SIZE = 20;
 const int MIN_MODULE_SIZE = 5;
 
@@ -21,17 +24,17 @@ struct Frequencies {
     msi proteoforms;
 };
 
-struct get_entities_result {
-    bimap_str_int genes;
-    bimap_str_int proteins;
-    bimap_str_int proteoforms;
-    bimap_str_int small_molecules;
+struct All_entities {
+    entities_bimap genes;
+    entities_bimap proteins;
+    entities_bimap proteoforms;
+    entities_bimap small_molecules;
 };
 
-get_entities_result get_entities(std::string_view path_file_reactome_genes,
-                                 std::string_view path_file_reactome_proteins,
-                                 std::string_view path_file_reactome_proteoforms,
-                                 std::string_view path_file_reactome_small_molecules);
+All_entities get_entities(std::string_view file_genes,
+                          std::string_view file_proteins,
+                          std::string_view file_proteoforms,
+                          std::string_view file_small_molecules);
 
 inline bool file_exists(const std::string &name) {
     struct stat buffer;
@@ -39,18 +42,18 @@ inline bool file_exists(const std::string &name) {
 }
 
 // Create or read module files at the three levels: all in one, and single module files.
-std::map<const std::string, const modules>
-get_or_create_modules(const std::string &path_modules, std::string_view path_file_phegeni,
+std::map<const char *, const All_modules>
+get_or_create_modules(std::string_view path_file_phegeni,
+                      const entities_bimap &genes,
+                      const entities_bimap &proteins,
+                      const entities_bimap &proteoforms,
+                      const entities_bimap &small_molecules,
                       std::string_view path_file_gene_interactions,
-                      std::string_view path_file_mapping_proteins_to_genes,
                       std::string_view path_file_protein_interactions,
-                      std::string_view path_file_mapping_proteins_to_proteoforms,
                       std::string_view path_file_proteoform_interactions,
-                      const bimap_str_int &genes,
-                      const bimap_str_int &proteins,
-                      const bimap_str_int &proteoforms,
-                      const bimap_str_int &small_molecules,
-                      const bimap_str_int &traits,
+                      std::string_view path_file_mapping_proteins_to_genes,
+                      std::string_view path_file_mapping_proteins_to_proteoforms,
+                      const std::string &path_output,
                       bool keep_disconnected_nodes);
 
 struct score_maps {
@@ -60,13 +63,13 @@ struct score_maps {
 };
 
 void report_pairs_overlap_data(const std::string &path_out,
-                               const std::map<const std::string, const modules> &all_modules,
+                               const std::map<const std::string, const All_modules> &all_modules,
                                const std::map<const std::string, const vusi> &interactions,
                                const bimap_str_int &traits,
                                const int min_module_size, const int max_module_size);
 
 // Calculates differences in module overlap between gene and proteoform level networks_lib
-// It uses multiple scoring functions to calculate the overlap score between each pair of modules.
+// It uses multiple scoring functions to calculate the overlap score between each pair of All_modules.
 // Creates a report for each scoring function. The report is a csv file with one row each module pair.
 void doOverlapAnalysis(
         std::string_view path_file_modules,
@@ -81,14 +84,14 @@ void doOverlapAnalysis(
         std::string_view path_file_mapping_proteins_to_proteoforms,
         std::string path_reports);
 
-void report_module_size_variation(std::string_view path_reports, const std::map<const std::string, const modules> &,
+void report_module_size_variation(std::string_view path_reports, const std::map<const std::string, const All_modules> &,
                                   const bimap_str_int &traits, std::map<const std::string, um<int, int>> &sizes);
 
-// Check if there are pairs of modules sharing nodes at one level but not in another
+// Check if there are pairs of All_modules sharing nodes at one level but not in another
 void report_node_overlap_reduction_examples(std::string path_scores, std::string label, const score_maps &scores,
                                             const bimap_str_int &traits);
 
-// Check if there are pairs of modules which are have variations in level, for the number of edges connecting them
+// Check if there are pairs of All_modules which are have variations in level, for the number of edges connecting them
 void report_connecting_edges_variation_examples(std::string path_reports, const score_maps scores);
 
 void report_overlap_only_ptms(std::string string, const score_maps maps, const bimap_str_int anInt);

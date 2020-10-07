@@ -5,7 +5,7 @@ using namespace std;
 // Read the genes and traits of PheGenI data file.
 // Creates two bimaps: genes and traits. The returned genes are a subset of the genes in the parameter gene set.
 // The gene list are those genes in the dataset that are also contained in the acceptable gene list.
-module_bimaps loadPheGenIGenesAndTraits(
+bimaps loadPheGenIGenesAndTraits(
         string_view path_file_phegeni,
         const bimap_str_int &acceptable_genes) {
 
@@ -57,15 +57,37 @@ module_bimaps loadPheGenIGenesAndTraits(
     return {phegeni_traits, phegeni_genes};
 }
 
-// Read Phegeni trait modules with genes as members. Only gene members also in the acceptable gene list.
-// Creates two mappings to represent the Trait modules with genes as members:
+All_modules get_or_create_gene_modules(std::string_view path_file_phegeni,
+                                       const bimap_str_int &traits,
+                                       const entities_bimap &genes,
+                                       const entities_bimap &small_molecules,
+                                       std::string_view path_file_gene_interactions,
+                                       const std::string &path_output,
+                                       bool keep_disconnected_nodes) {
+    std::string modules_file_name = path_output + config::LEVELS.at(config::gene) + config::MODULES_FILE_END;
+    if (file_exists(modules_file_name)) {
+        std::cout << "Reading gene All_modules." << std::endl;
+        return loadModules(modules_file_name, traits, genes).entity_modules;
+    } else {
+        std::cout << "Creating gene All_modules." << std::endl;
+        return createGeneModules(path_file_phegeni, genes, small_molecules, traits,
+                                 path_file_gene_interactions.data(),
+                                 path_output, keep_disconnected_nodes);
+    }
+}
+
+// Read Phegeni trait All_modules with genes as members. Only gene members also in the acceptable gene list.
+// Creates two mappings to represent the Trait All_modules with genes as members:
 // - trait strings to gene bitsets.
 // - gene strings to trait bitsets
-// The two mappings define the trait modules (also called, phenotype modules or disease modules)
-modules createGeneModules(std::string_view path_file_phegeni,
-                          const bimap_str_int &genes, const bimap_str_int &small_molecules, const bimap_str_int &traits,
-                          const std::string &path_file_gene_interactions,
-                          const std::string &path_modules, const std::string &suffix, bool keep_disconnected_nodes) {
+// The two mappings define the trait All_modules (also called, phenotype All_modules or disease All_modules)
+All_modules createGeneModules(std::string_view path_file_phegeni,
+                              const bimap_str_int &genes,
+                              const bimap_str_int &small_molecules,
+                              const bimap_str_int &traits,
+                              const std::string &path_file_gene_interactions,
+                              const std::string &path_modules,
+                              bool keep_disconnected_nodes) {
     ifstream file_phegen(path_file_phegeni.data());
     string line, field, trait, gene, gene2;
     string p_value_str;
@@ -77,18 +99,18 @@ modules createGeneModules(std::string_view path_file_phegeni,
         throw runtime_error(message + function);
     }
 
-    // Initialize modules
-    modules modules;
+    // Initialize All_modules
+    All_modules modules;
     int total_num_members = genes.size() + small_molecules.size();
-    for (int trait_index = 0; trait_index < traits.int_to_str.size(); trait_index++)
+    for (int trait_index = 0; trait_index < traits.size(); trait_index++)
         modules.group_to_members.push_back(base::dynamic_bitset<>(total_num_members));
-    for (int gene_index = 0; gene_index < genes.int_to_str.size(); gene_index++)
+    for (int gene_index = 0; gene_index < genes.size(); gene_index++)
         modules.member_to_groups.push_back(base::dynamic_bitset<>(traits.size()));
 
-    std::cerr << "Initialized modules:\n"
-              << "Genes to traits: " << modules.member_to_groups.size()
+    std::cerr << "Initialized All_modules:\n"
+              << "Genes to traits: " << modules.numMembers()
               << "\t Traits bitsets size: " << modules.member_to_groups.begin()->size()
-              << "\nTraits to genes: " << modules.group_to_members.size()
+              << "\nTraits to genes: " << modules.numGroups()
               << "\t Genes bitsets size: " << modules.group_to_members.begin()->size() << "\n";
 
     // Read members of each module
@@ -122,11 +144,11 @@ modules createGeneModules(std::string_view path_file_phegeni,
 
     auto interactions = loadInteractionNetwork(path_file_gene_interactions, genes, true);
     if (!keep_disconnected_nodes) {
-        std::cout << "Removing disconnected genes from modules..." << std::endl;
+        std::cout << "Removing disconnected genes from All_modules..." << std::endl;
         removeDisconnectedMembers(modules, traits, genes, interactions);
     }
 
-    writeModulesSingleFile(path_modules + "genes" + suffix, modules, traits, genes);
+    writeModulesSingleFile(path_modules + config::LEVELS.at(config::gene) + config::MODULES_FILE_END, modules, traits, genes);
     writeModulesManyFiles(path_modules, "genes", ".tsv", modules, traits, genes, interactions);
 
     cerr << "Number of traits with gene members as bitset: " << modules.group_to_members.size() << "\n";
@@ -135,38 +157,38 @@ modules createGeneModules(std::string_view path_file_phegeni,
     return modules;
 }
 
-// Creates modules of proteins and proteoforms.
-// Converts the modules from gene --> protein or protein --> proteoform, and then removes the disconnected vertices
+// Creates All_modules of proteins and proteoforms.
+// Converts the All_modules from gene --> protein or protein --> proteoform, and then removes the disconnected vertices
 // It applies the logic that, some nodes should not be in the network module, because there are no connection to others
-modules createProteinOrProteoformModules(const modules &prev_modules, const bimap_str_int &prev_entities,
-                                         const bimap_str_int &entities, const bimap_str_int &traits,
-                                         const ummss &mapping,
-                                         const std::string &path_file_entity_interactions,
-                                         const std::string &path_modules,
-                                         const std::string &level, const std::string &suffix,
-                                         bool keep_disconnected_nodes) {
-    // Convert gene modules to protein modules using the mapping from entities to genes
-    modules result_modules = convertModulesWithMapping(prev_modules, prev_entities, entities, traits, mapping);
+All_modules createProteinOrProteoformModules(const All_modules &prev_modules, const bimap_str_int &prev_entities,
+                                             const bimap_str_int &entities, const bimap_str_int &traits,
+                                             const ummss &mapping,
+                                             const std::string &path_file_entity_interactions,
+                                             const std::string &path_modules,
+                                             const std::string &level, const std::string &suffix,
+                                             bool keep_disconnected_nodes) {
+    // Convert gene All_modules to protein All_modules using the mapping from entities to genes
+    All_modules result_modules = convertModulesWithMapping(prev_modules, prev_entities, entities, traits, mapping);
 
     if (!keep_disconnected_nodes) {
         auto interactions = loadInteractionNetwork(path_file_entity_interactions, entities, true);
         removeDisconnectedMembers(result_modules, traits, entities, interactions);
-        writeModulesSingleFile(path_modules, level, suffix, result_modules, traits, entities);
+        writeModulesSingleFile(path_modules, result_modules, traits, entities);
         writeModulesManyFiles(path_modules, level, ".tsv", result_modules, traits, entities, interactions);
     }
 
     return result_modules;
 }
 
-// Note that mapping uses strings, whereas modules use the indexes
+// Note that mapping uses strings, whereas All_modules use the indexes
 // Therefore, the bimaps are necessary to jumpt between indexes and strings
-modules convertModulesWithMapping(
-        const modules &original_modules,
+All_modules convertModulesWithMapping(
+        const All_modules &original_modules,
         const bimap_str_int &original_entities,
         const bimap_str_int &destination_entities,
         const bimap_str_int &traits,
         const ummss &mapping) {
-    modules new_modules;
+    All_modules new_modules;
 
     for (int group_index = 0; group_index < traits.int_to_str.size(); group_index++)
         new_modules.group_to_members.push_back(base::dynamic_bitset<>(destination_entities.int_to_str.size()));

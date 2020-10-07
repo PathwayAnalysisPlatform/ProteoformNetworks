@@ -10,8 +10,9 @@
 #include <exception>
 #include <set>
 #include <utility>
+#include <map>
 
-const std::vector<std::string> LEVELS = {"genes", "proteins", "proteoforms"};
+#define str second
 
 using msi = std::map<std::string, int>;
 using msb = std::map<std::string, base::dynamic_bitset<>>;
@@ -42,7 +43,15 @@ struct bimap_str_int {
     umsi str_to_int;
 
     int size() const { return int_to_str.size(); }
+
+    bool has(const std::string &key) const { return str_to_int.find(key) != str_to_int.end(); };
+
+    int index_of(const std::string &key) const { return str_to_int.at(key); };
+
+    std::string key_at(const int index) const { return int_to_str[index]; };
 };
+
+using entities_bimap = bimap_str_int;
 
 #endif // ! TYPES_HPP
 

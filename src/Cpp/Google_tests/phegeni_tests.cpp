@@ -12,7 +12,7 @@ protected:
         traits = ret.groups;
         gene_modules = createGeneModules(path_file_phegeni, genes, traits,
                                          path_file_gene_interactions,
-                                         "../../../../reports/modules/", ".tsv", false);
+                                         "../../../../reports/All_modules/", ".tsv", false);
         std::cerr << traits.str_to_int.size() << " === " << traits.int_to_str.size() << "\n";
     }
 
@@ -20,7 +20,7 @@ protected:
     std::string path_file_genes = "../../Google_tests/resources/genes_slice.csv";
     std::string path_file_gene_interactions = "../../Google_tests/resources/gene_interactions.tab";
     bimap_str_int genes, traits;
-    modules gene_modules;
+    All_modules gene_modules;
 };
 
 // Throws runtime error if file PheGenI is not found
@@ -98,7 +98,7 @@ TEST_F(PhegeniLoadPheGenISetsFixture, CorrectGeneMembers) {
     EXPECT_FALSE(gene_modules.group_to_members[trait_index][genes.str_to_int["DDDD"]]);  // From column GENE ID 2
 }
 
-// Check a gene is member of the right number of trait modules
+// Check a gene is member of the right number of trait All_modules
 TEST_F(PhegeniLoadPheGenISetsFixture, CorrectTraitOwners) {
     int gene_index = genes.str_to_int["CFH"];
     std::cout << "[ ";
@@ -131,13 +131,13 @@ protected:
         auto ret = loadPheGenIGenesAndTraits(path_file_phegeni, genes);
         traits = ret.groups;
         gene_modules = createGeneModules(path_file_phegeni, genes, traits, path_file_gene_interactions,
-                                         "../../../../reports/modules/", ".tsv", false);
+                                         "../../../../reports/All_modules/", ".tsv", false);
         protein_modules = convertModulesWithMapping(gene_modules,
                                                     genes,
                                                     proteins,
                                                     traits,
                                                     mapping.second_to_first);
-        writeModulesSingleFile("../../../../reports/modules/", "proteins", ".tsv", protein_modules, traits, proteins);
+        writeModulesSingleFile("../../../../reports/All_modules/", "proteins", ".tsv", protein_modules, traits, proteins);
     }
 
     std::string path_file_phegeni = "../../Google_tests/resources/PheGenI_Association_genome_wide_significant_slice.txt";
@@ -145,7 +145,7 @@ protected:
     std::string path_file_gene_interactions = "../../Google_tests/resources/gene_interactions.tab";
     std::string path_file_proteins = "../../Google_tests/resources/proteins_slice.csv";
     std::string path_file_mapping = "../../../../resources/UniProt/mapping_proteins_to_genes_v70.tab";
-    modules gene_modules, protein_modules;
+    All_modules gene_modules, protein_modules;
     bimap_str_int genes, proteins, phegeni_genes, traits;
     bidirectional_mapping mapping;
 };
@@ -153,7 +153,7 @@ protected:
 // Return correct trait set names
 TEST_F(PhegeniConvertModulesWithMapping, ModuleTraitNamesCorrect) {
     EXPECT_EQ(gene_modules.group_to_members.size(), protein_modules.group_to_members.size())
-                        << "The gene modules should be the same number of protein modules.";
+                        << "The gene All_modules should be the same number of protein All_modules.";
     EXPECT_EQ(protein_modules.group_to_members.size(), traits.int_to_str.size());
 }
 
@@ -169,14 +169,14 @@ TEST_F(PhegeniConvertModulesWithMapping, ModuleTraitSetMembersCorrect) {
             protein_modules.group_to_members[trait_index][proteins.str_to_int["P02649"]]); // From gene APOE
 
     trait_index = traits.str_to_int["Bilirubin"];
-    std::cout << "There are " << gene_modules.group_to_members.size() << " gene modules.\n";
+    std::cout << "There are " << gene_modules.group_to_members.size() << " gene All_modules.\n";
     EXPECT_EQ(9, gene_modules.group_to_members[trait_index].count());
     for (int member_index = 0; member_index < genes.str_to_int.size(); member_index++) {
         if (gene_modules.group_to_members[trait_index][member_index])
             std::cout << genes.int_to_str[member_index] << ", ";
     }
     std::cout << std::endl;
-    std::cout << "There are " << gene_modules.group_to_members.size() << " protein modules.\n";
+    std::cout << "There are " << gene_modules.group_to_members.size() << " protein All_modules.\n";
     EXPECT_EQ(9, protein_modules.group_to_members[trait_index].count());
     for (int member_index = 0; member_index < proteins.str_to_int.size(); member_index++) {
         if (protein_modules.group_to_members[trait_index][member_index])
@@ -189,7 +189,7 @@ TEST_F(PhegeniConvertModulesWithMapping, ModuleTraitSetMembersCorrect) {
 
 // Return correct protein set names
 TEST_F(PhegeniConvertModulesWithMapping, ModuleProteinNamesCorrect) {
-    EXPECT_EQ(19, protein_modules.member_to_groups.size()) << "The proteins in the modules should be 19.";
+    EXPECT_EQ(19, protein_modules.member_to_groups.size()) << "The proteins in the All_modules should be 19.";
     EXPECT_TRUE(hasKey(proteins.str_to_int, static_cast<std::string>("P22309"))); // Comming from gene UGT1A1
     EXPECT_TRUE(hasKey(proteins.str_to_int, static_cast<std::string>("Q15011")));   // Comming from gene FADS1
     EXPECT_FALSE(hasKey(proteins.str_to_int, static_cast<std::string>("ALMS1P")));    // There is no mapping for gene
@@ -224,7 +224,7 @@ protected:
         traits = ret.groups;
 
         gene_modules = createGeneModules(path_file_phegeni_modules, genes, traits,
-                                         path_file_gene_interactions, "../../../../reports/modules/",
+                                         path_file_gene_interactions, "../../../../reports/All_modules/",
                                          ".tsv", false);
 
         bidirectional_mapping mapping_genes_to_proteins = readMapping(path_file_mapping_genes_to_proteins,
@@ -232,7 +232,7 @@ protected:
         protein_modules = createProteinOrProteoformModules(gene_modules, genes, proteins, traits,
                                                            mapping_genes_to_proteins.first_to_second,
                                                            path_file_protein_interactions,
-                                                           "../../../../reports/modules/", "proteins", ".tsv",
+                                                           "../../../../reports/All_modules/", "proteins", ".tsv",
                                                            false);
 
         bidirectional_mapping mapping_proteins_to_proteoforms = readMapping(path_file_mapping_proteins_to_proteoforms,
@@ -241,14 +241,14 @@ protected:
         proteoform_modules = createProteinOrProteoformModules(protein_modules, proteins, proteoforms, traits,
                                                               mapping_proteins_to_proteoforms.first_to_second,
                                                               path_file_proteoform_interactions,
-                                                              "../../../../reports/modules/", "proteoforms",
+                                                              "../../../../reports/All_modules/", "proteoforms",
                                                               ".tsv", false);
     }
 
     bimap_str_int genes, proteins, proteoforms, traits;
-    modules gene_modules, protein_modules, proteoform_modules;
+    All_modules gene_modules, protein_modules, proteoform_modules;
 
-    std::string path_file_phegeni_modules = "../../Google_tests/resources/createPheGenIModules/modules.csv";
+    std::string path_file_phegeni_modules = "../../Google_tests/resources/createPheGenIModules/All_modules.csv";
     std::string path_file_genes = "../../Google_tests/resources/createPheGenIModules/genes.csv";
     std::string path_file_proteins = "../../Google_tests/resources/createPheGenIModules/proteins.csv";
     std::string path_file_proteoforms = "../../Google_tests/resources/createPheGenIModules/proteoforms.csv";
@@ -330,11 +330,11 @@ TEST_F(CreatePheGenIModulesFixture, CorrectProteoforms) {
     EXPECT_EQ(25, proteoforms.str_to_int["J3_1"]);
 }
 
-// Check members of modules are correct
+// Check members of All_modules are correct
 
-// Check gene modules are correct
+// Check gene All_modules are correct
 TEST_F(CreatePheGenIModulesFixture, CorrectGeneModules) {
-    // Check there are 2 modules
+    // Check there are 2 All_modules
     EXPECT_EQ(2, gene_modules.group_to_members.size());
     EXPECT_EQ(2, gene_modules.member_to_groups[0].size());
 
@@ -377,11 +377,11 @@ TEST_F(CreatePheGenIModulesFixture, CorrectGeneModules) {
     EXPECT_FALSE(gene_modules.member_to_groups[gene_index][traits.str_to_int["GROUP1"]]);
 }
 
-// Check protein modules are correct
+// Check protein All_modules are correct
 TEST_F(CreatePheGenIModulesFixture, CorrectProteinModulesSizes) {
 
-    // -- Check the number of modules is the same
-    // Check there are still 2 modules
+    // -- Check the number of All_modules is the same
+    // Check there are still 2 All_modules
     EXPECT_EQ(2, protein_modules.group_to_members.size());
     EXPECT_EQ(2, protein_modules.member_to_groups[0].size());
 
@@ -393,16 +393,16 @@ TEST_F(CreatePheGenIModulesFixture, CorrectProteinModulesSizes) {
 TEST_F(CreatePheGenIModulesFixture, CorrectProteinModulesMembers) {
     // Check correct members
     EXPECT_EQ(4, protein_modules.group_to_members[traits.str_to_int["GROUP1"]].count());
-    // -- Check a gene with two protein products appears in the new modules
+    // -- Check a gene with two protein products appears in the new All_modules
     EXPECT_TRUE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["A1"]]);
-    // -- Check that one of the protein products of a gene gets removed of the modules, because that one does not interact with other members
+    // -- Check that one of the protein products of a gene gets removed of the All_modules, because that one does not interact with other members
     EXPECT_FALSE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["A2"]]);
-    // -- Check that one of the protein products of a gene gets removed of the modules, because that one does not interact with other members
+    // -- Check that one of the protein products of a gene gets removed of the All_modules, because that one does not interact with other members
     EXPECT_FALSE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["A3"]]);
     EXPECT_TRUE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["B1"]]);
-    // -- Check a gene with two protein products appears in the new modules
+    // -- Check a gene with two protein products appears in the new All_modules
     EXPECT_TRUE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["C1"]]);
-    // -- Check that one of the protein products of a gene gets removed of the modules, because that one does not interact with other members
+    // -- Check that one of the protein products of a gene gets removed of the All_modules, because that one does not interact with other members
     EXPECT_FALSE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["C2"]]);
     EXPECT_TRUE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["C3"]]);
     EXPECT_FALSE(protein_modules.group_to_members[traits.str_to_int["GROUP1"]][proteins.str_to_int["F1"]]);
@@ -455,18 +455,18 @@ TEST_F(CreatePheGenIModulesFixture, CorrectProteinModulesOwners) {
     EXPECT_EQ(0, protein_modules.member_to_groups[proteins.str_to_int["J3"]].count());
 }
 
-// Check proteoform modules are correct
-// -- Check the number of modules is the same
-// -- Check a gene with two protein products appears in the new modules
+// Check proteoform All_modules are correct
+// -- Check the number of All_modules is the same
+// -- Check a gene with two protein products appears in the new All_modules
 // -- -- Check the proteins have/do not have ownership of the traits
-// -- Check that one of the protein products of a gene gets removed of the modules, because that one does not interact with other members
+// -- Check that one of the protein products of a gene gets removed of the All_modules, because that one does not interact with other members
 // -- -- Check the proteins have/do not have ownership of the traits
 // -- Check random members are correct
 // -- -- Check the inverse ownership is correct
 TEST_F(CreatePheGenIModulesFixture, CorrectProteoformModulesSizes) {
 
-    // -- Check the number of modules is the same
-    // Check there are still 2 modules
+    // -- Check the number of All_modules is the same
+    // Check there are still 2 All_modules
     EXPECT_EQ(2, proteoform_modules.group_to_members.size());
     EXPECT_EQ(2, proteoform_modules.member_to_groups[0].size());
 

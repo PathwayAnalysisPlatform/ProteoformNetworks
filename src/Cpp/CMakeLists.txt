@@ -3,9 +3,8 @@ project(ProteoformNetworks)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(HEADER_FILES overlap_analysis.hpp)
-set(SOURCE_FILES main.cpp overlap_analysis.cpp)
-add_executable(ProteoformNetwork_run ${SOURCE_FILES})
+add_executable(create_modules create_modules.cpp config.hpp Interactome.hpp Interactome.cpp Module.cpp Module.hpp)
+add_executable(do_analysis overlap_analysis.cpp)
 
 include_directories(networks_lib)
 include_directories(base)
@@ -14,7 +13,7 @@ add_subdirectory(networks_lib)
 add_subdirectory(base)
 add_subdirectory(Google_tests)
 
-target_link_libraries(ProteoformNetwork_run networks_lib base)
+target_link_libraries(do_analysis networks_lib base)
 
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in googletest-download/CMakeLists.txt)
