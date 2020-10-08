@@ -3,7 +3,7 @@ project(ProteoformNetworks)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(create_modules create_modules.cpp Interactome.hpp Interactome.cpp Module.cpp Module.hpp create_modules.hpp)
+add_executable(create_modules create_modules.hpp create_modules.cpp Interactome.hpp Interactome.cpp Module.cpp Module.hpp networks_lib/types.hpp networks_lib/bimap_str_int.hpp networks_lib/bimap_str_int.cpp networks_lib/types.cpp)
 add_executable(do_analysis overlap_analysis.cpp)
 
 include_directories(networks_lib)

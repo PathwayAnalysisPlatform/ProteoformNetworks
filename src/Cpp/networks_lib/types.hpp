@@ -18,7 +18,7 @@ enum Level {
     genes, proteins, proteoforms, SimpleEntity
 };
 
-std::vector<std::string> LEVELS = {"genes", "proteins", "proteoforms", "SimpleEntity"};
+extern std::vector<std::string> LEVELS;
 
 using msi = std::map<std::string, int>;
 using msb = std::map<std::string, base::dynamic_bitset<>>;

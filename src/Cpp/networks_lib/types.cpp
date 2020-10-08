@@ -1,5 +1,3 @@
 #include "types.hpp"
 
-namespace g{
-
-}
+std::vector<std::string> LEVELS = {"genes", "proteins", "proteoforms", "SimpleEntity"};

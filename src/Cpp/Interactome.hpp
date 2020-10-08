@@ -5,7 +5,7 @@
 #include <map>
 #include <vector>
 #include <set>
-#include <bimap_str_int.hpp>
+#include "bimap_str_int.hpp"
 #include "types.hpp"
 
 class Interactome {

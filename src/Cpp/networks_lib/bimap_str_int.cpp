@@ -30,10 +30,6 @@ Bimap_str_int::Bimap_str_int(std::string_view file_elements) {
     }
 }
 
-Bimap_str_int::Bimap_str_int(){
-
-}
-
 // Creates a bimap of string to int and viceversa.
 // The int index assigned to each string corresponds to the lexicographic order.
 // Creates a bimap of the elements in the selected column.
