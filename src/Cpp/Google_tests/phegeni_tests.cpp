@@ -147,7 +147,7 @@ protected:
     std::string path_file_mapping = "../../../../resources/UniProt/mapping_proteins_to_genes_v70.tab";
     All_modules gene_modules, protein_modules;
     bimap_str_int genes, proteins, phegeni_genes, traits;
-    bidirectional_mapping mapping;
+    bimap_str_str mapping;
 };
 
 // Return correct trait set names
@@ -227,17 +227,17 @@ protected:
                                          path_file_gene_interactions, "../../../../reports/All_modules/",
                                          ".tsv", false);
 
-        bidirectional_mapping mapping_genes_to_proteins = readMapping(path_file_mapping_genes_to_proteins,
-                                                                      true, false);
+        bimap_str_str mapping_genes_to_proteins = readMapping(path_file_mapping_genes_to_proteins,
+                                                              true, false);
         protein_modules = createProteinOrProteoformModules(gene_modules, genes, proteins, traits,
                                                            mapping_genes_to_proteins.first_to_second,
                                                            path_file_protein_interactions,
                                                            "../../../../reports/All_modules/", "proteins", ".tsv",
                                                            false);
 
-        bidirectional_mapping mapping_proteins_to_proteoforms = readMapping(path_file_mapping_proteins_to_proteoforms,
-                                                                            true,
-                                                                            true);
+        bimap_str_str mapping_proteins_to_proteoforms = readMapping(path_file_mapping_proteins_to_proteoforms,
+                                                                    true,
+                                                                    true);
         proteoform_modules = createProteinOrProteoformModules(protein_modules, proteins, proteoforms, traits,
                                                               mapping_proteins_to_proteoforms.first_to_second,
                                                               path_file_proteoform_interactions,

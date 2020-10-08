@@ -193,20 +193,6 @@ def save_interactomes_with_indexed_vertices(interactomes, graphs_path):
     return
 
 
-def write_cpp_code():
-
-    # Write function returning start index for genes
-    # Write function returning start index for proteins
-    # Write function returning start index for proteoforms
-    # Write function returning start index for small molecules
-
-    # Write function returning end index of genes
-    # Write function returning end index of proteins
-    # Write function returning end index of proteoforms
-    # Write function returning end index of small molecules
-    pass
-
-
 if __name__ == '__main__':
     # print(f"Working directory: {os.getcwd()}")
 

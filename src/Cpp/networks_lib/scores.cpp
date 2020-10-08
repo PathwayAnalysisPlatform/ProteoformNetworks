@@ -227,33 +227,3 @@ double calculate_interface_size_edges(const base::dynamic_bitset<> &V1,
     }
     return result;
 }
-
-pair_map<double> getScores(const vb &sets, std::function<double()> score_function);
-
-void writeScores(const bimap_str_int &groups,
-                 const modules &entity_modules,
-                 const std::vector<std::string> &features_labels,
-                 const std::vector<pair_map<double>> &features,
-                 std::string_view file_output) {
-    assert(features.size() > 0);
-
-    ofstream output(file_output.data());
-    if (!output.is_open()) {
-        throw runtime_error("Problem opening scores file.\n");
-    }
-    int score = 0;
-    output << "TRAIT1\tTRAIT2";
-    for (const auto &label : features_labels)
-        output << "\t" << label;
-    output << "\n";
-    for (const auto &pair : features[0]) {
-        output << groups.int_to_str[pair.first.first] << "\t" << groups.int_to_str[pair.first.second] << std::setprecision(5);
-        for (const auto &feature : features)
-            output << "\t" << feature.at(pair.first);
-        output << "\n";
-        score++;
-    }
-    output.close();
-}
-
-

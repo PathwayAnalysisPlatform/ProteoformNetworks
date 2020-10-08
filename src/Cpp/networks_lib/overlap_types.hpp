@@ -3,24 +3,6 @@
 
 #include <types.hpp>
 
-struct bimaps {
-    bimap_str_int groups;
-    bimap_str_int members;
-};
-
-struct All_modules {
-    vb group_to_members;
-    vb member_to_groups;
-
-    [[nodiscard]] int numMembers() const { return member_to_groups.size(); };
-    [[nodiscard]] int numGroups() const { return group_to_members.size(); }
-};
-
-struct bidirectional_mapping {
-    ummss first_to_second;
-    ummss second_to_first;
-};
-
 // A hash function used to hash a pair of any kind
 struct hash_pair {
     template<class T1, class T2>

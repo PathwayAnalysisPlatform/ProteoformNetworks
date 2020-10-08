@@ -6,7 +6,7 @@
 #include <string_view>
 
 #include "DataSet.hpp"
-#include "conversions.hpp"
+#include "bimap_int_int.hpp"
 #include "proteoform.hpp"
 
 const std::string path_file_report_degree_analysis = "reports/degree_analysis.txt";

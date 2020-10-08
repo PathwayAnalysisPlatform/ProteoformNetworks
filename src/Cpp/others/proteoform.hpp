@@ -10,7 +10,7 @@
 
 #include "bimap_str_int.hpp"
 #include "types.hpp"
-#include "conversions.hpp"
+#include "bimap_int_int.hpp"
 
 namespace proteoform {
 

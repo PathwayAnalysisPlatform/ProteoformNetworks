@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include <conversions.hpp>
+#include <bimap_int_int.hpp>
 #include "types.hpp"
 #include "maps.hpp"
 
@@ -39,8 +39,8 @@ protected:
     }
 
     std::string path_file_mapping = "../../Google_tests/resources/mapping_protein_to_genes_slice.tab";
-    bidirectional_mapping mapping;
-    bidirectional_mapping mapping_without_header;
+    bimap_str_str mapping;
+    bimap_str_str mapping_without_header;
 };
 
 // Test read mapping: Read file without header row
@@ -121,7 +121,7 @@ protected:
         mapping = readMapping(path_file_mapping, true, true);
     }
 
-    bidirectional_mapping mapping;
+    bimap_str_str mapping;
     std::string path_file_mapping = "../../Google_tests/resources/createPheGenIModules/mapping_proteins_to_proteoforms.csv";
 };
 
@@ -175,7 +175,7 @@ protected:
         mapping = readMapping(path_file_mapping, false, true);
     }
 
-    bidirectional_mapping mapping;
+    bimap_str_str mapping;
     std::string path_file_mapping = "../../Google_tests/resources/createPheGenIModules/mapping_proteins_to_proteoforms.csv";
 };
 

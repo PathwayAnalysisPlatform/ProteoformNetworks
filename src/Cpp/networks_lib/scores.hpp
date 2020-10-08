@@ -16,8 +16,8 @@
 #include <utility>
 
 #include "types.hpp"
-#include "phegeni.hpp"
 #include "bimap_str_int.hpp"
+#include "overlap_types.hpp"
 
 struct measures_result {
     double min;
@@ -73,12 +73,5 @@ double calculate_interface_size_nodes(const base::dynamic_bitset<> &V1,
 double calculate_interface_size_edges(const base::dynamic_bitset<> &V1,
                                       const base::dynamic_bitset<> &V2,
                                       const vusi &E);
-
-
-void writeScores(const bimap_str_int &groups,
-                 const modules &entity_modules,
-                 const std::vector<std::string> &features_labels,
-                 const std::vector<pair_map<double>> &features,
-                 std::string_view file_output);
 
 #endif /* UTILITY_HPP_ */

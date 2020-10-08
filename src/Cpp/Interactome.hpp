@@ -5,35 +5,61 @@
 #include <map>
 #include <vector>
 #include <set>
-#include "config.hpp"
-
-enum level {
-    genes, proteins, proteoforms, SimpleEntity
-};
-std::vector<std::string> levels_str = {"genes", "proteins", "proteoforms", "SimpleEntity"};
+#include <bimap_str_int.hpp>
+#include "types.hpp"
 
 class Interactome {
+    Bimap_str_int vertices;
     std::map<int, std::set<int>> adj;
 
     std::vector<int> start_indexes;
     std::vector<int> end_indexes;
 
-    int index(std::string_view name) {
+    void readInteractions(std::string_view file_interactions);
 
-    }
+    void readIndexes(std::string_view file_indexes);
 
-    int name(int index) {
+    std::map<int, std::vector<int>> genes_to_proteins;
 
-    }
+    std::map<int, std::vector<int>> proteins_to_proteoform;
 
-    level get_type(int index);
-    level get_type(std::string_view name);
+    void readGenesToProteins(std::string_view file_proteins_to_genes);
 
-    void read_interactions(std::string_view file_interactions);
-    void read_indexes(std::string_view file_indexes);
+    void readProteinsToProteoforms(std::string_view file_proteins_to_proteoforms);
 
 public:
-    Interactome(std::string_view file_interactions, std::string_view file_indexes);
+
+    Interactome(std::string_view file_vertices, std::string_view file_interactions, std::string_view file_indexes,
+                std::string_view file_proteins_to_genes, std::string_view file_proteins_to_proteoforms);
+
+    int index(std::string_view name);
+
+    Level get_type(int index);
+
+    Level get_type(std::string_view name);
+
+    bool isGene(int index);
+
+    bool isProtein(int index);
+
+    bool isProteoform(int index);
+
+    bool isSimpleEntity(int index);
+
+    std::vector<int> getProteins(int gene_index);
+
+    std::vector<int> getProteoforms(int protein_index);
+
+    std::set<int> getNeighbors(int index);
+
+    std::set<int> getSimpleEntityNeighbors(int index);
+
+    std::set<int> getProteinNeighbors(int index);
+
+    std::set<int> getProteoformNeighbors(int index);
+
+    std::vector<std::pair<int, int>> getInteractions(std::vector<int> indexes);
+
 };
 
 

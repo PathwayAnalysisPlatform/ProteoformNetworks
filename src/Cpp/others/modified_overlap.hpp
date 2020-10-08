@@ -7,7 +7,6 @@
 
 #include "../overlap_analysis.hpp"
 #include "proteoform.hpp"
-#include "reactome.hpp"
 
 const double MIN_MODIFIED_ALL_MEMBERS_RATIO = 0.1;
 const double MIN_MODIFIED_OVERLAP_MEMBERS_RATIO = 0.9;
