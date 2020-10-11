@@ -40,14 +40,6 @@ def read_or_create_interactome(level, sm=True, graphs_path="", v=False):
 
     # Check if files exist
     if Path(json_file).exists():
-        # and Path(edges_file).exists() \
-        # and Path(vertices_file).exists() \
-        # and Path(small_molecules_file).exists():
-        # and (
-        #     level == "genes" or
-        #     (level == 'proteins' and Path(mapping_proteins_to_genes).exists()) or
-        #     (level == "proteoforms" and Path(mapping_proteins_to_proteoforms).exists())
-        # )\
         G = read_graph(json_file)
     else:
         print(f"Not found {json_file}")
@@ -85,7 +77,6 @@ def read_or_create_interactome(level, sm=True, graphs_path="", v=False):
         print(f"Graph {level} nodes: {G.graph['num_' + level]}")
         print(f"Graph small molecule nodes: {G.graph['num_small_molecules']}")
     return G
-
 
 def index(l, x, lo, hi):
     """Locate the leftmost value exactly equal to x in list l"""
@@ -148,23 +139,34 @@ def save_indexed_vertices(indexed_vertices, graphs_path):
     return
 
 
-def save_edges_with_indexed_vertices(interactome, level, graphs_path, indexed_vertices, start_indexes, end_indexes):
-    edges_file = Path(graphs_path + "interactome_" + level + ".tsv")
-    with codecs.open(edges_file, 'w', "utf-8") as fh:
-        for e in interactome.edges:
-            index1 = 0
-            index2 = 0
-            if e[0].startswith("sm_"):
-                index1 = index(indexed_vertices, e[0], start_indexes["SimpleEntity"], end_indexes["SimpleEntity"])
-            else:
-                index1 = index(indexed_vertices, e[0], start_indexes[level], end_indexes[level])
+def save_edges_with_indexed_vertices(interactomes, output_path, indexed_vertices, start_indexes, end_indexes):
+    """
+    Save interactome to a file called "interactome_edges.tsv" which has one edge per row. An edge is a pair of ints.
 
-            if e[1].startswith("sm_"):
-                index2 = index(indexed_vertices, e[1], start_indexes["SimpleEntity"], end_indexes["SimpleEntity"])
-            else:
-                index2 = index(indexed_vertices, e[1], start_indexes[level], end_indexes[level])
-            fh.write(f"{index1}\t{index2}\n")
-    print(f"Created edges file with indexed vertices for {level}")
+    :param interactomes: three networkx graphs with string names of molecules as vertices
+    :param output_path:
+    :param indexed_vertices: list of vertices in the order in which they are indexed
+    :param start_indexes: starting position in the indexed list for each type of molecule
+    :param end_indexes: ending position in the indexed list for each type of molecule
+    :return: void
+    """
+    edges_file = Path(output_path + "interactome_edges.tsv")
+    with codecs.open(edges_file, 'w', "utf-8") as fh:
+        for level in config.LEVELS:
+            for e in interactomes[level].edges:
+                index1 = 0
+                index2 = 0
+                if e[0].startswith("sm_"):
+                    index1 = index(indexed_vertices, e[0], start_indexes["SimpleEntity"], end_indexes["SimpleEntity"])
+                else:
+                    index1 = index(indexed_vertices, e[0], start_indexes[level], end_indexes[level])
+
+                if e[1].startswith("sm_"):
+                    index2 = index(indexed_vertices, e[1], start_indexes["SimpleEntity"], end_indexes["SimpleEntity"])
+                else:
+                    index2 = index(indexed_vertices, e[1], start_indexes[level], end_indexes[level])
+                fh.write(f"{index1}\t{index2}\n")
+    print(f"Created edges file with indexed vertices")
     return
 
 
@@ -187,8 +189,7 @@ def save_interactomes_with_indexed_vertices(interactomes, graphs_path):
     save_indexed_vertices(indexed_vertices, graphs_path)
 
     # Create three files with the interactomes
-    [save_edges_with_indexed_vertices(interactomes[l], l, graphs_path, indexed_vertices, start_indexes, end_indexes)
-     for l in config.LEVELS]
+    save_edges_with_indexed_vertices(interactomes, graphs_path, indexed_vertices, start_indexes, end_indexes)
 
     return
 

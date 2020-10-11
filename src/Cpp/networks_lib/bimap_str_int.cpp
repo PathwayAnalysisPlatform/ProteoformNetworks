@@ -1,11 +1,11 @@
 #include "bimap_str_int.hpp"
 
-std::string rtrim(std::string &s){
-    if(s.length() > 0){
-        auto it = s.end()-1;
-        while(isspace(*it)){
+std::string rtrim(std::string &s) {
+    if (s.length() > 0) {
+        auto it = s.end() - 1;
+        while (isspace(*it)) {
             s.erase(it);
-            it = s.end()-1;
+            it = s.end() - 1;
         }
     }
     return s;
@@ -19,15 +19,25 @@ vs convert_uss_to_vs(const uss &a_set) {
 
 // Create from list, without header, list comes already sorted, there is only one column in the file.
 Bimap_str_int::Bimap_str_int(std::string_view file_elements) {
+    std::cout << "Reading vertices...\n";
     std::ifstream f;
     f.open(file_elements.data());
 
+    if (!f.is_open()) {
+        std::string message = "Cannot open vertices file at ";
+        std::string function = __FUNCTION__;
+        throw std::runtime_error(message + function);
+    }
+
     std::string element;
     int i = 0;
-    while(f >> element){
+    while (f >> element) {
+//        std::cout << "Adding element: " << element << std::endl;
         itos.push_back(element);
         stoi[element] = i;
+        i++;
     }
+    std::cout << "Complete.\n\n";
 }
 
 // Creates a bimap of string to int and viceversa.
@@ -35,11 +45,10 @@ Bimap_str_int::Bimap_str_int(std::string_view file_elements) {
 // Creates a bimap of the elements in the selected column.
 // Column index starts counting at 0
 // The columns of the file must be separated by a tab ('\t')
-Bimap_str_int::Bimap_str_int(std::string_view file_elements, bool has_header, int column_index, int total_num_columns):
+Bimap_str_int::Bimap_str_int(std::string_view file_elements, bool has_header, int column_index, int total_num_columns) :
         itos{createIntToStr(file_elements, has_header, column_index, total_num_columns)},
         stoi{createStrToInt(itos)} {
 }
-
 
 
 umsi createStrToInt(const vs &index_to_entities) {
@@ -58,6 +67,16 @@ Bimap_str_int::Bimap_str_int(const vs &index_to_entities) {
     vs sortedAndUniqueVector(s.begin(), s.end());
     itos = sortedAndUniqueVector;
     stoi = createStrToInt(sortedAndUniqueVector);
+}
+
+int Bimap_str_int::index(const std::string &key) const {
+    if(stoi.find(key) == stoi.end())
+    {
+        std::string message = "Key not found: ";
+        message += key;
+        throw std::runtime_error(message);
+    }
+    return stoi.at(key);
 }
 
 // The input file has one identifier per row in the selected column.

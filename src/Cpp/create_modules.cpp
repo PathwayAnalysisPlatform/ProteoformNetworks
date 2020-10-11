@@ -180,7 +180,7 @@ void createModules(std::string_view file_phegeni,
 int main(int argc, char *argv[]) try {
 
     if (argc < 4) {
-        std::cerr << "Missing arguments. Expected: 4 arguments:\n\n"
+        std::cerr << "Missing arguments. Expected: 7 arguments:\n\n"
                   << " * - [1] File with Gene sets to create disease modules\n"
                   << " * - [2] File of Interactome vertices\n"
                   << " * - [3] File of Interactome edges (with indexed vertices)\n"
@@ -200,9 +200,11 @@ int main(int argc, char *argv[]) try {
     std::string file_proteins_to_proteoforms = argv[6];
     std::string output_path = argv[7];
 
+    std::cout <<"Reading Interactome...\n\n";
     Interactome interactome(file_vertices, file_edges, file_indexes, file_proteins_to_genes,
                             file_proteins_to_proteoforms);
 
+    std::cout << "Creating disease modules.\n\n";
     createModules(file_phegeni, interactome, output_path);
 }
 catch (const std::exception &ex) {

@@ -1,4 +1,3 @@
-#include <fstream>
 #include "Interactome.hpp"
 
 Level Interactome::get_type(int index) {
@@ -33,6 +32,7 @@ bool Interactome::isSimpleEntity(int index) {
 }
 
 void Interactome::readIndexes(std::string_view file_indexes) {
+    std::cout << "Reading start and end indexes...\n";
     std::ifstream f;
     f.open(file_indexes.data());
 
@@ -52,9 +52,11 @@ void Interactome::readIndexes(std::string_view file_indexes) {
             adj[i2].insert(i1);
         }
     }
+    std::cout << "Complete.\n\n";
 }
 
 void Interactome::readInteractions(std::string_view file_interactions) {
+    std::cout << "Reading edges.\n";
     std::ifstream f;
     f.open(file_interactions.data());
 
@@ -63,6 +65,7 @@ void Interactome::readInteractions(std::string_view file_interactions) {
         start_indexes.push_back(start_index);
         end_indexes.push_back(end_index);
     }
+    std::cout << "Complete.\n\n";
 }
 
 int Interactome::index(std::string_view name) {
@@ -71,6 +74,7 @@ int Interactome::index(std::string_view name) {
 
 
 void Interactome::readGenesToProteins(std::string_view file_proteins_to_genes) {
+    std::cout << "Reading genes to proteins...\n";
     std::ifstream f(file_proteins_to_genes.data());
 
     if (!f.is_open()) {
@@ -85,14 +89,16 @@ void Interactome::readGenesToProteins(std::string_view file_proteins_to_genes) {
     while (f >> protein_name >> gene_name) {
         int gene_index = index(gene_name), protein_index = index(protein_name);
         if (genes_to_proteins.find(gene_index) == genes_to_proteins.end()) {
-            genes_to_proteins.emplace(gene_index, protein_index);
+            genes_to_proteins.emplace(gene_index, std::vector<int>(1, protein_index));
         } else {
             genes_to_proteins[gene_index].push_back(protein_index);
         }
     }
+    std::cout << "Complete.\n\n";
 }
 
 void Interactome::readProteinsToProteoforms(std::string_view file_proteins_to_proteoforms) {
+    std::cout << "Reading proteins to proteoforms.\n";
     std::ifstream f(file_proteins_to_proteoforms.data());
 
     if (!f.is_open()) {
@@ -112,6 +118,7 @@ void Interactome::readProteinsToProteoforms(std::string_view file_proteins_to_pr
             proteins_to_proteoform[protein_index].push_back(proteoform_index);
         }
     }
+    std::cout << "Complete.\n\n";
 }
 
 Interactome::Interactome(std::string_view file_vertices, std::string_view file_edges, std::string_view file_indexes,
@@ -121,6 +128,7 @@ Interactome::Interactome(std::string_view file_vertices, std::string_view file_e
     readInteractions(file_edges);
     readGenesToProteins(file_proteins_to_genes);
     readProteinsToProteoforms(file_proteins_to_proteoforms);
+    std::cout << "Finished reading interactome.\n\n";
 }
 
 std::vector<int> Interactome::getProteins(int gene_index) {

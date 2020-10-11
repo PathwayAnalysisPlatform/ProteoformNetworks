@@ -7,6 +7,8 @@
 #include <set>
 #include "bimap_str_int.hpp"
 #include "types.hpp"
+#include <fstream>
+#include <iostream>
 
 class Interactome {
     Bimap_str_int vertices;

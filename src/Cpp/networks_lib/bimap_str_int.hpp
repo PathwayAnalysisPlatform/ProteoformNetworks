@@ -7,6 +7,7 @@
 #include <cstring>
 #include <set>
 #include "types.hpp"
+#include <iostream>
 
 std::string rtrim(std::string &s);
 
@@ -38,7 +39,7 @@ public:
 
     bool has(const std::string &key) const { return stoi.find(key) != stoi.end(); };
 
-    int index(const std::string &key) const { return stoi.at(key); };
+    int index(const std::string &key) const;
 
     std::string name(const int index) const { return itos[index]; };
 
