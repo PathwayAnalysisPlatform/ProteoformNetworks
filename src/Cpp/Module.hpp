@@ -11,16 +11,20 @@
 class Module {
     std::string name;
     Level level;
-    std::map<int, std::set<int>> adj;
-
 
 public:
 
     Module();
 
-    Module(const std::string &name, Level level);
+    std::map<int, std::set<int>> adj;
+
+    Module(const std::string &name, Level level, int maxNumVertices);
+
+    base::dynamic_bitset<> accessioned_entity_vertices;
 
     void addVertex(int vertex);
+
+    void addVertex(int interactomeIndex, int moduleBitsetIndex);
 
     void addEdge(int index1, int index2);
 

@@ -4,10 +4,21 @@ Module::Module() {
     throw std::runtime_error("This constructor should not be called.");
 }
 
-Module::Module(const std::string &name, Level level) : name(name), level(level) {}
+Module::Module(const std::string &name, Level level, int maxNumVertices) :
+        name(name),
+        level(level), accessioned_entity_vertices(base::dynamic_bitset<>(maxNumVertices)) {
+}
 
+// Add vertex to the adjacency list
 void Module::addVertex(int vertex) {
+
     adj[vertex];
+}
+
+// Add vertex to the adjacency list and to the bitset for overlap operations
+void Module::addVertex(int interactomeIndex, int moduleBitsetIndex) {
+    adj[interactomeIndex];
+    accessioned_entity_vertices[moduleBitsetIndex] = true;
 }
 
 void Module::addEdge(int index1, int index2) {

@@ -31,10 +31,10 @@ bool Interactome::isSimpleEntity(int index) {
     return index >= start_indexes[SimpleEntity];
 }
 
-void Interactome::readIndexes(std::string_view file_indexes) {
-    std::cout << "Reading start and end indexes...\n";
+void Interactome::readEdges(std::string_view file_edges) {
+    std::cout << "Reading edges...\n";
     std::ifstream f;
-    f.open(file_indexes.data());
+    f.open(file_edges.data());
 
     int i1, i2;
     while (f >> i1 >> i2) {
@@ -55,10 +55,10 @@ void Interactome::readIndexes(std::string_view file_indexes) {
     std::cout << "Complete.\n\n";
 }
 
-void Interactome::readInteractions(std::string_view file_interactions) {
-    std::cout << "Reading edges.\n";
+void Interactome::readRanges(std::string_view file_ranges) {
+    std::cout << "Reading index ranges.\n";
     std::ifstream f;
-    f.open(file_interactions.data());
+    f.open(file_ranges.data());
 
     int start_index, end_index;
     while (f >> start_index >> end_index) {
@@ -121,11 +121,11 @@ void Interactome::readProteinsToProteoforms(std::string_view file_proteins_to_pr
     std::cout << "Complete.\n\n";
 }
 
-Interactome::Interactome(std::string_view file_vertices, std::string_view file_edges, std::string_view file_indexes,
+Interactome::Interactome(std::string_view file_vertices, std::string_view file_edges, std::string_view file_ranges,
                          std::string_view file_proteins_to_genes, std::string_view file_proteins_to_proteoforms)
         : vertices(file_vertices) {
-    readIndexes(file_indexes);
-    readInteractions(file_edges);
+    readRanges(file_ranges);
+    readEdges(file_edges);
     readGenesToProteins(file_proteins_to_genes);
     readProteinsToProteoforms(file_proteins_to_proteoforms);
     std::cout << "Finished reading interactome.\n\n";
@@ -190,4 +190,30 @@ std::vector<std::pair<int, int>> Interactome::getInteractions(std::vector<int> i
     return interactions;
 }
 
+int Interactome::getNumVertices(){
+    return vertices.size();
+}
 
+int Interactome::getStartIndexGenes() {
+    return start_indexes[genes];
+}
+
+int Interactome::getEndIndexGenes() {
+    return end_indexes[genes];
+}
+
+int Interactome::getStartIndexProteins() {
+    return start_indexes[proteins];
+}
+
+int Interactome::getEndIndexProteins(){
+    return end_indexes[proteins];
+}
+
+int Interactome::getStartIndexProteoforms(){
+    return start_indexes[proteoforms];
+}
+
+int Interactome::getEndIndexProteoforms(){
+    return end_indexes[proteoforms];
+}

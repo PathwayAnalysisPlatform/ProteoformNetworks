@@ -131,7 +131,7 @@ def index_all_vertices(interactomes):
 
 
 def save_indexed_vertices(indexed_vertices, graphs_path):
-    vertices_file = Path(graphs_path + "interactome_indexed_vertices.tsv")
+    vertices_file = Path(graphs_path + "interactome_vertices.tsv")
     with codecs.open(vertices_file, 'w', "utf-8") as fh:
         for v in indexed_vertices:
             fh.write(f"{v}\n")
@@ -169,6 +169,12 @@ def save_edges_with_indexed_vertices(interactomes, output_path, indexed_vertices
     print(f"Created edges file with indexed vertices")
     return
 
+def save_ranges(start_indexes, end_indexes, output_path):
+    ranges_file = Path(output_path + "interactome_ranges.tsv")
+    with codecs.open(ranges_file, 'w', "utf-8") as fh:
+        for level in config.LEVELS:
+            fh.write(f"{start_indexes[level]}\t{end_indexes[level]}\n")
+        fh.write(f"{start_indexes['SimpleEntity']}\t{end_indexes['SimpleEntity']}\n")
 
 def save_interactomes_with_indexed_vertices(interactomes, graphs_path):
     """
@@ -190,6 +196,8 @@ def save_interactomes_with_indexed_vertices(interactomes, graphs_path):
 
     # Create three files with the interactomes
     save_edges_with_indexed_vertices(interactomes, graphs_path, indexed_vertices, start_indexes, end_indexes)
+
+    save_ranges(start_indexes, end_indexes, graphs_path)
 
     return
 

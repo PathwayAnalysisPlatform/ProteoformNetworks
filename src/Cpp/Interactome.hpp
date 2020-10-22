@@ -17,9 +17,9 @@ class Interactome {
     std::vector<int> start_indexes;
     std::vector<int> end_indexes;
 
-    void readInteractions(std::string_view file_interactions);
+    void readRanges(std::string_view file_interactions);
 
-    void readIndexes(std::string_view file_indexes);
+    void readEdges(std::string_view file_indexes);
 
     std::map<int, std::vector<int>> genes_to_proteins;
 
@@ -31,7 +31,7 @@ class Interactome {
 
 public:
 
-    Interactome(std::string_view file_vertices, std::string_view file_interactions, std::string_view file_indexes,
+    Interactome(std::string_view file_vertices, std::string_view file_interactions, std::string_view file_ranges,
                 std::string_view file_proteins_to_genes, std::string_view file_proteins_to_proteoforms);
 
     int index(std::string_view name);
@@ -61,6 +61,15 @@ public:
     std::set<int> getProteoformNeighbors(int index);
 
     std::vector<std::pair<int, int>> getInteractions(std::vector<int> indexes);
+
+    int getNumVertices();
+
+    int getStartIndexGenes();
+    int getEndIndexGenes();
+    int getStartIndexProteins();
+    int getEndIndexProteins();
+    int getStartIndexProteoforms();
+    int getEndIndexProteoforms();
 
 };
 

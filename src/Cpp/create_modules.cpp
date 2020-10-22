@@ -1,8 +1,4 @@
-#include <iostream>
-#include "overlap_analysis.hpp"
-#include "Interactome.hpp"
-#include "Module.hpp"
-
+#include "create_modules.hpp"
 
 void saveModules(std::map<std::string, Module> modules, const std::string &output_path);
 
@@ -12,6 +8,8 @@ std::map<std::string, Module> createGeneModules(std::string_view file_phegeni,
                                                 Interactome interactome,
                                                 const std::string &path_output) {
 
+    std::cout << "Creating gene level modules...\n";
+
     // Read traits and genes in Phegeni file. The genes used are the ones from Reactome, if the gene read is not there it is ignored.
     std::ifstream file_phegen(file_phegeni.data());
     std::string line, field, trait, gene_name, gene_name_2;
@@ -19,6 +17,7 @@ std::map<std::string, Module> createGeneModules(std::string_view file_phegeni,
     long double p_value;
 
     std::map<std::string, Module> modules;
+    int numGenes = interactome.getEndIndexGenes() - interactome.getStartIndexGenes() + 1;
 
     if (!file_phegen.is_open()) {
         std::string message = "Cannot open path_file_phegeni at ";
@@ -42,15 +41,20 @@ std::map<std::string, Module> createGeneModules(std::string_view file_phegeni,
                 line);               // Skip header line leftoever: Source,	PubMed,	Analysis ID,	Study ID,	Study Name
 
         if (modules.find(trait) == modules.end()) {
-            modules.emplace(trait, Module(trait, genes));
+            modules.emplace(trait, Module(trait, genes, numGenes));
         }
-        modules[trait].addVertex(interactome.index(gene_name));
-        for (int simpleEntity : interactome.getSimpleEntityNeighbors(interactome.index(gene_name)))
-            modules[trait].addVertex(simpleEntity);
+        int index;
+        if ((index = interactome.index(gene_name)) > 0) {
+            modules[trait].addVertex(index, index - interactome.getStartIndexGenes());
+            for (int simpleEntity : interactome.getSimpleEntityNeighbors(index))
+                modules[trait].addVertex(simpleEntity);
+        }
 
-        modules[trait].addVertex(interactome.index(gene_name_2));
-        for (int simpleEntity : interactome.getSimpleEntityNeighbors(interactome.index(gene_name_2)))
-            modules[trait].addVertex(simpleEntity);
+        if ((index = interactome.index(gene_name_2)) > 0) {
+            modules[trait].addVertex(index, index - interactome.getStartIndexGenes());
+            for (int simpleEntity : interactome.getSimpleEntityNeighbors(index))
+                modules[trait].addVertex(simpleEntity);
+        }
     }
 
     modules[trait].addEdges(interactome.getInteractions(modules[trait].getVertices()));
@@ -72,7 +76,7 @@ std::map<std::string, Module> createGeneModules(std::string_view file_phegeni,
 
     saveModules(modules, path_output);
 
-    std::cerr << "Created " << modules.size() << " disease modules\n";
+    std::cerr << "Created " << modules.size() << " gene level disease modules\n";
 
     return modules;
 }
@@ -81,10 +85,13 @@ std::map<std::string, Module> createProteinModules(std::map<std::string, Module>
                                                    Interactome interactome,
                                                    const std::string &output_path) {
 
+    std::cout << "Creating protein level modules...\n";
+
     std::map<std::string, Module> protein_modules;
     for (auto &entry : gene_modules) {
         Module &gene_module = entry.second;
-        Module protein_module = Module(gene_module.getName(), proteins);
+        Module protein_module = Module(gene_module.getName(), proteins,
+                                       interactome.getEndIndexProteins() - interactome.getStartIndexProteins() + 1);
 
         std::set<int> candidate_proteins;
         for (auto vertex : gene_module.getVertices()) { // Gather all candidate proteins by converting ids
@@ -97,7 +104,10 @@ std::map<std::string, Module> createProteinModules(std::map<std::string, Module>
         for (auto candidate_protein : candidate_proteins) { // Keep only those with interactors in the same set
             for (auto neighbor : interactome.getProteinNeighbors(candidate_protein)) {
                 if (candidate_proteins.find(neighbor) != candidate_proteins.end()) {
-                    protein_module.addVertex(candidate_protein);
+                    protein_module.addVertex(candidate_protein,
+                                             candidate_protein - interactome.getStartIndexProteins());
+                    for (int simpleEntity : interactome.getSimpleEntityNeighbors(candidate_protein))
+                        protein_module.addVertex(simpleEntity);
                     break;
                 }
             }
@@ -110,6 +120,8 @@ std::map<std::string, Module> createProteinModules(std::map<std::string, Module>
 
     saveModules(protein_modules, output_path);
 
+    std::cerr << "Created " << protein_modules.size() << " protein level disease modules\n";
+
     return protein_modules;
 }
 
@@ -117,10 +129,15 @@ std::map<std::string, Module> createProteoformModules(std::map<std::string, Modu
                                                       Interactome interactome,
                                                       const std::string &output_path) {
 
+    std::cout << "Creating proteoform level modules...\n";
+
     std::map<std::string, Module> proteoform_modules;
     for (auto &entry : protein_modules) {
         Module &protein_module = entry.second;
-        Module proteoform_module = Module(protein_module.getName(), proteoforms);
+        Module proteoform_module = Module(
+                protein_module.getName(),
+                proteoforms,
+                interactome.getEndIndexProteoforms() - interactome.getStartIndexProteoforms() - 1);
 
         std::set<int> candidate_proteoforms;
         for (auto vertex : protein_module.getVertices()) { // Gather all candidate proteins by converting ids
@@ -133,7 +150,10 @@ std::map<std::string, Module> createProteoformModules(std::map<std::string, Modu
         for (auto candidate_proteoform : candidate_proteoforms) { // Keep only those with interactors in the same set
             for (auto neighbor : interactome.getProteoformNeighbors(candidate_proteoform)) {
                 if (candidate_proteoforms.find(neighbor) != candidate_proteoforms.end()) {
-                    proteoform_module.addVertex(candidate_proteoform);
+                    proteoform_module.addVertex(candidate_proteoform,
+                                                candidate_proteoform - interactome.getStartIndexProteoforms());
+                    for (int simpleEntity :interactome.getSimpleEntityNeighbors(candidate_proteoform))
+                        proteoform_module.addVertex(simpleEntity);
                     break;
                 }
             }
@@ -146,14 +166,23 @@ std::map<std::string, Module> createProteoformModules(std::map<std::string, Modu
 
     saveModules(proteoform_modules, output_path);
 
+    std::cerr << "Created " << proteoform_modules.size() << " proteoform level disease modules\n";
     return proteoform_modules;
 
 }
 
 void saveModules(std::map<std::string, Module> modules, const std::string &output_path) {
+
     for (auto entry : modules) {
         Module &module = entry.second;
-        std::ofstream f(output_path.data() + module.getName() + "_" + LEVELS[module.getLevel()] + ".tsv");
+        std::string file_name = output_path.data() + module.getName() + "_" + LEVELS[module.getLevel()] + ".tsv";
+        std::ofstream f(file_name);
+
+        if (!f.is_open()) {
+            std::string message = "Cannot open module file " + file_name + " at ";
+            std::string function = __FUNCTION__;
+            throw std::runtime_error(message + function);
+        }
 
         for (auto vertex : module.getVertices()) {
             if (module.getNeighbors(vertex).size() == 0) {
@@ -167,16 +196,18 @@ void saveModules(std::map<std::string, Module> modules, const std::string &outpu
     }
 }
 
-void createModules(std::string_view file_phegeni,
-                   Interactome interactome,
-                   const std::string &output_path) {
+std::vector<std::map<std::string, Module>> createModules(std::string_view file_phegeni,
+                                                         Interactome interactome,
+                                                         const std::string &output_path) {
     std::map<std::string, Module> gene_modules = createGeneModules(file_phegeni, interactome, output_path);
     std::map<std::string, Module> protein_modules = createProteinModules(gene_modules, interactome, output_path);
     std::map<std::string, Module> proteoform_modules = createProteoformModules(protein_modules, interactome,
                                                                                output_path);
+    return {gene_modules, protein_modules, proteoform_modules};
 }
 
 
+/*
 int main(int argc, char *argv[]) try {
 
     if (argc < 4) {
@@ -200,7 +231,7 @@ int main(int argc, char *argv[]) try {
     std::string file_proteins_to_proteoforms = argv[6];
     std::string output_path = argv[7];
 
-    std::cout <<"Reading Interactome...\n\n";
+    std::cout << "Reading Interactome...\n\n";
     Interactome interactome(file_vertices, file_edges, file_indexes, file_proteins_to_genes,
                             file_proteins_to_proteoforms);
 
@@ -209,4 +240,4 @@ int main(int argc, char *argv[]) try {
 }
 catch (const std::exception &ex) {
     std::cout << ex.what() << "\n";
-}
+}*/

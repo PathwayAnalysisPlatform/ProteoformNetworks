@@ -38,13 +38,6 @@ writeMeasures(std::ofstream &report, const measures_result &measures, std::strin
 
 void writeMeasures(std::ofstream &report, const ummss &mapping, std::string_view label1, std::string_view label2);
 
-// Calculate Jaccard index, which is intersection over union
-double getJaccardSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2);
-
-double getOverlapSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2);
-
-double getOverlapSize(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2);
-
 // Calculate score between al pairs of bitsets
 // The sets are the second value of each entry in the sets parameter.
 // The score is a function capable of calculating the overlap with bitsets.

@@ -4,7 +4,8 @@
 #include <string_view>
 #include "Interactome.hpp"
 #include "Module.hpp"
-
+#include <iostream>
+#include "overlap_analysis.hpp"
 
 // Create or read module files at the three levels: all in one, and single module files.
 std::map<std::string, Module> createGeneModules(std::string_view file_phegeni,
@@ -19,7 +20,8 @@ std::map<std::string, Module> createProteoformModules(std::map<std::string, Modu
                                                       Interactome interactome,
                                                       const std::string &output_path);
 
-void createModules(std::string_view file_phegeni, Interactome interactome, const std::string &output_path);
+std::vector<std::map<std::string, Module>>
+createModules(std::string_view file_phegeni, Interactome interactome, const std::string &output_path);
 
 void saveModules(std::map<std::string, Module> modules, const std::string &output_path);
 
