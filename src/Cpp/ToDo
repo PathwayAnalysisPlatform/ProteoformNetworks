@@ -1,0 +1,26 @@
+[ ] Check interactome
+    [ ] Check number of total entities: genes, proteins, proteoforms, small molecules
+    [ ] Check proteoforms have semicolon at the end
+    [ ] The number of small molecules in each level is the same
+    [ ] Check indexing of vertices is correct
+    [ ] Check indexed edges are correct
+
+[ ] Verify that modules are correct
+    [ ] Total Number of modules is correct
+    [ ] There is one file for each module for each level
+
+    [ ] Each module has the correct genes
+    [ ] Each module has the correct proteins
+    [ ] Each module has the correct proteoforms
+    [ ] Each module has the correct small molecules
+    [ ] Interactions in a module are correct
+        [ ] Check for examples at gene level
+        [ ] Check for examples at protein level
+        [ ] Check for examples at proteoform level
+
+[ ] Check overlap scores are correct
+    [ ] Shared nodes calculation
+    [ ] Examples of overlapping coefficient
+    [ ] Examples of jaccard index
+    [ ] Interface
+

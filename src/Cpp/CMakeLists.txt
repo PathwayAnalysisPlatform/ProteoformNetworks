@@ -11,7 +11,7 @@ include_directories(base)
 
 add_subdirectory(networks_lib)
 add_subdirectory(base)
-add_subdirectory(Google_tests)
+add_subdirectory(tests)
 
 target_link_libraries(do_analysis networks_lib base)
 

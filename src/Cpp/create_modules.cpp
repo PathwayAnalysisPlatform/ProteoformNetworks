@@ -45,12 +45,14 @@ std::map<std::string, Module> createGeneModules(std::string_view file_phegeni,
         }
         int index;
         if ((index = interactome.index(gene_name)) > 0) {
+//            std::cout << "Adding " << interactome.getName(index) << " to module: " << trait << std::endl;
             modules[trait].addVertex(index, index - interactome.getStartIndexGenes());
             for (int simpleEntity : interactome.getSimpleEntityNeighbors(index))
                 modules[trait].addVertex(simpleEntity);
         }
 
         if ((index = interactome.index(gene_name_2)) > 0) {
+//            std::cout << "Adding " << interactome.getName(index) << " to module: " << trait << std::endl;
             modules[trait].addVertex(index, index - interactome.getStartIndexGenes());
             for (int simpleEntity : interactome.getSimpleEntityNeighbors(index))
                 modules[trait].addVertex(simpleEntity);
@@ -94,22 +96,33 @@ std::map<std::string, Module> createProteinModules(std::map<std::string, Module>
                                        interactome.getEndIndexProteins() - interactome.getStartIndexProteins() + 1);
 
         std::set<int> candidate_proteins;
-        for (auto vertex : gene_module.getVertices()) { // Gather all candidate proteins by converting ids
-            if (interactome.isGene(vertex)) {
-                for (auto protein : interactome.getProteins(vertex))
+        for (auto gene : gene_module.getVertices()) { // Gather all candidate proteins by converting ids
+            if (interactome.isGene(gene)) {
+                for (auto protein : interactome.getProteins(gene))
                     candidate_proteins.insert(protein);
             }
         }
 
-        for (auto candidate_protein : candidate_proteins) { // Keep only those with interactors in the same set
-            for (auto neighbor : interactome.getProteinNeighbors(candidate_protein)) {
-                if (candidate_proteins.find(neighbor) != candidate_proteins.end()) {
-                    protein_module.addVertex(candidate_protein,
-                                             candidate_protein - interactome.getStartIndexProteins());
-                    for (int simpleEntity : interactome.getSimpleEntityNeighbors(candidate_protein))
-                        protein_module.addVertex(simpleEntity);
-                    break;
+        bool filterCandidateProteins = false;
+        if (filterCandidateProteins) {
+            for (auto candidate_protein : candidate_proteins) { // Keep only those with interactors in the same set
+                for (auto neighbor : interactome.getProteinNeighbors(candidate_protein)) {
+                    if (candidate_proteins.find(neighbor) !=
+                        candidate_proteins.end()) { // If the  neighbor is a protein
+                        protein_module.addVertex(candidate_protein,
+                                                 candidate_protein - interactome.getStartIndexProteins());
+                        for (int simpleEntity : interactome.getSimpleEntityNeighbors(candidate_protein))
+                            protein_module.addVertex(simpleEntity);
+                        break;
+                    }
                 }
+            }
+        } else {
+            for (auto candidate_protein : candidate_proteins) {
+                std::cout << "Adding " << interactome.getName(candidate_protein) << " to module: " << protein_module.getName()
+                << " at index " << candidate_protein - interactome.getStartIndexProteins()
+                << std::endl;
+                protein_module.addVertex(candidate_protein, candidate_protein - interactome.getStartIndexProteins());
             }
         }
 
@@ -147,15 +160,24 @@ std::map<std::string, Module> createProteoformModules(std::map<std::string, Modu
             }
         }
 
-        for (auto candidate_proteoform : candidate_proteoforms) { // Keep only those with interactors in the same set
-            for (auto neighbor : interactome.getProteoformNeighbors(candidate_proteoform)) {
-                if (candidate_proteoforms.find(neighbor) != candidate_proteoforms.end()) {
-                    proteoform_module.addVertex(candidate_proteoform,
-                                                candidate_proteoform - interactome.getStartIndexProteoforms());
-                    for (int simpleEntity :interactome.getSimpleEntityNeighbors(candidate_proteoform))
-                        proteoform_module.addVertex(simpleEntity);
-                    break;
+        bool filterCandidateProteoforms = false;
+
+        if (filterCandidateProteoforms) {
+            for (auto candidate_proteoform : candidate_proteoforms) { // Keep only those with interactors in the same set
+                for (auto neighbor : interactome.getProteoformNeighbors(candidate_proteoform)) {
+                    if (candidate_proteoforms.find(neighbor) != candidate_proteoforms.end()) {
+                        proteoform_module.addVertex(candidate_proteoform,
+                                                    candidate_proteoform - interactome.getStartIndexProteoforms());
+                        for (int simpleEntity :interactome.getSimpleEntityNeighbors(candidate_proteoform))
+                            proteoform_module.addVertex(simpleEntity);
+                        break;
+                    }
                 }
+            }
+        } else {
+            for (auto canditate_proteoform : candidate_proteoforms) {
+                proteoform_module.addVertex(canditate_proteoform,
+                                            canditate_proteoform - interactome.getStartIndexProteoforms());
             }
         }
 
@@ -172,6 +194,8 @@ std::map<std::string, Module> createProteoformModules(std::map<std::string, Modu
 }
 
 void saveModules(std::map<std::string, Module> modules, const std::string &output_path) {
+
+    std::cout << "Saving modules at " << output_path << std::endl;
 
     for (auto entry : modules) {
         Module &module = entry.second;
