@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <ctime>
-#include <sys/stat.h>
 #include <utility>
 
 #include "scores.hpp"
@@ -14,11 +13,9 @@
 #include "create_modules.hpp"
 
 #include <windows.h>
+#include "tools/files.hpp"
 
-inline bool file_exists(const std::string &name) {
-    struct stat buffer;
-    return (stat(name.c_str(), &buffer) == 0);
-}
+int countSharedVertices(Module m1, Module m2, Interactome interactome);
 
 double getOverlapSize(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2);
 
@@ -27,7 +24,7 @@ double getOverlapSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> 
 // Calculate Jaccard index, which is intersection over union
 double getJaccardSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2);
 
-void calculateOverlap(Interactome interactome, std::vector<std::map<std::string, Module>> modules, const std::string& output_path);
-
+void calculateOverlap(Interactome interactome, std::vector<std::map<std::string, Module>> modules,
+                      const std::string &output_path);
 
 #endif /* OVERLAP_H_ */

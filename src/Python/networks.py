@@ -168,7 +168,7 @@ def add_nodes(G, df, level):
         elif G.nodes[unique_id]['type'] == "proteins" or G.nodes[entity['Id']]['type'] == "proteoforms":
             G.nodes[unique_id]['prevId'] = entity['PrevId']
 
-    print(f"{level}: {G.graph['num_small_molecules']}")
+    print(f"{level} level - small molecules: {G.graph['num_small_molecules']}")
     print(f"{level}: {G.graph['num_' + level]}")
 
 

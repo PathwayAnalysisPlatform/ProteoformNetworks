@@ -4,6 +4,10 @@ import pandas as pd
 
 from bokeh.palettes import Colorblind
 
+genes_str = "genes"
+proteins_str = "proteins"
+proteoforms_str = "proteoforms"
+
 LEVELS = ["genes", "proteins", "proteoforms"]
 
 # LEVELS_COLOR = {"genes": "#67A9CF", "proteins": "#F1A340", "proteoforms": "#7FBF7B"}

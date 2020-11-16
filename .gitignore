@@ -74,6 +74,6 @@ src/Python/learning/
 
 !.idea/runConfigurations/
 .idea/misc.xml
-/src/Cpp/tests/lib/gtest/
+/src/Cpp/Google_tests/lib/
 .idea/misc.xml
 .idea/runConfigurations/ProteoformNetwork_run.xml

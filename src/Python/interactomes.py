@@ -9,8 +9,7 @@ import config
 from lib.graph_database import get_query_result
 from networks import add_edges_reaction_participants, add_edges_complex_components, add_nodes, save_graph, \
     read_graph
-from queries import get_reaction_participants, get_complex_components, QUERIES_PARTICIPANTS, \
-    fix_neo4j_values, QUERIES_COMPONENTS
+from queries import QUERIES_PARTICIPANTS, fix_neo4j_values, QUERIES_COMPONENTS
 
 
 def read_or_create_interactome(level, sm=True, graphs_path="", v=False):
@@ -48,16 +47,19 @@ def read_or_create_interactome(level, sm=True, graphs_path="", v=False):
         G.graph['num_' + level] = 0
         G.graph['num_small_molecules'] = 0
 
-        participants = get_reaction_participants(level, True)
-        components = get_complex_components(level, True)
+        participants = get_query_result(QUERIES_PARTICIPANTS[level])
+        participants = fix_neo4j_values(participants, level)
+
+        components = get_query_result(QUERIES_COMPONENTS[level])
+        components = fix_neo4j_values(components, level)
 
         if sm:
             sm_participants = get_query_result(QUERIES_PARTICIPANTS['sm'])
-            sm_participants = fix_neo4j_values(sm_participants, level)
+            sm_participants = fix_neo4j_values(sm_participants, 'sm')
             participants = pd.concat([sm_participants, participants])
 
             sm_components = get_query_result(QUERIES_COMPONENTS['sm'])
-            sm_components = fix_neo4j_values(sm_components, level)
+            sm_components = fix_neo4j_values(sm_components, 'sm')
             components = pd.concat([sm_components, components])
 
         records = pd.concat([participants, components])
@@ -77,6 +79,7 @@ def read_or_create_interactome(level, sm=True, graphs_path="", v=False):
         print(f"Graph {level} nodes: {G.graph['num_' + level]}")
         print(f"Graph small molecule nodes: {G.graph['num_small_molecules']}")
     return G
+
 
 def index(l, x, lo, hi):
     """Locate the leftmost value exactly equal to x in list l"""
@@ -169,12 +172,14 @@ def save_edges_with_indexed_vertices(interactomes, output_path, indexed_vertices
     print(f"Created edges file with indexed vertices")
     return
 
+
 def save_ranges(start_indexes, end_indexes, output_path):
     ranges_file = Path(output_path + "interactome_ranges.tsv")
     with codecs.open(ranges_file, 'w', "utf-8") as fh:
         for level in config.LEVELS:
             fh.write(f"{start_indexes[level]}\t{end_indexes[level]}\n")
         fh.write(f"{start_indexes['SimpleEntity']}\t{end_indexes['SimpleEntity']}\n")
+
 
 def save_interactomes_with_indexed_vertices(interactomes, graphs_path):
     """

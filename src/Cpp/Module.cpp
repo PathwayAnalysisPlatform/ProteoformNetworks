@@ -6,19 +6,26 @@ Module::Module() {
 
 Module::Module(const std::string &name, Level level, int maxNumVertices) :
         name(name),
-        level(level), accessioned_entity_vertices(base::dynamic_bitset<>(maxNumVertices)) {
+        level(level),
+        accessioned_entity_vertices(base::dynamic_bitset<>(maxNumVertices)) {
+
+    //    std::cout << "Module for " << LEVELS[level] << " constructed with " << maxNumVertices << std::endl;
 }
 
 // Add vertex to the adjacency list
 void Module::addVertex(int vertex) {
-
     adj[vertex];
 }
 
 // Add vertex to the adjacency list and to the bitset for overlap operations
 void Module::addVertex(int interactomeIndex, int moduleBitsetIndex) {
     adj[interactomeIndex];
-    accessioned_entity_vertices[moduleBitsetIndex] = true;
+    if(moduleBitsetIndex >= accessioned_entity_vertices.size()){
+        std::cerr << "Tried to add entity out of index range:" << moduleBitsetIndex << ". Max index: " << accessioned_entity_vertices.size()-1 << std::endl;
+        std::cerr << "Level: " << LEVELS[level] << std::endl;
+    } else{
+        accessioned_entity_vertices[moduleBitsetIndex] = true;
+    }
 }
 
 void Module::addEdge(int index1, int index2) {
@@ -58,6 +65,10 @@ const std::string &Module::getName() const {
 
 Level Module::getLevel() const {
     return this->level;
+}
+
+const std::map<int, std::set<int>> &Module::getAdj() const {
+    return adj;
 }
 
 

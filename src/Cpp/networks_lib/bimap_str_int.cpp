@@ -72,7 +72,7 @@ Bimap_str_int::Bimap_str_int(const vs &index_to_entities) {
 int Bimap_str_int::index(const std::string &key) const {
     if(stoi.find(key) == stoi.end())
     {
-        std::cout << "Key not found: " << key << std::endl;
+//        std::cerr << "Key not found: " << key << std::endl;
         return -1;
     }
     return stoi.at(key);

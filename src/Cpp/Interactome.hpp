@@ -36,6 +36,8 @@ public:
 
     int index(std::string_view name);
 
+    std::string getName(int i);
+
     Level get_type(int index);
 
     Level get_type(std::string_view name);

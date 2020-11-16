@@ -7,16 +7,18 @@
 #include <set>
 #include <vector>
 #include "Interactome.hpp"
+#include "types.hpp"
 
 class Module {
     std::string name;
     Level level;
+    std::map<int, std::set<int>> adj;
 
 public:
 
     Module();
 
-    std::map<int, std::set<int>> adj;
+    const std::map<int, std::set<int>> &getAdj() const;
 
     Module(const std::string &name, Level level, int maxNumVertices);
 

@@ -1,34 +1,15 @@
 #include "overlap_analysis.hpp"
-
-double calculateJaccardIndex(Module m1, Module m2);
-
-double calculateOverlapCoefficient(Module m1, Module m2);
-
-int countSharedVertices(Module m1, Module m2);
-
-using namespace std;
-
-std::string GetExeFileName() {
-    char buffer[MAX_PATH];
-    GetModuleFileName(NULL, buffer, MAX_PATH);
-    return std::string(buffer);
-}
-
-std::string GetExePath() {
-    std::string f = GetExeFileName();
-    return f.substr(0, f.find_last_of("\\/"));
-}
-
+#include "tools/files.hpp"
 
 int countSharedVertices(Module m1, Module m2, Interactome interactome) {
 
     int count = 0;
 
-    for(auto& entry : m1.adj){
+    for (auto &entry : m1.getAdj()) {
         int v = entry.first;
-        if(!interactome.isSimpleEntity(v)){
-           if(m2.hasVertex(v))
-               count++;
+        if (!interactome.isSimpleEntity(v)) {
+            if (m2.hasVertex(v))
+                count++;
         }
     }
 
@@ -44,7 +25,7 @@ double getOverlapSimilarity(base::dynamic_bitset<> set1, base::dynamic_bitset<> 
         return 1.0;
     } else {
         double intersection_size = (set1 & set2).count();
-        return intersection_size / min(set1.count(), set2.count());
+        return intersection_size / std::min(set1.count(), set2.count());
     }
 }
 
@@ -77,32 +58,38 @@ void calculateOverlap(Interactome interactome, std::vector<std::map<std::string,
         throw std::runtime_error(message + function);
     }
 
-    fall << "LEVEL\t" << "MODULE1\t" << "MODULE2\t" << "SHARED_ACCESSIONED_ENTITIES\t" << "OVERLAP_COEFFICIENT\t" << "JACCARD_INDEX\n";
-    foverlapping << "LEVEL\t" << "MODULE1\t" << "MODULE2\t" << "SHARED_ACCESSIONED_ENTITIES\t" << "OVERLAP_COEFFICIENT\t" << "JACCARD_INDEX\n";
+    fall << "LEVEL\t" << "MODULE1\t" << "MODULE2\t" << "SHARED_ACCESSIONED_ENTITIES\t" << "OVERLAP_COEFFICIENT\t"
+         << "JACCARD_INDEX\n";
+    foverlapping << "LEVEL\t" << "MODULE1\t" << "MODULE2\t" << "SHARED_ACCESSIONED_ENTITIES\t"
+                 << "OVERLAP_COEFFICIENT\t" << "JACCARD_INDEX\n";
 
     for (int level = 0; level < 3; level++) {
         std::cerr << "Calculating overlap scores for " << LEVELS[level] << std::endl;
 
         int cont = 1;
-        for(auto it1 = modules[level].begin(); it1 != modules[level].end(); it1++){
-            cout << cont << ": " << it1->first << "\n";
+        for (auto it1 = modules[level].begin(); it1 != modules[level].end(); it1++) {
+            std::cout << cont << ": " << it1->first << "\n";
             auto it2 = it1;
-            for(it2++; it2 != modules[level].end(); it2++) {
+            for (it2++; it2 != modules[level].end(); it2++) {
 //                cout << " -- with " << it2->first << std::endl;
-                int sharedVertices = getOverlapSize(it1->second.accessioned_entity_vertices, it2->second.accessioned_entity_vertices);
+                int sharedVertices = getOverlapSize(it1->second.accessioned_entity_vertices,
+                                                    it2->second.accessioned_entity_vertices);
                 double overlapCoefficient = 0;
                 double jaccardIndex = 0;
 
                 fall << LEVELS[level] << "\t" << it1->first << "\t" << it2->first << "\t";
                 fall << sharedVertices << "\t" << overlapCoefficient << "\t" << jaccardIndex << "\n";
 
-                if(sharedVertices){
+                if (sharedVertices) {
 
-                    double overlapCoefficient = getOverlapSimilarity(it1->second.accessioned_entity_vertices, it2->second.accessioned_entity_vertices);
-                    double jaccardIndex = getJaccardSimilarity(it1->second.accessioned_entity_vertices, it2->second.accessioned_entity_vertices);
+                    double overlapCoefficient = getOverlapSimilarity(it1->second.accessioned_entity_vertices,
+                                                                     it2->second.accessioned_entity_vertices);
+                    double jaccardIndex = getJaccardSimilarity(it1->second.accessioned_entity_vertices,
+                                                               it2->second.accessioned_entity_vertices);
 
                     foverlapping << LEVELS[level] << "\t" << it1->first << "\t" << it2->first << "\t";
-                    foverlapping << sharedVertices << "\t" << overlapCoefficient << "\t" << jaccardIndex << std::endl;
+                    foverlapping << sharedVertices << "\t" << overlapCoefficient << "\t" << jaccardIndex
+                                 << std::endl;
                 }
             }
             cont++;
@@ -110,6 +97,16 @@ void calculateOverlap(Interactome interactome, std::vector<std::map<std::string,
     }
 }
 
+/*
+../../../resources/PheGenI/PheGenI_Association_genome_wide_significant.txt
+../../../resources/Reactome/interactome_vertices.tsv
+../../../resources/Reactome/interactome_edges.tsv
+../../../resources/Reactome/interactome_ranges.tsv
+../../../resources/Reactome/mapping_proteins_to_genes.tsv
+../../../resources/Reactome/mapping_proteins_to_proteoforms.tsv
+../../../resources/PheGenI/modules/
+../../../reports/overlap/
+ */
 
 int main(int argc, char *argv[]) try {
 
@@ -135,6 +132,15 @@ int main(int argc, char *argv[]) try {
     std::string file_proteins_to_proteoforms = argv[6];
     std::string modules_output_path = argv[7];
     std::string overlap_output_path = argv[8];
+
+    assert (file_phegeni.find("PheGenI_Association_genome_wide_significant.txt") != std::string::npos);
+    assert (file_vertices.find("interactome_vertices.tsv") != std::string::npos);
+    assert (file_edges.find("interactome_edges.tsv") != std::string::npos);
+    assert (file_ranges.find("interactome_ranges.tsv") != std::string::npos);
+    assert (file_proteins_to_genes.find("mapping_proteins_to_genes.tsv") != std::string::npos);
+    assert (file_proteins_to_proteoforms.find("mapping_proteins_to_proteoforms.tsv") != std::string::npos);
+
+    std::cout << files::GetExePath() << std::endl;
 
     std::cout << "Reading Interactome...\n\n";
     Interactome interactome(file_vertices, file_edges, file_ranges, file_proteins_to_genes,

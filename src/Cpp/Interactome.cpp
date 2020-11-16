@@ -72,6 +72,10 @@ int Interactome::index(std::string_view name) {
     return vertices.index(name.data());
 }
 
+std::string Interactome::getName(int i){
+    return vertices.name(i);
+}
+
 
 void Interactome::readGenesToProteins(std::string_view file_proteins_to_genes) {
     std::cout << "Reading genes to proteins...\n";

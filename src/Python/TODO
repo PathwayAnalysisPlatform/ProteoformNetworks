@@ -1,0 +1,21 @@
+[ ] Check Interactome
+    [ ] Check correct number of genes
+    [ ] Check correct number of proteins
+    [ ] Check correct number of proteoforms
+    [ ] Check correct number of small molecules
+    [ ] Check interactions
+        [ ] Check input - output interactions
+        [ ] Check catalyst - output interactions
+        [ ] Check catalyst - input has no interactions
+        [ ] Check regulator - output interactions
+        [ ] Check regulator - input interactions
+
+[ ] Check indexing of interactome
+    [ ] Correct vertices indexing
+    [ ] Correct interactions indexing
+
+[ ] Verify that reaction participants interact in the interactome at the three levels.
+[ ] Nodes in the proteoform network all finish in ";" or a ptm.
+[ ] Check gene modules are created properly.
+[ ] Protein modules are converted correctly.
+[ ] Proteoform modules are created correctly.

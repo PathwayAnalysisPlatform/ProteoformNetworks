@@ -1,8 +1,6 @@
 import re
 
-import pandas as pd
-
-from config import LEVELS
+from config import LEVELS, proteoforms_str
 from lib.graph_database import get_query_result
 
 QUERIES_PARTICIPANTS = {
@@ -137,19 +135,6 @@ def get_reactions_by_pathway(pathway):
     return get_query_result(query)
 
 
-def make_proteoform_string(value):
-    if type(value) == str:
-        return value
-    proteoform = value[0]
-    if len(value) == 2:
-        proteoform = ";".join(value)
-    elif len(value) > 2:
-        isoform = value[0] + ";"
-        ptms = ",".join(value[1:])
-        proteoform = isoform + ptms
-    return proteoform
-
-
 def fix_neo4j_values(df, level):
     """
     Corrects format of some fields of the resulting records of the query to match the text structure
@@ -165,35 +150,34 @@ def fix_neo4j_values(df, level):
         return df
 
     df['Id'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.Id) if x.Type == 'SimpleEntity' else x.Id, axis=1)
-    if level == "proteoforms":
+    if level == proteoforms_str:
         df['Id'] = df['Id'].apply(make_proteoform_string)
     df['Name'] = df['Name'].apply(lambda x: re.sub("\s*\[[\s\w]*\]\s*", '', x))
     return df
 
 
-def get_reaction_participants(level, v=False):
+def make_proteoform_string(value):
     """
-    Get list of participant molecules in the reactions for all pathways in Reactome
+    Create proteoform string in the simple format: isoform;ptm1,ptm2...
+    Adds a ';' at the end of the proteoform when there are no ptms, to make sure the string represents a proteoform.
+    Examples: 	["P36507", "00046:null", "00047:null"] or 	["P28482"]
 
-    :param sm: Bool to show simple entities or not
-    :param level: String "genes", "proteins" or "proteoforms"
-    :param v: Bool Show extra console messages
-    :return: pandas dataframe with one participant per record
-    Columns: Pathway, Reaction, Entity, Name, Type, Id, Database, Role
-
-    * Notice that records are sorted by reaction for easy traversal later.
+    :param value: array of strings
+    :return:
     """
-    if level not in LEVELS:
-        raise Exception
+    if type(value) == str:
+        return value + ";"
+    if len(value) == 1:
+        return value[0] + ";"
+    if len(value) == 2:
+        return ";".join(value)
+    else:
+        isoform = value[0] + ";"
+        ptms = ",".join(value[1:])
+        return isoform + ptms
+    print(f"Got a weird value: {value}")
+    return value[0]
 
-    query = QUERIES_PARTICIPANTS[level]
-    if (v):
-        print(query)
-
-    df = get_query_result(query)
-    df = fix_neo4j_values(df, level)
-
-    return df
 
 
 def get_reaction_participants_by_pathway(pathway, level, sm, v=False):
@@ -274,27 +258,6 @@ def get_reaction_participants_by_pathway(pathway, level, sm, v=False):
         print(query)
 
     df = get_query_result(query)
-    df = fix_neo4j_values(df, level)
-
-    return df
-
-
-def get_complex_components(level, v=False):
-    """
-        Get list of complex components participating in all pathways of Reactome
-
-        :param sm: Bool to show simple entities or not
-        :param level: String "genes", "proteins" or "proteoforms"
-        :param v: Bool Show extra console messages
-        :return: pandas dataframe with one component per record
-        Columns: Pathway, Reaction, Entity, Name, Type, Id, Database, Role
-
-        * Notice that records are sorted by complex for easy traversal later.
-        """
-    if (v):
-        print(QUERIES_COMPONENTS[level])
-
-    df = get_query_result(QUERIES_COMPONENTS[level])
     df = fix_neo4j_values(df, level)
 
     return df
