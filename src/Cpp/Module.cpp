@@ -1,9 +1,5 @@
 #include "Module.hpp"
 
-Module::Module() {
-    throw std::runtime_error("This constructor should not be called.");
-}
-
 Module::Module(const std::string &name, Level level, int maxNumVertices) :
         name(name),
         level(level),
@@ -18,7 +14,7 @@ void Module::addVertex(int vertex) {
 }
 
 // Add vertex to the adjacency list and to the bitset for overlap operations
-void Module::addVertex(int interactomeIndex, int moduleBitsetIndex) {
+void Module::addVertex(int interactomeIndex, unsigned int moduleBitsetIndex) {
     adj[interactomeIndex];
     if(moduleBitsetIndex >= accessioned_entity_vertices.size()){
         std::cerr << "Tried to add entity out of index range:" << moduleBitsetIndex << ". Max index: " << accessioned_entity_vertices.size()-1 << std::endl;

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <ctime>
 #include <utility>
+#include <algorithm>
 
 #include "scores.hpp"
 #include "bimap_str_int.hpp"

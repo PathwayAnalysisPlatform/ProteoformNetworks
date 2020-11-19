@@ -53,7 +53,7 @@ Bimap_str_int::Bimap_str_int(std::string_view file_elements, bool has_header, in
 
 umsi createStrToInt(const vs &index_to_entities) {
     umsi entities_to_index;
-    for (int I = 0; I < index_to_entities.size(); I++) {
+    for (auto I = 0u; I < index_to_entities.size(); I++) {
         entities_to_index.emplace(index_to_entities[I], I);
     }
     return entities_to_index;

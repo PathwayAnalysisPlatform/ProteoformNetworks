@@ -16,7 +16,7 @@ class Module {
 
 public:
 
-    Module();
+    Module() = delete;
 
     const std::map<int, std::set<int>> &getAdj() const;
 
@@ -26,7 +26,7 @@ public:
 
     void addVertex(int vertex);
 
-    void addVertex(int interactomeIndex, int moduleBitsetIndex);
+    void addVertex(int interactomeIndex, unsigned int moduleBitsetIndex);
 
     void addEdge(int index1, int index2);
 

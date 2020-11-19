@@ -14,7 +14,6 @@ std::map<std::string, Module> createGeneModules(std::string_view file_phegeni,
     std::ifstream file_phegen(file_phegeni.data());
     std::string line, field, trait, gene_name, gene_name_2;
     std::string p_value_str;
-    long double p_value;
 
     std::map<std::string, Module> modules;
     int numGenes = interactome.getEndIndexGenes() - interactome.getStartIndexGenes() + 1;
@@ -46,20 +45,20 @@ std::map<std::string, Module> createGeneModules(std::string_view file_phegeni,
         int index;
         if ((index = interactome.index(gene_name)) > 0) {
 //            std::cout << "Adding " << interactome.getName(index) << " to module: " << trait << std::endl;
-            modules[trait].addVertex(index, index - interactome.getStartIndexGenes());
+            modules.at(trait).addVertex(index, index - interactome.getStartIndexGenes());
             for (int simpleEntity : interactome.getSimpleEntityNeighbors(index))
-                modules[trait].addVertex(simpleEntity);
+                modules.at(trait).addVertex(simpleEntity);
         }
 
         if ((index = interactome.index(gene_name_2)) > 0) {
 //            std::cout << "Adding " << interactome.getName(index) << " to module: " << trait << std::endl;
-            modules[trait].addVertex(index, index - interactome.getStartIndexGenes());
+            modules.at(trait).addVertex(index, index - interactome.getStartIndexGenes());
             for (int simpleEntity : interactome.getSimpleEntityNeighbors(index))
-                modules[trait].addVertex(simpleEntity);
+                modules.at(trait).addVertex(simpleEntity);
         }
     }
 
-    modules[trait].addEdges(interactome.getInteractions(modules[trait].getVertices()));
+    modules.at(trait).addEdges(interactome.getInteractions(modules.at(trait).getVertices()));
 
     for (auto entry : modules) {
         Module &module = entry.second;
