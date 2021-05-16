@@ -124,4 +124,4 @@ if __name__ == '__main__':
 
     # read_or_create_mapping_proteins_to_level("../../../resources/UniProt/", "genes")
     # read_or_create_mapping_proteins_to_level("../../../resources/UniProt/", "proteoforms")
-    # graphs_no_sm = [read_or_create_full_graph(level, False, graphs_path, v=False) for level in LEVELS]
+    # graphs_no_sm = [read_or_create_full_graph(level, False, out_path, v=False) for level in LEVELS]

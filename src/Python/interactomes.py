@@ -12,73 +12,93 @@ from networks import add_edges_reaction_participants, add_edges_complex_componen
 from queries import QUERIES_PARTICIPANTS, fix_neo4j_values, QUERIES_COMPONENTS
 
 
-def read_or_create_interactome(level, sm=True, graphs_path="", v=False):
-    """
-    When any of the files does not exist it creates the full interaction network (graph) and stores it in files.
-    If all the files exist it reads the graph from the json file.
-    - A json file with all vertices and edges attributes.
-    - A .tsv file with the accessioned entity nodes (genes, proteins or proteoforms)
-    - A .tsv file with the simple entity nodes (small molecules such as O2, H2O or ATP).
-    - A .tsv file for the edges.
-    - When the level is "proteins" it also creates a file with the mapping from proteins to genes: proteins_to_genes.tsv
-    - When the level is "proteoforms" it creates a file with mapping from proteins to protoeforms: proteins_to_proteoforms.tsv
+def print_interactome_details(g):
+    print(f"Graph for {g.graph['level']} ")
+    print(f"Graph edges: {g.size()}")
+    print(f"Graph nodes: {len(g.nodes)}")
+    print(f"Graph {g.graph['level']} nodes: {g.graph['num_entities']}")
+    print(f"Graph small molecule nodes: {g.graph['num_small_molecules']}")
 
-    :param level: One of the LEVEL enum
-    :param sm: bool to add small molecules to the interaction network. The file is created independently if sm = true or false
-    :param graphs_path: directory to store the files
+
+def get_interactome(level, method=config.METHODS[2], out_path=""):
+    """
+    Returns a networkx graph instance of the selected interaction network.
+
+    Tries to read from a json file with the network. If the file does not exists it creates it.
+
+    :param level: "genes" | "proteins" | "proteoforms"
+    :param sm: True | False to add small molecules to the network
+    :param out_path: path to the directory for the output graph files
+    :param v: verbose mode to show extra information while executing
+    :return: networkx graph
+    """
+
+    filename = get_json_filename(level, method, out_path)
+
+    if not Path(filename).exists():
+        create_interactome(level, method, out_path, v)
+    g = read_graph(filename)
+
+    return g
+
+
+def get_json_filename(level, method, out_path):
+    return Path(out_path + level + "_" + method + ".json")
+
+
+def create_interactome(level, method=config.METHODS[2], out_path=""):
+    """
+    Create complete interaction network with all known pathways and reactions of the current version of Reactome
+    at the selected level: gene, protein or proteoforms.
+
+    Creates a networkx graph and stores it in a json file.
+    Each node hast a type attribute: as, sm
+
+    :param method:
+    :param level: "genes" | "proteins" | "proteoforms"
+    :param out_path: directory to store the files
     :param v: show extra messages to the console
-    :return: networkx complete graph using all genes, proteins or proteoforms
+    :return: void
     """
+    print("Creating interactome file...")
+    json_file = get_json_filename(level, method, out_path)
 
-    json_file = Path(graphs_path + level + ".json")
-    vertices_file = Path(graphs_path + level + "_vertices.tsv")
-    small_molecules_file = Path(graphs_path + level + "_small_molecules.tsv")
-    edges_file = Path(graphs_path + level + "_interactions.tsv")
-    mapping_proteins_to_genes = graphs_path + config.MAPPING_FILE.replace('level', 'genes')
-    mapping_proteins_to_proteoforms = graphs_path + config.MAPPING_FILE.replace('level', 'proteoforms')
-
-    # Check if files exist
     if Path(json_file).exists():
-        G = read_graph(json_file)
-    else:
-        print(f"Not found {json_file}")
-        print("Creating graph")
-        G = nx.Graph()
-        G.graph['num_' + level] = 0
-        G.graph['num_small_molecules'] = 0
+        return
+    print("Creating graph")
 
-        participants = get_query_result(QUERIES_PARTICIPANTS[level])
-        participants = fix_neo4j_values(participants, level)
-
-        components = get_query_result(QUERIES_COMPONENTS[level])
-        components = fix_neo4j_values(components, level)
-
-        if sm:
-            sm_participants = get_query_result(QUERIES_PARTICIPANTS['sm'])
-            sm_participants = fix_neo4j_values(sm_participants, 'sm')
-            participants = pd.concat([sm_participants, participants])
-
-            sm_components = get_query_result(QUERIES_COMPONENTS['sm'])
-            sm_components = fix_neo4j_values(sm_components, 'sm')
-            components = pd.concat([sm_components, components])
-
-        records = pd.concat([participants, components])
-        add_nodes(G, records, level)
-
-        add_edges_reaction_participants(G, participants)
-        add_edges_complex_components(G, components)
-
-        save_graph(G, level, graphs_path)
-
+    G = nx.Graph()
     G.graph["level"] = level
-    G.graph["sm"] = sm
+    G.graph["method"] = method
+    G.graph['num_entities'] = 0
+    G.graph['num_small_molecules'] = 0
 
-    if v:
-        print(f"Graph edges: {G.size()}")
-        print(f"Graph nodes: {len(G.nodes)}")
-        print(f"Graph {level} nodes: {G.graph['num_' + level]}")
-        print(f"Graph small molecule nodes: {G.graph['num_small_molecules']}")
-    return G
+    participants = get_query_result(QUERIES_PARTICIPANTS[level])
+    participants = fix_neo4j_values(participants, level)
+
+    components = get_query_result(QUERIES_COMPONENTS[level])
+    components = fix_neo4j_values(components, level)
+
+    if method == config.METHODS[0]:
+        sm_participants = get_query_result(QUERIES_PARTICIPANTS['sm'])
+        sm_participants = fix_neo4j_values(sm_participants, 'sm')
+        participants = pd.concat([sm_participants, participants])
+
+        sm_components = get_query_result(QUERIES_COMPONENTS['sm'])
+        sm_components = fix_neo4j_values(sm_components, 'sm')
+        components = pd.concat([sm_components, components])
+    elif method == config.METHODS[2]:
+        pass
+    else:
+        pass
+
+    records = pd.concat([participants, components])
+    add_nodes(G, records, level)
+
+    add_edges_reaction_participants(G, participants)
+    add_edges_complex_components(G, components)
+
+    save_graph(G, level, out_path)
 
 
 def index(l, x, lo, hi):
@@ -211,6 +231,6 @@ if __name__ == '__main__':
     # print(f"Working directory: {os.getcwd()}")
 
     graphs_path = "../../resources/Reactome/"
-    interactomes = {l: read_or_create_interactome(l, True, graphs_path) for l in config.LEVELS}
+    interactomes = {l: create_interactome(l, True, graphs_path) for l in config.LEVELS}
     print(f"Indexing vertices")
     save_interactomes_with_indexed_vertices(interactomes, graphs_path)

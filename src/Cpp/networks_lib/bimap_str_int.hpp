@@ -25,6 +25,8 @@ class Bimap_str_int {
 
 public:
 
+    Bimap_str_int();
+
     // Create from list, without header, list comes already sorted, there is only one column in the file.
     Bimap_str_int(std::string_view file_elements);
 

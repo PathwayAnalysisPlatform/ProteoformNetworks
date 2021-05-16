@@ -243,15 +243,15 @@ namespace base {
    }
 
    constexpr void byte_swap(std::uint16_t& v) noexcept {
-      v = __builtin_bswap16(v);
+//      v = __builtin_bswap16(v);
    }
 
    constexpr void byte_swap(std::uint32_t& v) noexcept {
-      v = __builtin_bswap32(v);
+//      v = __builtin_bswap32(v);
    }
 
    constexpr void byte_swap(std::uint64_t& v) noexcept {
-      v = __builtin_bswap64(v);
+//      v = __builtin_bswap64(v);
    }
 
    template<typename T> //requires std::is_integral_v<T>

@@ -1,7 +1,6 @@
 import codecs
 import json
 import os
-from collections import namedtuple
 from pathlib import Path
 
 import networkx as nx
@@ -11,10 +10,6 @@ import config
 from config import LEVELS, get_entity_color
 from queries import get_reaction_participants_by_pathway, get_complex_components_by_pathway, \
     get_pathway_name
-
-Pathway_graphs = namedtuple("Graphs",
-                            ['genes', "genes_no_small_molecules", "proteins", "proteins_no_small_molecules",
-                             "proteoforms", "proteoforms_no_small_molecules"])
 
 
 def add_edges_from_product(G, c1, c2, v=False):
@@ -183,7 +178,6 @@ def read_graph(json_file):
     with open(json_file) as f:
         data = json.load(f)
         G = nx.json_graph.node_link_graph(data)
-
     return G
 
 

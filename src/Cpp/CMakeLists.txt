@@ -3,11 +3,7 @@ project(ProteoformNetworks)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(SOURCE_FILES overlap_analysis.cpp overlap_analysis.hpp
-        create_modules.hpp create_modules.cpp
-        Interactome.hpp Interactome.cpp
-        Module.cpp Module.hpp
-        networks_lib/types.hpp networks_lib/bimap_str_int.hpp networks_lib/bimap_str_int.cpp networks_lib/types.cpp)
+set(SOURCE_FILES main.cpp)
 add_executable(ProteoformNetworks_run ${SOURCE_FILES})
 
 include_directories(networks_lib)

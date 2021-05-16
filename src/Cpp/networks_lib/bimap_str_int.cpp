@@ -1,5 +1,9 @@
 #include "bimap_str_int.hpp"
 
+Bimap_str_int::Bimap_str_int() {
+
+}
+
 std::string rtrim(std::string &s) {
     if (s.length() > 0) {
         auto it = s.end() - 1;

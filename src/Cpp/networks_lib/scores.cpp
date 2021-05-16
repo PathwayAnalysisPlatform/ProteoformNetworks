@@ -127,12 +127,12 @@ double getOverlapSize(base::dynamic_bitset<> set1, base::dynamic_bitset<> set2) 
 pair_map<double> getScores(const vb &vertex_sets,
                            std::function<double(base::dynamic_bitset<>,
                                                 base::dynamic_bitset<>)> score_function,
-                           const int min_module_size, const int max_module_size) {
+                           const unsigned int min_module_size, const unsigned int max_module_size) {
 
     pair_map<double> result;
-    for (int I1 = 0; I1 < vertex_sets.size(); I1++) {
+    for (auto I1 = 0u; I1 < vertex_sets.size(); I1++) {
         if (vertex_sets[I1].count() < min_module_size || vertex_sets[I1].count() > max_module_size) continue;
-        for (int I2 = I1 + 1; I2 < vertex_sets.size(); I2++) {
+        for (auto I2 = I1 + 1; I2 < vertex_sets.size(); I2++) {
             if (vertex_sets[I2].count() < min_module_size || vertex_sets[I2].count() > max_module_size) continue;
             std::cerr << I1 << " -- " << I2 << std::endl;
             auto score = score_function(vertex_sets[I1], vertex_sets[I2]);
@@ -189,7 +189,7 @@ double calculate_interface_size_nodes(const base::dynamic_bitset<> &V1,
                                       const vusi &E) {
     std::set<int> interface_nodes;
     // Count the number of nodes with an edge going to the other set
-    for (int start_node = 0; start_node < V1.size(); start_node++) {
+    for (int start_node = 0u; start_node < V1.size(); start_node++) {
         for (int end_node : E[start_node]) {
             if (V1[start_node] && V2[end_node]) {
                 interface_nodes.insert({start_node, end_node});
@@ -208,7 +208,7 @@ double calculate_interface_size_edges(const base::dynamic_bitset<> &V1,
                                       const vusi &E) {
     int result = 0;
 
-    for (int start_node = 0; start_node < V1.size(); start_node++) {
+    for (int start_node = 0u; start_node < V1.size(); start_node++) {
         if (V1[start_node] || V2[start_node]) {             // Check if the node belongs to any of the two modules
             for (int end_node : E[start_node]) {
                 if (start_node < end_node) {                // Check all edges only once, not in both directions.

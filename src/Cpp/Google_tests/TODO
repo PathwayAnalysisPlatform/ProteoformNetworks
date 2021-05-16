@@ -1,0 +1,48 @@
+- Read the Interactome for the 3 levels
+    X Get nodes as vector.
+    X Adds a node
+    X Get neighbors of a node.
+    X Get interactors of a nonexistent node throws exception
+    X Ask interactome if node exists by index
+    X Read node names
+    X Read nodes called again removes previous names
+    X Check that node names are not repeated.
+    X Check that nodes in the names input stream are not repeated.
+    X Set initial names of nodes to empty string.
+    X Throw exception when requesting name of a non existet node.
+    X Throw exception when the stream has a different number of labels than the number of nodes.
+    X Ask interactome if node exists by name
+    - Refactor that all nodes in ranges exist.
+    - Change constructor with edges to function to read interactions.
+    - Remove constructor with only edges. --> Replace with ranges
+    - Get type of a node.
+    - Read types of nodes.
+    - Get neighbors if a specific type:
+
+    - Create network from an edge file:
+        - Be able to create network with an interaction list. The interactions are pairs of integers.
+        - Read a list of interactions from a file.
+    - Read the labels of the nodes in the network
+    - Get the name of an index entity
+    - Read the mapping from genes to proteins
+    - Get the proteins corresponding to a gene
+    - Read the mapping from protein to proteoforms
+    - Get the proteoforms corresponding to a protein
+    - Get the type of a node
+
+Interactome class:
+X Create a network from a list of edges
+
+
+Interactome Reader class:
+- Read a file with a list of edges and call to create a network.
+
+Module class:
+- Be able to add vertices
+- Be able to add edges
+- Be able to create a module from a list of vertices (for the gene modules)
+- Be able to create a module from a list of edges (for the protein and proteoform modules)
+- Get entity neighbors of a gene
+
+ModuleReader class:
+- Read the phegeni style file and get a sets of vertices to create modules.

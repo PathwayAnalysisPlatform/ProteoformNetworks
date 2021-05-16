@@ -9,6 +9,7 @@ proteins_str = "proteins"
 proteoforms_str = "proteoforms"
 
 LEVELS = ["genes", "proteins", "proteoforms"]
+METHODS = ["without_sm", "with_not_unique_sm", "with_unique_sm"]
 
 # LEVELS_COLOR = {"genes": "#67A9CF", "proteins": "#F1A340", "proteoforms": "#7FBF7B"}
 LEVELS_COLOR = {"genes": Colorblind[4][0], "proteins": Colorblind[4][1], "proteoforms": Colorblind[4][3]}
@@ -27,7 +28,7 @@ PATH_RESOURCES = "resources/"
 FILE_PATHWAYMATCHER = "PathwayMatcher.jar"
 URL_PATHWAYMATCHER = "https://github.com/PathwayAnalysisPlatform/PathwayMatcher/releases/latest/download/PathwayMatcher.jar"
 
-GRAPHS_PATH = "resources/Reactome/"
+GRAPHS_PATH = "resources/Reactome/76/"
 MAPPING_FILE = "mapping_proteins_to_level.tsv"
 
 
