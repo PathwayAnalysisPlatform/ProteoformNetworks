@@ -8,7 +8,7 @@ import networkx as nx
 import pandas as pd
 
 import config
-from config import no_sm, with_sm, with_unique_sm, sm
+from config import no_sm, with_sm, with_unique_sm, sm, LEVELS
 from lib.graph_database import get_reaction_participants_by_pathway, get_complex_components_by_pathway, get_pathway_name
 
 
@@ -18,13 +18,14 @@ def print_interactome_details(g):
     print(f"Graph nodes: {len(g.nodes)}")
     print(f"Graph {g.graph['level']} nodes: {g.graph['num_entities']}")
     print(f"Graph small molecule nodes: {g.graph['num_small_molecules']}")
+    print("\n***********************\n\n")
 
 
 def get_json_filename(level, method, out_path):
     return Path(out_path + level + "_" + method + ".json")
 
 
-def add_nodes(G, df):
+def add_nodes(G, df, method=with_sm):
     """
     Add the nodes represented by a dataframe records to the graph G
 
@@ -35,6 +36,8 @@ def add_nodes(G, df):
     :return: The same graph G with the added nodes
     """
     level = G.graph["level"]
+    sm_id_column = 'Id' if not method == with_unique_sm else 'unique_sm'
+
     for index, row in df.iterrows():
 
         # Each node has an id, label, type, entity_color, role, reactions, pathways, complexes.
@@ -43,7 +46,8 @@ def add_nodes(G, df):
         # label: gene name, small molecule name, protein name, and for proteoforms the protein name with possible manual
         # annotation of modifications.
         # print(f"Adding node {index} of entity {entity}")
-        unique_id = 'sm_' + row['Id'] if row['Type'] == 'SimpleEntity' else row['Id']
+        unique_id = 'sm_' + row[sm_id_column] if row['Type'] == 'SimpleEntity' else row['Id']
+
         if unique_id not in G.nodes:
             G.add_node(unique_id,
                        label=row['Id'],
@@ -152,7 +156,7 @@ def add_edges(G, inputs, outputs, catalysts, regulators, reaction, v=False):
     add_edges_from_product(G, regulators, outputs, v)
 
 
-def add_edges_reaction_participants(G, df, v=False):
+def add_edges_reaction_participants(G, df, method=with_sm, v=False):
     """
     Add the edges inferred from the reaction participants in the records of the dataframe.
 
@@ -169,8 +173,11 @@ def add_edges_reaction_participants(G, df, v=False):
     outputs = set()
     catalysts = set()
     regulators = set()
+
+    sm_id_column = 'Id' if not method == with_unique_sm else 'unique_sm'
+
     for index, participant in df.iterrows():
-        unique_id = 'sm_' + participant['Id'] if participant['Type'] == 'SimpleEntity' else participant['Id']
+        unique_id = 'sm_' + participant[sm_id_column] if participant['Type'] == 'SimpleEntity' else participant['Id']
         G.nodes[unique_id]['roles'].add(participant['Role'])
         G.nodes[unique_id]['reactions'].add(participant['Reaction'])
         G.nodes[unique_id]['pathways'].add(participant['Pathway'])
@@ -205,7 +212,7 @@ def add_edges_reaction_participants(G, df, v=False):
         print(f"From reactions, added {len(G.edges)} edges to the graph.")
 
 
-def add_edges_complex_components(G, df, v=False):
+def add_edges_complex_components(G, df, method=with_sm, v=False):
     """
     Add the edges inferred from the complex components in the records of the dataframe.
 
@@ -218,9 +225,12 @@ def add_edges_complex_components(G, df, v=False):
         return G
 
     components = set()
+
+    sm_id_column = 'Id' if not method == with_unique_sm else 'unique_sm'
+
     complex = df.iloc[0]['Complex']
     for index, record in df.iterrows():
-        unique_id = 'sm_' + record['Id'] if record['Type'] == 'SimpleEntity' else record['Id']
+        unique_id = 'sm_' + record[sm_id_column] if record['Type'] == 'SimpleEntity' else record['Id']
         G.nodes[unique_id]['complexes'].add(record['Complex'])
 
         if complex != record['Complex']:
@@ -336,22 +346,14 @@ def create_interactome(level, method, participants, components, out_path=""):
         add_nodes(G, pd.concat([participants[level], components[level]]))
         add_edges_reaction_participants(G, participants[level])
         add_edges_complex_components(G, components[level])
-    elif method == with_sm:
-        add_nodes(G, pd.concat([participants[level], participants[sm], components[level], components[sm]]))
-        add_edges_reaction_participants(G, participants[level])
-        add_edges_complex_components(G, components[level])
-    elif method == with_unique_sm:
-        unique_sm_participants = participants[sm]
-        unique_sm_participants['Id'] = participants[sm].apply(lambda row: row['Id'] + "-" + row['Reaction'], axis=1)
-        unique_sm_components = components[sm]
-        unique_sm_components['Id'] = components[sm].apply(lambda row: row['Id'] + "-" + row['Complex'], axis=1)
-        add_nodes(G, pd.concat([participants[level], unique_sm_participants, components[level], unique_sm_components]))
+    elif method == with_sm or method == with_unique_sm:
+        add_nodes(G, pd.concat([participants[level], participants[sm], components[level], components[sm]]), method)
         add_edges_reaction_participants(G, participants[level])
         add_edges_complex_components(G, components[level])
     else:
         raise Exception("No such method to create the interactome")
 
-    save_interactome(G, out_path, "_test1_")
+    save_interactome(G, out_path, method + "_")
     print(f"Finished creating interactome file for {level}-{method}")
 
 
@@ -494,6 +496,14 @@ def save_interactomes_with_indexed_vertices(interactomes, graphs_path):
     save_ranges(start_indexes, end_indexes, graphs_path)
 
     return
+
+
+def get_nums(interactome_dict):
+    num_interactions = pd.Series([interactome_dict[l].size() for l in LEVELS], index=LEVELS)
+    num_entities = pd.Series([interactome_dict[l].graph['num_entities'] for l in LEVELS], index=LEVELS)
+    num_small_molecules = pd.Series([interactome_dict[l].graph['num_small_molecules'] for l in LEVELS], index=LEVELS)
+
+    return num_interactions, num_entities, num_small_molecules
 
 
 if __name__ == '__main__':

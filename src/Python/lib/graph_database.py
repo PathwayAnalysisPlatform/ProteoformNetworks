@@ -1,4 +1,6 @@
 import re
+import os.path
+from os import path
 
 import pandas as pd
 from neo4j import GraphDatabase
@@ -86,21 +88,37 @@ def fix_neo4j_values(df, level):
     return df
 
 
-def get_participants(level):
+def get_participants(level, location=""):
     """
     Gets reaction participants from Reactome in a table with the columns: [Pathway, Reaction, Entity, Name, Type, Id, Database, Role]
 
-    :param level:
+    :param location: directory where to search for the csv files
+    :param level: genes, proteins or proteoforms
     :return: pandas dataframe
     """
-    participants = get_query_result(QUERIES_PARTICIPANTS[level])
-    participants = fix_neo4j_values(participants, level)
-    return participants
+
+    filename = location + "records_reaction_participants_" + level + ".csv"
+
+    if not path.exists(filename):
+        participants = get_query_result(QUERIES_PARTICIPANTS[level])
+        participants = fix_neo4j_values(participants, level)
+        participants.to_csv(filename)
+        return participants
+    else:
+        return pd.read_csv(filename)
 
 
-def get_components(level):
-    components = get_query_result(QUERIES_COMPONENTS[level])
-    return fix_neo4j_values(components, level)
+def get_components(level, location=""):
+
+    filename = location + "records_complex_components_" + level + ".csv"
+
+    if not path.exists(filename):
+        components = get_query_result(QUERIES_COMPONENTS[level])
+        components = fix_neo4j_values(components, level)
+        components.to_csv(filename)
+        return components
+    else:
+        return pd.read_csv(filename)
 
 
 if __name__ == "__main__":

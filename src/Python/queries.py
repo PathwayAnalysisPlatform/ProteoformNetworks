@@ -8,7 +8,7 @@ QUERIES_PARTICIPANTS = {
     RETURN DISTINCT pw.stId as Pathway, rle.stId as Reaction, pe.stId as Entity, pe.displayName as Name, 
                     last(labels(pe)) as Type, head(re.geneName) as Id, re.databaseName AS Database, 
                     head([scores IN relationships(p) | type(scores)]) as Role
-    ORDER BY Pathway, Reaction, Role, Type LIMIT 100
+    ORDER BY Pathway, Reaction, Role, Type
     """,
     proteins: """
     MATCH (pw:Pathway{speciesName:'Homo sapiens'})-[:hasEvent]->(rle:ReactionLikeEvent{speciesName:'Homo sapiens'}),
@@ -17,7 +17,7 @@ QUERIES_PARTICIPANTS = {
     RETURN DISTINCT pw.stId as Pathway, rle.stId as Reaction, pe.stId as Entity, pe.displayName as Name,
                 last(labels(pe)) as Type, re.identifier as Id, head(re.geneName) as PrevId,
                 re.databaseName AS Database, head([scores IN relationships(p) | type(scores)]) as Role
-    ORDER BY Pathway, Reaction, Role, Type LIMIT 100
+    ORDER BY Pathway, Reaction, Role, Type
     """,
     proteoforms: """
     MATCH (pw:Pathway{speciesName:'Homo sapiens'})-[:hasEvent]->(rle:ReactionLikeEvent{speciesName:'Homo sapiens'}),
@@ -36,7 +36,7 @@ QUERIES_PARTICIPANTS = {
     COLLECT(ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END) AS ptms,
     Database, Role
     RETURN DISTINCT Pathway, Reaction, Entity, Name, Type, (Id+ptms) as Id, PrevId, Database, Role
-    ORDER BY Pathway, Reaction, Role LIMIT 100
+    ORDER BY Pathway, Reaction, Role
     """,
     sm: """
     MATCH (pw:Pathway{speciesName:'Homo sapiens'})-[:hasEvent]->(rle:ReactionLikeEvent{speciesName:'Homo sapiens'}),
@@ -45,7 +45,7 @@ QUERIES_PARTICIPANTS = {
         RETURN DISTINCT pw.stId as Pathway, rle.stId as Reaction, pe.stId as Entity, pe.displayName as Name,
                         last(labels(pe)) as Type, pe.displayName as Id, rd.displayName AS Database,  
                         head([scores IN relationships(p) | type(scores)]) as Role
-        ORDER BY Pathway, Reaction, Role, Type LIMIT 100
+        ORDER BY Pathway, Reaction, Role, Type
     """
 }
 
@@ -53,12 +53,12 @@ QUERIES_COMPONENTS = {
     genes: """
     MATCH (c:Complex{speciesName:'Homo sapiens'})-[:hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'})-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
     RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName AS Name, last(labels(pe)) as Type, head(re.geneName) as Id
-    ORDER BY Complex LIMIT 100
+    ORDER BY Complex
     """,
     proteins: """
     MATCH (c:Complex{speciesName:'Homo sapiens'})-[:hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'})-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
     RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName AS Name, last(labels(pe)) as Type, re.identifier as Id, head(re.geneName) as PrevId
-    ORDER BY Complex LIMIT 100
+    ORDER BY Complex
     """,
     proteoforms: """
     MATCH (c:Complex{speciesName:'Homo sapiens'})-[:hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'})-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
@@ -80,12 +80,12 @@ QUERIES_COMPONENTS = {
                         ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END
                     ) AS ptms   
     RETURN DISTINCT Complex, Entity, Name, Type, (Id+ptms) as Id, PrevId
-    ORDER BY Complex LIMIT 100
+    ORDER BY Complex
     """,
     sm: """
     MATCH (c:Complex{speciesName:'Homo sapiens'})-[:hasComponent|hasMember|hasCandidate*]->(pe:SimpleEntity)
     RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName AS Name, last(labels(pe)) as Type, pe.displayName as Id
-    ORDER BY Complex LIMIT 100
+    ORDER BY Complex
     """
 }
 
