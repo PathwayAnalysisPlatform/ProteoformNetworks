@@ -82,6 +82,11 @@ def fix_neo4j_values(df, level):
         return df
 
     df['Id'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.Id) if x.Type == 'SimpleEntity' else x.Id, axis=1)
+    df['Id'] = df.apply(lambda x: str(x.Id).replace(" ", "_") if x.Type == 'SimpleEntity' else x.Id, axis=1)
+
+    df['UniqueId'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.UniqueId) if x.Type == 'SimpleEntity' else x.Id, axis=1)
+    df['UniqueId'] = df.apply(lambda x: str(x.UniqueId).replace(" ", "_") if x.Type == 'SimpleEntity' else x.Id, axis=1)
+
     if level == proteoforms:
         df['Id'] = df['Id'].apply(make_proteoform_string)
     df['Name'] = df['Name'].apply(lambda x: re.sub("\s*\[[\s\w]*\]\s*", '', x))

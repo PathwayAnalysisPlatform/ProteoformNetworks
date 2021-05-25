@@ -36,7 +36,7 @@ def add_nodes(G, df, method=with_sm):
     :return: The same graph G with the added nodes
     """
     level = G.graph["level"]
-    sm_id_column = 'Id' if not method == with_unique_sm else 'unique_sm'
+    sm_id_column = 'Id' if not method == with_unique_sm else 'UniqueId'
 
     for index, row in df.iterrows():
 
@@ -128,7 +128,7 @@ def create_graph(pathway, level, sm, graphs_path="", v=False, save=False):
     add_nodes(G, df_reactions, level)
     add_nodes(G, df_complexes, level)
 
-    add_edges_reaction_participants(G, df_reactions, level, v)
+    add_edges_all_reaction_participants(G, df_reactions, level, v)
     add_edges_complex_components(G, df_complexes, level, v)
 
     if save:
@@ -147,7 +147,7 @@ def add_edges_from_product(G, c1, c2, v=False):
                     print(f"Added edge from: {i} to {j}")
 
 
-def add_edges(G, inputs, outputs, catalysts, regulators, reaction, v=False):
+def add_edges_for_reaction(G, inputs, outputs, catalysts, regulators, reaction, v=False):
     if v:
         print(
             f"\n\nReaction: {reaction}:\nInputs: {inputs}\nCatalysts: {catalysts}\nOutputs: {outputs}\nRegulators: {regulators}")
@@ -156,7 +156,7 @@ def add_edges(G, inputs, outputs, catalysts, regulators, reaction, v=False):
     add_edges_from_product(G, regulators, outputs, v)
 
 
-def add_edges_reaction_participants(G, df, method=with_sm, v=False):
+def add_edges_all_reaction_participants(G, df, method=with_sm, v=False):
     """
     Add the edges inferred from the reaction participants in the records of the dataframe.
 
@@ -174,7 +174,7 @@ def add_edges_reaction_participants(G, df, method=with_sm, v=False):
     catalysts = set()
     regulators = set()
 
-    sm_id_column = 'Id' if not method == with_unique_sm else 'unique_sm'
+    sm_id_column = 'Id' if not method == with_unique_sm else 'UniqueId'
 
     for index, participant in df.iterrows():
         unique_id = 'sm_' + participant[sm_id_column] if participant['Type'] == 'SimpleEntity' else participant['Id']
@@ -182,7 +182,7 @@ def add_edges_reaction_participants(G, df, method=with_sm, v=False):
         G.nodes[unique_id]['reactions'].add(participant['Reaction'])
         G.nodes[unique_id]['pathways'].add(participant['Pathway'])
         if reaction != participant['Reaction'] or pathway != participant['Pathway']:
-            add_edges(G, inputs, outputs, catalysts, regulators, reaction, v)
+            add_edges_for_reaction(G, inputs, outputs, catalysts, regulators, reaction, v)
             reaction = participant['Reaction']
             pathway = participant['Pathway']
             inputs = set()
@@ -199,7 +199,7 @@ def add_edges_reaction_participants(G, df, method=with_sm, v=False):
             catalysts.add(unique_id)
     reaction = df.iloc[-1]['Reaction']
     pathway = df.iloc[-1]['Pathway']
-    add_edges(G, inputs, outputs, catalysts, regulators, reaction, v)
+    add_edges_for_reaction(G, inputs, outputs, catalysts, regulators, reaction, v)
 
     # Convert the reaction set of each node into a list
     for n in G.nodes:
@@ -226,7 +226,7 @@ def add_edges_complex_components(G, df, method=with_sm, v=False):
 
     components = set()
 
-    sm_id_column = 'Id' if not method == with_unique_sm else 'unique_sm'
+    sm_id_column = 'Id' if not method == with_unique_sm else 'UniqueId'
 
     complex = df.iloc[0]['Complex']
     for index, record in df.iterrows():
@@ -344,12 +344,14 @@ def create_interactome(level, method, participants, components, out_path=""):
 
     if method == no_sm:
         add_nodes(G, pd.concat([participants[level], components[level]]))
-        add_edges_reaction_participants(G, participants[level])
+        add_edges_all_reaction_participants(G, participants[level])
         add_edges_complex_components(G, components[level])
     elif method == with_sm or method == with_unique_sm:
-        add_nodes(G, pd.concat([participants[level], participants[sm], components[level], components[sm]]), method)
-        add_edges_reaction_participants(G, participants[level])
-        add_edges_complex_components(G, components[level])
+        df_both_participants = pd.concat([participants[level], participants[sm]]).sort_values(["Pathway", "Reaction"])
+        df_both_components = pd.concat([components[level], components[sm]]).sort_values(["Complex"])
+        add_nodes(G, pd.concat([df_both_participants, df_both_components]), method)
+        add_edges_all_reaction_participants(G, df_both_participants, method)
+        add_edges_complex_components(G, df_both_components, method)
     else:
         raise Exception("No such method to create the interactome")
 

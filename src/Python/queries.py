@@ -42,9 +42,8 @@ QUERIES_PARTICIPANTS = {
     MATCH (pw:Pathway{speciesName:'Homo sapiens'})-[:hasEvent]->(rle:ReactionLikeEvent{speciesName:'Homo sapiens'}),
               p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:SimpleEntity),
               (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
-        RETURN DISTINCT pw.stId as Pathway, rle.stId as Reaction, pe.stId as Entity, pe.displayName as Name,
-                        last(labels(pe)) as Type, pe.displayName as Id, rd.displayName AS Database,  
-                        head([scores IN relationships(p) | type(scores)]) as Role
+        RETURN DISTINCT pw.stId as Pathway, rle.stId as Reaction, pe.stId as Entity, pe.displayName as Name, last(labels(pe)) as Type, "sm_" + pe.displayName as Id, rd.displayName AS Database,  
+                        head([scores IN relationships(p) | type(scores)]) as Role, "sm_" + rle.stId + "_" + pe.displayName as UniqueId
         ORDER BY Pathway, Reaction, Role, Type
     """
 }
@@ -84,7 +83,7 @@ QUERIES_COMPONENTS = {
     """,
     sm: """
     MATCH (c:Complex{speciesName:'Homo sapiens'})-[:hasComponent|hasMember|hasCandidate*]->(pe:SimpleEntity)
-    RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName AS Name, last(labels(pe)) as Type, pe.displayName as Id
+    RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName as Name, last(labels(pe)) as Type, "sm_" + pe.displayName as Id, "sm_" + c.stId + "_" + pe.displayName as UniqueId
     ORDER BY Complex
     """
 }
