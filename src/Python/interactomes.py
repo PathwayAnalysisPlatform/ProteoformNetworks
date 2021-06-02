@@ -500,7 +500,7 @@ def save_interactomes_with_indexed_vertices(interactomes, graphs_path):
     return
 
 
-def get_nums(interactome_dict):
+def get_sizes(interactome_dict):
     num_interactions = pd.Series([interactome_dict[l].size() for l in LEVELS], index=LEVELS)
     num_entities = pd.Series([interactome_dict[l].graph['num_entities'] for l in LEVELS], index=LEVELS)
     num_small_molecules = pd.Series([interactome_dict[l].graph['num_small_molecules'] for l in LEVELS], index=LEVELS)

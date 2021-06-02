@@ -1,7 +1,7 @@
 import networkx as nx
+import pandas as pd
 
 from config import LEVELS
-from lib.graph_database import get_pathway_name
 
 
 # def create_pathway_graphs(pathway, graphs_path="../../reports/pathways/", v=False):
@@ -59,6 +59,15 @@ def merge_graphs(graphs):
             full_graph.nodes[node]['pathways'].update(graph.nodes[node]['pathways'])
             full_graph.nodes[node]['roles'].update(graph.nodes[node]['roles'])
             full_graph.nodes[node]['complexes'].update(graph.nodes[node]['complexes'])
+
+
+def get_multiindex():
+    arrays = [
+        [*(["Not Included"] * 3), *(["Included"] * 3), *(["Reaction-Unique Included"] * 3)], [*(LEVELS * 3)]
+    ]
+    tuples = list(zip(*arrays))
+    index = pd.MultiIndex.from_tuples(tuples, names=["Small Molecules", "Entity Level"])
+    return index
 
 
 if __name__ == '__main__':
