@@ -4,15 +4,20 @@ import pandas as pd
 
 from bokeh.palettes import Colorblind
 
-genes_str = "genes"
-proteins_str = "proteins"
-proteoforms_str = "proteoforms"
+genes = "genes"
+proteins = "proteins"
+proteoforms = "proteoforms"
 
-LEVELS = ["genes", "proteins", "proteoforms"]
-METHODS = ["without_sm", "with_not_unique_sm", "with_unique_sm"]
+sm = "sm"
+no_sm = "no_sm"                             # Connecting participants in reactions without small molecules
+with_sm = "with_sm"                         # Connect participants with small molecules
+with_unique_sm = "with_unique_sm"           # Connect participants with reaction-unique small molecules
+
+LEVELS = [genes, proteins, proteoforms]
+METHODS = [no_sm, with_sm, with_unique_sm]
 
 # LEVELS_COLOR = {"genes": "#67A9CF", "proteins": "#F1A340", "proteoforms": "#7FBF7B"}
-LEVELS_COLOR = {"genes": Colorblind[4][0], "proteins": Colorblind[4][1], "proteoforms": Colorblind[4][3]}
+LEVELS_COLOR = {genes: Colorblind[4][0], proteins: Colorblind[4][1], proteoforms: Colorblind[4][3]}
 PROTEOFORMS_SUBGRAPHS_COLOR = {"mm": Colorblind[6][5], "uu": Colorblind[6][2], "um": Colorblind[6][1]}
 
 PATH_REACTOME = "resources/reactome/"
@@ -52,6 +57,18 @@ COLOR_IO = "black"
 COLOR_CO = "orange"
 COLOR_RO = "red"
 COLOR_CC = "dodgerblue"
+
+COLOR_GENES_BORDER = "#31a354"
+COLOR_GENES_FILL = "#a1d99b"
+COLOR_PROTEINS_BORDER = "#636363"
+COLOR_PROTEINS_FILL = "#bdbdbd"
+COLOR_PROTEOFORMS_BORDER = "#3182bd"
+COLOR_PROTEOFORMS_FILL = "#9ecae1"
+COLOR_SMALL_MOLECULES_BORDER = "#e6550d"
+COLOR_SMALL_MOLECULES_FILL = "#fdae6b"
+
+COLORS_FILL = [COLOR_GENES_FILL, COLOR_PROTEINS_FILL, COLOR_PROTEOFORMS_FILL, COLOR_SMALL_MOLECULES_FILL]
+COLORS_BORDER = [COLOR_GENES_BORDER, COLOR_PROTEINS_BORDER, COLOR_PROTEOFORMS_BORDER, COLOR_SMALL_MOLECULES_BORDER]
 
 EDGES_WEIGHT_IN_REACTION = 1
 EDGES_WEIGHT_IN_COMPLEX = 50

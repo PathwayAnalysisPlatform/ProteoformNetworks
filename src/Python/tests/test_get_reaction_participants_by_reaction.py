@@ -1,7 +1,7 @@
 import pytest
 from pandas import DataFrame
 
-from queries import get_reaction_participants_by_reaction
+from lib.graph_database import get_reaction_participants_by_reaction
 
 
 @pytest.fixture(scope="session")
