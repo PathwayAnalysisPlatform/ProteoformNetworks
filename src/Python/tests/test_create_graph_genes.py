@@ -1,8 +1,6 @@
 import pytest
 
-from networks import create_graph
-from queries import get_reaction_participants_by_pathway
-
+from interactomes import create_graph
 
 @pytest.fixture(scope="session")
 def glycolysis_graph(tmpdir_factory):
@@ -26,30 +24,6 @@ def test_create_graph_wrong_level_raises_exception():
 def test_create_graph_num_edges(glycolysis_graph):
     print(glycolysis_graph.edges)
     assert len(glycolysis_graph.edges) == 46
-
-
-def test_create_graph_num_vertices(glycolysis_graph):
-    print(glycolysis_graph.nodes)
-    assert len(glycolysis_graph.nodes) == 18
-
-
-def test_connects_inputs_with_outputs(glycolysis_graph):
-
-    # Input to output interactions for reaction R-HSA-163773:
-    assert ("PFKFB1", "ADP") in glycolysis_graph.edges
-    assert ("ATP", "ADP") in glycolysis_graph.edges
-    assert ("ATP", "PFKFB1") in glycolysis_graph.edges
-
-    # Input to output interactions for reaction R-HSA-163750
-    assert ("PFKFB1", "Pi") in glycolysis_graph.edges
-    assert ("H2O", "Pi") in glycolysis_graph.edges
-    assert ("H2O", "PFKFB1") in glycolysis_graph.edges
-
-    # Input to output interaction for reaction R-HSA-71802
-    assert ("Fru(6)P", "D-Fructose 2,6-bisphosphate") in glycolysis_graph.edges
-    assert ("Fru(6)P", "ADP") in glycolysis_graph.edges
-    assert ("ATP", "D-Fructose 2,6-bisphosphate") in glycolysis_graph.edges
-    assert ("ATP", "ADP") in glycolysis_graph.edges
 
 
 def test_connects_input_genes_with_small_outputs_not_when_is_same_molecule(glycolysis_graph):
@@ -124,3 +98,5 @@ def test_connects_components_of_same_complex(glycolysis_graph):
     assert ("PPP2R5D", "PPP2R1B") in glycolysis_graph.edges
     assert ("PPP2R5D", "PPP2R1A") in glycolysis_graph.edges
     assert ("PPP2R5D", "PPP2CB") in glycolysis_graph.edges
+
+#TODO: Test it connectects correctly the reaction: R-HSA-6805205

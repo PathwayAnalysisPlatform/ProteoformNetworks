@@ -1,31 +1,96 @@
-from unittest import TestCase
-
 import pandas as pd
 import pytest
 
-from queries import get_reaction_participants_by_pathway, get_low_level_pathways, \
-    get_reactions_by_pathway, fix_neo4j_values, get_pathways, get_reactions, get_complexes, \
-    get_complex_components_by_complex, make_proteoform_string
+# TODO: Test fix_neo4j_values
+from config import proteoforms, proteins, genes, sm
+from lib.graph_database import fix_neo4j_values, get_low_level_pathways, \
+    get_reactions_by_pathway, get_pathways, get_reactions, get_complexes, get_complex_components_by_complex, \
+    make_proteoform_string, get_participants_by_pathway
 
 
 @pytest.fixture(scope="session")
-def glycolysis_genes():
-    return get_reaction_participants_by_pathway("R-HSA-70171", "genes", True)
+def glycolysis_participants_genes():
+    return get_participants_by_pathway(genes, "R-HSA-70171")
 
 
 @pytest.fixture(scope="session")
-def glycolysis_genes_no_sm():
-    return get_reaction_participants_by_pathway("R-HSA-70171", "genes", False)
+def glycolysis_participants_proteins():
+    return get_participants_by_pathway(proteins, "R-HSA-70171")
 
 
 @pytest.fixture(scope="session")
-def glycolysis_proteins():
-    return get_reaction_participants_by_pathway("R-HSA-70171", "proteins", True, True)
+def glycolysis_participants_proteoforms():
+    return get_participants_by_pathway(proteoforms, "R-HSA-70171")
 
 
 @pytest.fixture(scope="session")
-def glycolysis_proteins_no_sm():
-    return get_reaction_participants_by_pathway("R-HSA-70171", "proteins", False)
+def glycolysis_participants_sm():
+    return get_participants_by_pathway(sm, "R-HSA-70171")
+
+
+@pytest.fixture(scope="session")
+def ras_processing_participants_genes():
+    return get_participants_by_pathway(genes, "R-HSA-9648002")
+
+
+@pytest.fixture(scope="session")
+def ras_processing_participants_proteins():
+    return get_participants_by_pathway(proteins, "R-HSA-9648002")
+
+
+@pytest.fixture(scope="session")
+def ras_processing_participants_proteoforms():
+    return get_participants_by_pathway(proteoforms, "R-HSA-9648002")
+
+
+@pytest.fixture(scope="session")
+def ras_processing_participants_sm():
+    return get_participants_by_pathway(sm, "R-HSA-9648002")
+
+
+def test_participant_records_columns_genes(ras_processing_participants_genes):
+    df = ras_processing_participants_genes
+    assert "Pathway" in df.columns
+    assert "Reaction" in df.columns
+    assert "Entity" in df.columns
+    assert "Name" in df.columns
+    assert "Type" in df.columns
+    assert "Id" in df.columns
+    assert "Database" in df.columns
+    assert "Role" in df.columns
+
+def test_participant_records_columns_proteins(ras_processing_participants_proteins):
+    df = ras_processing_participants_proteins
+    assert "Pathway" in df.columns
+    assert "Reaction" in df.columns
+    assert "Entity" in df.columns
+    assert "Name" in df.columns
+    assert "Type" in df.columns
+    assert "Id" in df.columns
+    assert "Database" in df.columns
+    assert "Role" in df.columns
+
+def test_participant_records_columns_proteoforms(ras_processing_participants_proteoforms):
+    df = ras_processing_participants_proteoforms
+    assert "Pathway" in df.columns
+    assert "Reaction" in df.columns
+    assert "Entity" in df.columns
+    assert "Name" in df.columns
+    assert "Type" in df.columns
+    assert "Id" in df.columns
+    assert "Database" in df.columns
+    assert "Role" in df.columns
+
+def test_participant_records_columns_sm(ras_processing_participants_sm):
+    df = ras_processing_participants_sm
+    assert "Pathway" in df.columns
+    assert "Reaction" in df.columns
+    assert "Entity" in df.columns
+    assert "Name" in df.columns
+    assert "Type" in df.columns
+    assert "Id" in df.columns
+    assert "Database" in df.columns
+    assert "Role" in df.columns
 
 
 def test_fix_neo4j_values_empty_dataframe():
@@ -37,7 +102,7 @@ def test_fix_neo4j_values_empty_dataframe():
 
 
 def test_pathway_not_exists_returns_empty_dataframe():
-    result = get_reaction_participants_by_pathway("blabla", "genes", True)
+    result = get_participants_by_pathway("genes", "blabla")
     assert len(result) == 0
     assert type(result) == pd.DataFrame
     assert len(result.columns) == 0
@@ -337,20 +402,24 @@ def test_get_complex_components_proteoforms_without_small_molecules():
     assert not ((df['Entity'] == 'R-ALL-917877') & (df['Id'] == 'heme')).any()
     assert ((df['Entity'] == 'R-HSA-2168862') & (df['Id'] == 'P69905;')).any()
 
+
 def test_make_proteoform_string_multiple_values():
     values = ["P40189-1", "00048:759", "00048:767", "00048:814", "00048:905", "00048:915"]
     ans = make_proteoform_string(values)
     assert ans == "P40189-1;00048:759,00048:767,00048:814,00048:905,00048:915"
+
 
 def test_make_proteoform_string_single_value():
     values = ["P40189-1"]
     ans = make_proteoform_string(values)
     assert ans == "P40189-1;"
 
+
 def test_make_proteoform_string_one_ptm():
     values = ["P40189-1", "00048:759"]
     ans = make_proteoform_string(values)
     assert ans == "P40189-1;00048:759"
+
 
 def test_make_proteoform_string_string():
     value = "P40189-1"

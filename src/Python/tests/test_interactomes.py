@@ -1,9 +1,93 @@
 
 import pytest
 
-# Test: Adds the correct graph attribute values
-# Test: Given I had the correct records I add the correct nodes and edges
-# Test:
+# R-HSA-70171  Glycolysis
+# Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
+# Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
+
+# Reaction "Phosphorylation of PF2K-Pase by PKA catalytic subunit" R-HSA-163773
+# Reaction "KRAS4B is phosphorylated on serine 181" R-HSA-9653503
+
+#region Genes No small molecules
+
+# Test get_participants()
+# Test get_components()
+# Test add_nodes()
+# Test create_interaction_network()
+
+#endregion
+
+#region Genes With small molecules
+
+# Test get_participants()
+# Test get_components()
+# Test add_nodes()
+# Test create_interaction_network()
+
+#endregion
+
+#region Genes With reaction-specific ids for small molecules
+
+# Test get_participants()
+# Test get_components()
+# Test add_nodes()
+# Test create_interaction_network()
+
+#endregion
+
+#region Proteins No small molecules
+
+# Test get_participants()
+# Test get_components()
+# Test add_nodes()
+# Test create_interaction_network()
+
+#endregion
+
+#region Proteins With small molecules
+
+# Test get_participants()
+# Test get_components()
+# Test add_nodes()
+# Test create_interaction_network()
+
+#endregion
+
+#region Proteins With reaction-specific ids for small molecules
+
+# Test get_participants()
+# Test get_components()
+# Test add_nodes()
+# Test create_interaction_network()
+
+#endregion
+
+#region Proteoforms No small molecules
+
+# Test get_participants()
+# Test get_components()
+# Test add_nodes()
+# Test create_interaction_network()
+
+#endregion
+
+#region Proteoforms With small molecules
+
+# Test get_participants()
+# Test get_components()
+# Test add_nodes()
+# Test create_interaction_network()
+
+#endregion
+
+#region Proteoforms With reaction-specific ids for small molecules
+
+# Test get_participants()
+# Test get_components()
+# Test add_nodes()
+# Test create_interaction_network()
+
+#endregion
 
 @pytest.fixture(scope="session")
 def interactome_gene_no_sm(tmpdir_factory):
