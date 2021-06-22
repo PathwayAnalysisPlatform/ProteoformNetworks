@@ -9,7 +9,6 @@ import pandas as pd
 
 import config
 from config import no_sm, with_sm, with_unique_sm, sm, LEVELS
-from lib.graph_database import get_reaction_participants_by_pathway, get_complex_components_by_pathway, get_pathway_name
 
 
 def print_interactome_details(g):
@@ -46,7 +45,7 @@ def add_nodes(G, df, method=with_sm):
         # label: gene name, small molecule name, protein name, and for proteoforms the protein name with possible manual
         # annotation of modifications.
         # print(f"Adding node {index} of entity {entity}")
-        unique_id = 'sm_' + row[sm_id_column] if row['Type'] == 'SimpleEntity' else row['Id']
+        unique_id = row[sm_id_column] if row['Type'] == 'SimpleEntity' else row['Id']
 
         if unique_id not in G.nodes:
             G.add_node(unique_id,
@@ -101,42 +100,6 @@ def save_json_graph(G, filename):
     print(f"Created json file.")
 
 
-def create_graph(pathway, level, sm, graphs_path="", v=False, save=False):
-    """
-    Converts a set of reactions with its participants into a graph
-
-    :param df_reactions: Pandas dataframe with reactions and its participants
-    :param df_complexes: Pandas dataframe with complexes and its components
-    :param sm: False shows only EntityWithAccessionSequence participants
-    :return: networkx graph with the interaction network representation of the reactions
-    """
-
-    G = nx.Graph()
-    name = get_pathway_name(pathway)
-    if len(name) == 0:
-        return G
-
-    G.graph["stId"] = pathway
-    G.graph["level"] = level
-    G.graph["sm"] = sm
-    G.graph['num_' + level] = 0
-    G.graph['num_small_molecules'] = 0
-
-    df_reactions = get_reaction_participants_by_pathway(pathway, level, sm, v)
-    df_complexes = get_complex_components_by_pathway(pathway, level, sm, v)
-
-    add_nodes(G, df_reactions, level)
-    add_nodes(G, df_complexes, level)
-
-    add_edges_all_reaction_participants(G, df_reactions, level, v)
-    add_edges_complex_components(G, df_complexes, level, v)
-
-    if save:
-        save_interactome(G, level, graphs_path, label=pathway + ("_no_sm" if not sm else ""))
-
-    print(f"Created graph {pathway} - {level} - {sm}", flush=True)
-    return G
-
 
 def add_edges_from_product(G, c1, c2, v=False):
     for i in c1:
@@ -177,7 +140,7 @@ def add_edges_all_reaction_participants(G, df, method=with_sm, v=False):
     sm_id_column = 'Id' if not method == with_unique_sm else 'UniqueId'
 
     for index, participant in df.iterrows():
-        unique_id = 'sm_' + participant[sm_id_column] if participant['Type'] == 'SimpleEntity' else participant['Id']
+        unique_id = participant[sm_id_column] if participant['Type'] == 'SimpleEntity' else participant['Id']
         G.nodes[unique_id]['roles'].add(participant['Role'])
         G.nodes[unique_id]['reactions'].add(participant['Reaction'])
         G.nodes[unique_id]['pathways'].add(participant['Pathway'])
@@ -230,7 +193,7 @@ def add_edges_complex_components(G, df, method=with_sm, v=False):
 
     complex = df.iloc[0]['Complex']
     for index, record in df.iterrows():
-        unique_id = 'sm_' + record[sm_id_column] if record['Type'] == 'SimpleEntity' else record['Id']
+        unique_id = record[sm_id_column] if record['Type'] == 'SimpleEntity' else record['Id']
         G.nodes[unique_id]['complexes'].add(record['Complex'])
 
         if complex != record['Complex']:
@@ -319,18 +282,18 @@ def save_interactome(G, graphs_path="", label=""):
         print(f"Created mapping proteins to proteoforms file.")
 
 
-def create_interactome(level, method, participants, components, out_path=""):
+def create_interaction_network(level, method, participants, components, out_path=""):
     """
-    Create interaction network with the participants and components provided as parameter
-
+    Create interaction network with the participants and components provided as parameter.
+    It does not care which level the participants are, it simply connects reaction parcitipants and complex participants.
     Creates a networkx graph and stores it in a json file.
 
-    :param level: genes, proteins or proteoforms
-    :param method: "no_sm", "with_sm" or "with_unique_sm"
+    :param level: genes, proteins or proteoforms. This attribute is just to set it as graph property.
+    :param method: "no_sm", "with_sm" or "with_unique_sm". This is just to set is as graph property.
     :param participants: pandas dataframe with the reaction participants
     :param components: pandas dataframe with the complex components
     :param out_path: path to directory to store the json file
-    :return: void
+    :return: The networkx interaction network
     """
 
     print("Creating interactome file...")
@@ -357,6 +320,7 @@ def create_interactome(level, method, participants, components, out_path=""):
 
     save_interactome(G, out_path, method + "_")
     print(f"Finished creating interactome file for {level}-{method}")
+    return G
 
 
 def get_interactome(level, method, participants, components, out_path=""):
@@ -368,7 +332,7 @@ def get_interactome(level, method, participants, components, out_path=""):
     filename = get_json_filename(level, method, out_path)
 
     if not Path(filename).exists():
-        create_interactome(level, method, participants, components, out_path)
+        create_interaction_network(level, method, participants, components, out_path)
     g = read_graph(filename)
 
     return g
@@ -512,6 +476,6 @@ if __name__ == '__main__':
     # print(f"Working directory: {os.getcwd()}")
 
     graphs_path = "../../resources/Reactome/"
-    interactomes = {l: create_interactome(l, True, graphs_path) for l in config.LEVELS}
+    interactomes = {l: create_interaction_network(l, True, graphs_path) for l in config.LEVELS}
     print(f"Indexing vertices")
     save_interactomes_with_indexed_vertices(interactomes, graphs_path)
