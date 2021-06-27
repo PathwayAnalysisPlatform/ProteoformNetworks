@@ -116,3 +116,16 @@ def create_ppis_dictionary(interactions_with_old_id, id_mapping):
                             else:
                                 result.setdefault(to_new_id, set()).add(from_new_id)
     return result
+
+
+def merge_dictionaries(d1, d2):
+    """Merge dictionaries of string to set.
+        Return a dictionary that:
+        - Keys are the union of the keys in both dictionaries
+        - Values are the union of the sets of values in each dictionary
+    """
+    for k, s in d2.items():
+        if k not in d1:
+            d1[k] = set()
+        d1[k].update(s)
+    return d1

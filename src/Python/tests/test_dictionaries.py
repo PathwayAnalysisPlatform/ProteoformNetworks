@@ -2,7 +2,8 @@ import os
 from unittest import TestCase
 
 from lib.dictionaries import read_dictionary_one_to_set, write_dictionary_one_to_one, convert_tab_to_dict, \
-    write_dictionary_one_to_set, read_set_from_columns, get_intersection, in_dictionary, flatten_dictionary
+    write_dictionary_one_to_set, read_set_from_columns, get_intersection, in_dictionary, flatten_dictionary, \
+    merge_dictionaries
 
 
 class Test_dictionaries(TestCase):
@@ -127,6 +128,7 @@ class Test_dictionaries(TestCase):
 
         os.remove(file_name)
 
+
     def test_read_dictionary_skip_header(self):
         # Create trio file with headers
         trios = [('Column1', 'Column2', 'Column3'), (1, 1, 2), (2, 3, 2), (3, 4, 5)]
@@ -146,6 +148,25 @@ class Test_dictionaries(TestCase):
 
         # Remove precondition files
         os.remove(file_name)
+
+        def test_merge_dictionaries(self):
+            d1 = {'A': {'B', 'C'},
+                  'D': {'C'},
+                  'C': {'d'}}
+            d2 = {'A': {'a', 'b', 'c'},
+                  'B': {'b'},
+                  'C': {'c', 'd', 'e'}}
+
+            d = merge_dictionaries(d1, d2)
+            self.assertEqual(4, len(d.keys()), msg="There is a wrong number of keys in the dictionary")
+            self.assertEqual(5, len(d['A']), msg="The number of elements in 'A' should be 5")
+            self.assertTrue('a' in d['A'])
+            self.assertTrue('D' in d)
+            self.assertEqual(1, len(d['D']), msg="The number of elements in 'D' should be 1")
+            self.assertTrue('B' in d)
+            self.assertEqual(1, len(d['B']), msg="The number of elements in 'B' should be 1")
+            self.assertEqual(3, len(d['C']), msg="The number of elements in 'C' should be 3")
+            self.assertTrue('c' in d['C'])
 
 
 class Test_convert_tab_to_dict(TestCase):
@@ -331,3 +352,5 @@ class Test_read_set_column_values(TestCase):
         self.assertFalse(result[1], msg="The pair should not be marked as contained in the dictionary")
         self.assertTrue(result[2], msg="The pair should be marked as contained in the dictionary")
         self.assertTrue(result[3], msg="The pair should be marked as contained in the dictionary")
+
+
