@@ -9,6 +9,54 @@ import pandas as pd
 
 import config
 from config import no_sm, with_sm, with_unique_sm, sm, LEVELS
+from lib.graph_database_access import get_pathway_name
+
+
+def get_or_create_pathway_interaction_network(pathway, level, method):
+    G = nx.Graph()
+    return G
+
+
+def create_pathway_interaction_networks(pathway):
+    """
+    Creates interaction networks for a pathway in all three levels, with the 3 contruction methods
+
+    If pathway does not exists, then returns empty networks.
+    :param pathway: Pathway stId string
+    :param out_path:
+    :return: Get dictionary {method: lists of 3 pathways}.
+    """
+
+    name = get_pathway_name(pathway)
+    if len(name) == 0:
+        return {m: [nx.Graph()]*3 for m in config.METHODS}
+    else:
+        return {m: [get_or_create_pathway_interaction_network(pathway, l) for l in LEVELS] for m in config.METHODS}
+
+
+def merge_graphs(graphs):
+    # How does the resulting graph look like?
+    # - Vertices: Composition of nodes in all interactomes
+    #    - Merge: sets of Reactions, Pathways, Complexes
+    #    - Copy value of: Id, Type, Entity Color
+    # - Edges: Composition of edges in all interactomes
+    full_graph = nx.compose_all(graphs)  # Add all nodes setting  Id, Type, and entity_color
+
+    for graph in graphs:
+        for node in graph.nodes:
+            full_graph.nodes[node]['reactions'].update(graph.nodes[node]['reactions'])
+            full_graph.nodes[node]['pathways'].update(graph.nodes[node]['pathways'])
+            full_graph.nodes[node]['roles'].update(graph.nodes[node]['roles'])
+            full_graph.nodes[node]['complexes'].update(graph.nodes[node]['complexes'])
+
+
+def get_multiindex():
+    arrays = [
+        [*(["Not Included"] * 3), *(["Included"] * 3), *(["Reaction-Unique Included"] * 3)], [*(LEVELS * 3)]
+    ]
+    tuples = list(zip(*arrays))
+    index = pd.MultiIndex.from_tuples(tuples, names=["Small Molecules", "Entity Level"])
+    return index
 
 
 def print_interactome_details(g):
@@ -20,7 +68,7 @@ def print_interactome_details(g):
     print("\n***********************\n\n")
 
 
-def get_json_filename(level, method, out_path):
+def get_json_filename(level, method, out_path="", label=""):
     return Path(out_path + level + "_" + method + ".json")
 
 
@@ -98,7 +146,6 @@ def save_json_graph(G, filename):
         data = nx.json_graph.node_link_data(G)
         json.dump(data, outfile)
     print(f"Created json file.")
-
 
 
 def add_edges_from_product(G, c1, c2, v=False):
@@ -212,7 +259,7 @@ def add_edges_complex_components(G, df, method=with_sm, v=False):
         print(f"From complexes, added {len(G.edges)} edges to the graph.")
 
 
-def save_interactome(G, graphs_path="", label=""):
+def save_interaction_network(G, graphs_path="", label=""):
     """
     Create the json file with all attributes.
     Creates a vertices file for the accessioned entities.
@@ -282,7 +329,7 @@ def save_interactome(G, graphs_path="", label=""):
         print(f"Created mapping proteins to proteoforms file.")
 
 
-def create_interaction_network(level, method, participants, components, out_path=""):
+def create_interaction_network(level, method, participants, components, out_path="", label=""):
     """
     Create interaction network with the participants and components provided as parameter.
     It does not care which level the participants are, it simply connects reaction parcitipants and complex participants.
@@ -318,21 +365,21 @@ def create_interaction_network(level, method, participants, components, out_path
     else:
         raise Exception("No such method to create the interactome")
 
-    save_interactome(G, out_path, method + "_")
+    save_interaction_network(G, out_path, method + "_")
     print(f"Finished creating interactome file for {level}-{method}")
     return G
 
 
-def get_interactome(level, method, participants, components, out_path=""):
+def get_or_create_interaction_network(level, method, participants, components, out_path="", label=""):
     """
     Returns a networkx graph instance of the selected interaction network.
     Tries to read from a json file with the network. If the file does not exists it creates it.
     """
 
-    filename = get_json_filename(level, method, out_path)
+    filename = get_json_filename(level, method, out_path, label)
 
     if not Path(filename).exists():
-        create_interaction_network(level, method, participants, components, out_path)
+        create_interaction_network(level, method, participants, components, out_path, label)
     g = read_graph(filename)
 
     return g
@@ -475,7 +522,7 @@ def get_sizes(interactome_dict):
 if __name__ == '__main__':
     # print(f"Working directory: {os.getcwd()}")
 
-    graphs_path = "../../resources/Reactome/"
+    graphs_path = "../../../resources/Reactome/"
     interactomes = {l: create_interaction_network(l, True, graphs_path) for l in config.LEVELS}
     print(f"Indexing vertices")
     save_interactomes_with_indexed_vertices(interactomes, graphs_path)

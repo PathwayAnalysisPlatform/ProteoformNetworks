@@ -82,13 +82,13 @@ def fix_neo4j_values(df, level):
         return df
 
     df['Id'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.Id) if x.Type == 'SimpleEntity' else x.Id, axis=1)
-    df['Id'] = df.apply(lambda x: str(x.Id).replace(" ", "_") if x.Type == 'SimpleEntity' else x.Id, axis=1)
+    df['Id'] = df.apply(lambda x: str(x.Id).replace(" ", "_").strip() if x.Type == 'SimpleEntity' else x.Id, axis=1)
 
     # df['UniqueId'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.UniqueId) if x.Type == 'SimpleEntity' else x.Id, axis=1)
     # df['UniqueId'] = df.apply(lambda x: str(x.UniqueId).replace(" ", "_") if x.Type == 'SimpleEntity' else x.Id, axis=1)
 
     if level == proteoforms:
-        df['Id'] = df['Id'].apply(make_proteoform_string)
+        df['Id'] = df.apply(lambda x: make_proteoform_string(x.Id) if x.Type == 'EntityWithAccessionedSequence' else x.Id, axis=1)
     df['Name'] = df['Name'].apply(lambda x: re.sub("\s*\[[\s\w]*\]\s*", '', x))
     return df
 
@@ -112,7 +112,7 @@ def get_participants(level, location=""):
     else:
         return pd.read_csv(filename)
 
-def get_participants_by_pathway(level, pathway):
+def get_participants_by_pathway(pathway, level):
     query = get_query_participants_by_pathway(level, pathway)
     participants = get_query_result(query)
     participants = fix_neo4j_values(participants, level)
@@ -131,7 +131,7 @@ def get_components(level, location=""):
     else:
         return pd.read_csv(filename)
 
-def get_components_by_pathway(level, pathway):
+def get_components_by_pathway(pathway, level):
         query = get_query_participants_by_pathway(level, pathway)
         participants = get_query_result(query)
         participants = fix_neo4j_values(participants, level)
@@ -169,7 +169,8 @@ def get_low_level_pathways():
 
 
 def get_reactions_by_pathway(pathway):
-    return f"MATCH (p:Pathway{{stId:\"{pathway}\"}})-[:hasEvent]->(rle:Reaction{{speciesName:'Homo sapiens'}}) RETURN rle.stId as reaction"
+    query = f"MATCH (p:Pathway{{stId:\"{pathway}\"}})-[:hasEvent]->(rle:Reaction{{speciesName:'Homo sapiens'}}) RETURN rle.stId as reaction"
+    return get_query_result(query)
 
 def get_reactions():
     query = "MATCH (rle:ReactionLikeEvent{speciesName:\"Homo sapiens\"}) RETURN rle.stId as stId"

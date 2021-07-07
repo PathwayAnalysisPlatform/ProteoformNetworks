@@ -1,7 +1,7 @@
 import networkx as nx
 import os
 
-from networks import add_edges_reaction_participants, add_edges_complex_components
+from lib.networks import add_edges_reaction_participants, add_edges_complex_components
 from queries import get_reactions, get_complexes, get_reaction_participants_by_reaction, \
     get_complex_components_by_complex
 

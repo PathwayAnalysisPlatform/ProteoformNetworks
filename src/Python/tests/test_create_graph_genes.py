@@ -1,6 +1,6 @@
 import pytest
 
-from interactomes import create_graph
+from lib.networks import create_graph
 
 @pytest.fixture(scope="session")
 def glycolysis_graph(tmpdir_factory):

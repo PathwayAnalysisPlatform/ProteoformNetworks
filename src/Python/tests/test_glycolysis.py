@@ -4,7 +4,7 @@ import pytest
 
 #region Genes No small molecules
 from config import genes
-from lib.graph_database import get_participants_by_pathway
+from lib.graph_database_access import get_participants_by_pathway
 
 
 @pytest.fixture(scope="session")

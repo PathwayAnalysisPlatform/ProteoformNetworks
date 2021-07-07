@@ -15,10 +15,11 @@ from bokeh.palettes import Colorblind
 from bokeh.plotting import figure
 from bokeh.transform import cumsum
 
-from config import get_entity_color, COLOR_IO, COLOR_CO, COLOR_RO, COLOR_CC
-from networks import create_graph, merge_graphs
-from networks import create_pathway_graphs
-from queries import get_pathway_name, get_low_level_pathways
+from config import get_entity_color, COLOR_IO, COLOR_CO, COLOR_RO, COLOR_CC, LEVELS, sm, genes
+from lib.graph_database_access import get_participants_by_pathway, get_components_by_pathway, get_pathway_name
+from lib.networks import get_or_create_interaction_network, create_pathway_interaction_networks, \
+    get_or_create_pathway_interaction_network
+from lib.networks import merge_graphs
 
 
 class Coloring(Enum):
@@ -27,20 +28,17 @@ class Coloring(Enum):
     PATHWAY = "Pathway"
 
 
-def plot_pathway(pathway, level="proteins", sm=True, coloring=Coloring.ENTITY_TYPE, v=True):
+def show_graph_with_lcc(g):
     """
-    Basic plotting function for a pathway. Shows only one granularity level and with/without small molecules.
+    Plot a graph and highlight the nodes and edges forming the largest connected component
+    :return: plot
+    """
+    pass
 
-    :param pathway: string stId of the pathway
-    :param level: string {"genes", "proteins", "proteoforms"}
-    :param sm: bool, show small molecules in the network
-    :param coloring: Coloring instance
-    :param v: bool v
-    :return: bokeh plot
-    """
-    G = create_graph(pathway, level, sm, "", v)
-    P = plot_interaction_network(G, coloring)
-    return P
+
+# Plot graph with multiple types of nodes
+
+# Plot graph with multiple types of nodes and highlight the largest connected component
 
 
 def getDefaultPalette(n):
@@ -241,15 +239,27 @@ def select_common_nodes(smaller_graph, larger_graph):
     return common
 
 
-def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", graphs_path="../../reports/pathways/",
+def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_path="../../reports/pathways/",
                             coloring=Coloring.ENTITY_TYPE,
                             graphs=None,
                             v=False):
+    """
+    Plot the interaction networks generated for a single pathway at the 3 levels; genes, proteins and proteoforms and
+    using the 3 methods of constructing the
+
+    :param pathway:
+    :param out_path:
+    :param graphs_path:
+    :param coloring:
+    :param graphs:
+    :param v:
+    :return:
+    """
     name = get_pathway_name(pathway)['Name'][0]
     if len(name) == 0:
         return
 
-    graphs_sm, graphs_no_sm = graphs or create_pathway_graphs(pathway, graphs_path)
+    graphs_sm, graphs_no_sm = graphs or create_pathway_interaction_networks(pathway, graphs_path)
 
     pos_all = [nx.spring_layout(g) for g in graphs_sm]
     node_set_unasigned = [set(g.nodes) for g in graphs_sm]
@@ -292,8 +302,8 @@ def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", gra
     if v:
         import os
         print("In function create_graph: ", os.getcwd())
-        print(f"Output path is: {figures_path}{pathway}_network.html")
-    output_file(f"{figures_path}{pathway}_{coloring.name}_network.html")
+        print(f"Output path is: {out_path}{pathway}_network.html")
+    output_file(f"{out_path}{pathway}_{coloring.name}_network.html")
 
     title = f"<p style=\"font-weight:bold;text-align:left;font-size:22px;width:1800px;\">" \
             f"<span style=\"color:black;\">{name} ({pathway})</span>" \
@@ -376,20 +386,20 @@ def plot_pathway_all_levels(pathway, figures_path="../../figures/pathways/", gra
     save(l)
     return l
 
-
-def plot_low_level_pathways(min_size=5, max_size=20, figures_path="figures/pathways/", graphs_path="reports/pathways/"):
-    pathways = get_low_level_pathways()
-    for pathway in pathways['stId']:
-        name = get_pathway_name(pathway)
-        name = name.iloc[0]['Name']
-
-        G = create_graph(pathway, "genes", True, graphs_path, save=False)
-
-        if min_size <= len(G.nodes) <= max_size:
-            print(f"-- Plotting pathway \"{pathway}\" with size {len(G.nodes)}")
-            plot_pathway_all_levels(pathway, figures_path, graphs_path)
-        # else:
-        #     print(f"Skipping pathway: \"{pathway}\" with size {len(G.nodes)}")
+#
+# def plot_low_level_pathways(min_size=5, max_size=20, figures_path="figures/pathways/", graphs_path="reports/pathways/"):
+#     pathways = get_low_level_pathways()
+#     for pathway in pathways['stId']:
+#         name = get_pathway_name(pathway)
+#         name = name.iloc[0]['Name']
+#
+#         G = create_graph(pathway, "genes", True, graphs_path, save=False)
+#
+#         if min_size <= len(G.nodes) <= max_size:
+#             print(f"-- Plotting pathway \"{pathway}\" with size {len(G.nodes)}")
+#             plot_pathway_all_levels(pathway, figures_path, graphs_path)
+#         # else:
+#         #     print(f"Skipping pathway: \"{pathway}\" with size {len(G.nodes)}")
 
 
 def plot_pathways(pathways, level, sm, coloring, v=False):
@@ -404,21 +414,31 @@ def plot_pathways(pathways, level, sm, coloring, v=False):
     :param v:
     :return: bokeh figure with the plot
     """
-    graphs = [create_graph(pathway, level, sm) for pathway in pathways]
-    full_graph = merge_graphs(graphs)
-    f = plot_interaction_network(full_graph, Coloring.PATHWAY)
-    show(f)
-    return f
-
+    # graphs = [create_graph(pathway, level, sm) for pathway in pathways]
+    # full_graph = merge_graphs(graphs)
+    # f = plot_interaction_network(full_graph, Coloring.PATHWAY)
+    # show(f)
+    # return f
+    pass
 
 def main():
-    pathway = "R-HSA-9634600"
-    graphs = create_pathway_graphs(pathway)
-    p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.ENTITY_TYPE)
-    # show(p)
-    p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.REACTION)
-    # show(p)
-    p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.PATHWAY)
+    pathway1 = "R-HSA-9634600"  # Regulation of glycolysis by fructose 2,6-bisphosphate metabolism
+    pathway2 = "R-HSA-6814122"  # Cooperation of PDCL (PhLP1) and TRiC/CCT in G-protein beta folding
+    pathway3 = "R-HSA-9648002"  # Ras Processing
+    graphs = create_pathway_interaction_networks(pathway1)
+
+    # participants = {level: get_participants_by_pathway(level, pathway) for level in [*LEVELS, sm]}
+    # components = {level: get_components_by_pathway(level, pathway) for level in [*LEVELS, sm]}
+
+    # create_pathway_graphs(pathway)
+    g1 = get_or_create_pathway_interaction_network(pathway1, genes)
+    p1 = plot_interaction_network(g1, coloring.PATHWAY)
+
+    # p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.ENTITY_TYPE)
+    # # show(p)
+    # p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.REACTION)
+    # # show(p)
+    # p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.PATHWAY)
     # show(p)
 
     # plot_low_level_pathways(10, 20, "../../figures/pathways/", "../../reports/pathways/")

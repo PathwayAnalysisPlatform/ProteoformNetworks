@@ -51,9 +51,9 @@ QUERIES_PARTICIPANTS = {
 def get_query_participants_by_pathway(level, pathway="", reaction=""):
     query = QUERIES_PARTICIPANTS[level]
     if len(pathway) > 0:
-        query.replace("Pathway{speciesName:'Homo sapiens'}", f"Pathway{{speciesName:'Homo sapiens', stId:'{pathway}'}}")
+        query = query.replace("Pathway{speciesName:'Homo sapiens'}", f"Pathway{{speciesName:'Homo sapiens', stId:'{pathway}'}}")
     if len(reaction) > 0:
-        query.replace("ReactionLikeEvent{speciesName:'Homo sapiens'}", f"ReactionLikeEvent{{speciesName:'Homo sapiens', stId:'{reaction}'}}")
+        query = query.replace("ReactionLikeEvent{speciesName:'Homo sapiens'}", f"ReactionLikeEvent{{speciesName:'Homo sapiens', stId:'{reaction}'}}")
     return query
 
 def get_query_components(level, pathway="", reaction=""):
@@ -176,6 +176,14 @@ WITH DISTINCT Protein, COLLECT(DISTINCT Proteoform) as Proteoforms ORDER By Prot
 WITH Protein, Proteoforms, size(Proteoforms) as NumProteoforms
 WHERE NumProteoforms > 1
 RETURN DISTINCT Protein, Proteoforms, NumProteoforms ORDER BY NumProteoforms DESC
+"""
+
+QUERY_GET_PATHWAYS_BY_PROTEIN = """
+MATCH (p:Pathway{speciesName:"Homo sapiens"})-[:hasEvent*]->(rle:ReactionLikeEvent{speciesName:"Homo sapiens"}),
+      (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity),
+      (pe)-[:referenceEntity]->(re:ReferenceEntity{identifier:"P04049", databaseName:"UniProt"})
+RETURN DISTINCT p.stId AS PathwayId, p.displayName AS Pathway, re.identifier AS Identifier
+ORDER BY PathwayId, Identifier
 """
 
 

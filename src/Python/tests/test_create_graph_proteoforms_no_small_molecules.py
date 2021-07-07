@@ -1,6 +1,6 @@
 import pytest
 
-from networks import create_graph
+from lib.networks import create_graph
 
 
 @pytest.fixture(scope="session")
