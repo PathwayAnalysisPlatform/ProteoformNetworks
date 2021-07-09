@@ -9,13 +9,19 @@ import pandas as pd
 
 import config
 from config import no_sm, with_sm, with_unique_sm, sm, LEVELS
-from lib.graph_database_access import get_pathway_name
+from lib.graph_database_access import get_pathway_name, get_participants_by_pathway, get_components_by_pathway
 
 
-def get_or_create_pathway_interaction_network(pathway, level, method):
-    G = nx.Graph()
-    return G
+def create_pathway_interaction_network(pathway, level, method, out_path=""):
+    if level not in LEVELS:
+        raise Exception(f"There is no {level} level.")
 
+    participants = {level: get_participants_by_pathway(pathway, level) for level in [level, sm]}
+    components = {level: get_components_by_pathway(pathway, level) for level in [level, sm]}
+
+    g = create_interaction_network(level, method, participants, components, out_path, pathway)
+
+    return g
 
 def create_pathway_interaction_networks(pathway):
     """
@@ -31,7 +37,7 @@ def create_pathway_interaction_networks(pathway):
     if len(name) == 0:
         return {m: [nx.Graph()]*3 for m in config.METHODS}
     else:
-        return {m: [get_or_create_pathway_interaction_network(pathway, l) for l in LEVELS] for m in config.METHODS}
+        return {m: [create_pathway_interaction_network(pathway, l) for l in LEVELS] for m in config.METHODS}
 
 
 def merge_graphs(graphs):
@@ -374,6 +380,14 @@ def get_or_create_interaction_network(level, method, participants, components, o
     """
     Returns a networkx graph instance of the selected interaction network.
     Tries to read from a json file with the network. If the file does not exists it creates it.
+
+    :param level: genes, proteins or proteoforms. This attribute is just to set it as graph property.
+    :param method: "no_sm", "with_sm" or "with_unique_sm". This is just to set is as graph property.
+    :param participants: pandas dataframe with the reaction participants
+    :param components: pandas dataframe with the complex components
+    :param out_path: path to directory to store the json file
+    :param label: Any text to distinguish the graph file, ex. Pathway name
+    :return: The networkx interaction network
     """
 
     filename = get_json_filename(level, method, out_path, label)

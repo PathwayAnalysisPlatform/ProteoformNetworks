@@ -427,8 +427,7 @@ def main():
     pathway3 = "R-HSA-9648002"  # Ras Processing
     graphs = create_pathway_interaction_networks(pathway1)
 
-    # participants = {level: get_participants_by_pathway(level, pathway) for level in [*LEVELS, sm]}
-    # components = {level: get_components_by_pathway(level, pathway) for level in [*LEVELS, sm]}
+
 
     # create_pathway_graphs(pathway)
     g1 = get_or_create_pathway_interaction_network(pathway1, genes)

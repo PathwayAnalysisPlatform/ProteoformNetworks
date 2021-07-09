@@ -1,11 +1,10 @@
 import pandas as pd
 import pytest
 
-# TODO: Test fix_neo4j_values
-from config import proteoforms, proteins, genes, sm, no_sm
+from config import proteoforms, proteins, genes, sm
 from lib.graph_database_access import fix_neo4j_values, get_low_level_pathways, \
     get_reactions_by_pathway, get_pathways, get_reactions, get_complexes, get_complex_components_by_complex, \
-    make_proteoform_string, get_participants_by_pathway
+    make_proteoform_string, get_participants_by_pathway, get_components_by_pathway, get_complexes_by_pathway
 
 
 @pytest.fixture(scope="session")
@@ -16,6 +15,11 @@ def glycolysis_participants_genes():
 @pytest.fixture(scope="session")
 def glycolysis_participants_proteins():
     return get_participants_by_pathway("R-HSA-70171", proteins)
+
+
+@pytest.fixture(scope="session")
+def glycolysis_components_proteins():
+    return get_components_by_pathway("R-HSA-70171", proteins)
 
 
 @pytest.fixture(scope="session")
@@ -165,7 +169,8 @@ def participant_proteins_Erythrocytes_take_up_carbon_dioxide_and_release_oxygen(
 # Test: Query for participants of a pathway returns all the gene and small molecule participants decomposing complexes
 # Pathway R-HSA-1237044 hast complex participants in its reactions, some complexes also have complex components.
 # Checks if the component molecules of the complex components are in the result
-def test_query_for_pathway_participants_decomposes_complexes(participant_proteins_Erythrocytes_take_up_carbon_dioxide_and_release_oxygen):
+def test_query_for_pathway_participants_decomposes_complexes(
+        participant_proteins_Erythrocytes_take_up_carbon_dioxide_and_release_oxygen):
     df = participant_proteins_Erythrocytes_take_up_carbon_dioxide_and_release_oxygen
     # Reaction R-HSA-1237325 in the pathway has complex participants: "R-HSA-1237320"
     # Complex R-HSA-1237320 has 6 participant molecules:
@@ -310,7 +315,7 @@ def test_get_complexes():
 
 
 def test_get_complex_components_genes_returns_components():
-    df = get_complex_components_by_complex("R-HSA-983126", "genes", True)
+    df = get_complex_components_by_complex("R-HSA-983126", genes)
     assert type(df) == pd.DataFrame
     assert len(df) == 264
     assert ((df['Entity'] == 'R-HSA-141412') & (df['Id'] == 'CDC20')).any()
@@ -319,20 +324,21 @@ def test_get_complex_components_genes_returns_components():
 
 
 def test_get_complex_components_genes_returns_components_2():
-    df = get_complex_components_by_complex("R-HSA-2168879", "genes", True)
-    assert len(df) == 7
-    assert ((df['Entity'] == 'R-ALL-352327') & (df['Id'] == 'O2')).any()
-    assert ((df['Entity'] == 'R-ALL-917877') & (df['Id'] == 'heme')).any()
-    assert ((df['Entity'] == 'R-HSA-2168862') & (df['Id'] == 'HBA1')).any()
+    df = get_complex_components_by_complex("R-HSA-2168879", genes)
+    assert df['Id'].nunique() == 4
+    assert (df['Id'] == 'HP').any()
+    assert (df['Id'] == 'HBA1').any()
+    assert (df['Id'] == 'HBB').any()
+    assert (df['Id'] == 'CD163').any()
 
 
 def test_get_complex_components_genes_with_non_existent_complex_returns_empty_list():
-    df = get_complex_components_by_complex("fake_complex", "genes", True)
+    df = get_complex_components_by_complex("fake_complex", genes)
     assert len(df) == 0
 
 
 def test_get_complex_components_genes_without_small_molecules():
-    df = get_complex_components_by_complex("R-HSA-2168879", "genes", False)
+    df = get_complex_components_by_complex("R-HSA-2168879", genes)
     assert len(df) == 5
     assert not ((df['Entity'] == 'R-ALL-352327') & (df['Id'] == 'O2')).any()
     assert not ((df['Entity'] == 'R-ALL-917877') & (df['Id'] == 'heme')).any()
@@ -340,7 +346,7 @@ def test_get_complex_components_genes_without_small_molecules():
 
 
 def test_get_complex_components_proteins_returns_components():
-    df = get_complex_components_by_complex("R-HSA-983126", "proteins", True)
+    df = get_complex_components_by_complex("R-HSA-983126", proteins)
     assert type(df) == pd.DataFrame
     assert len(df) == 264
     assert not ((df['Entity'] == 'R-HSA-141412') & (df['Id'] == 'CDC20')).any()
@@ -352,21 +358,24 @@ def test_get_complex_components_proteins_returns_components():
 
 
 def test_get_complex_components_proteins_returns_components_2():
-    df = get_complex_components_by_complex("R-HSA-2168879", "proteins", True)
-    assert len(df) == 7
-    assert ((df['Entity'] == 'R-ALL-352327') & (df['Id'] == 'O2')).any()
-    assert ((df['Entity'] == 'R-ALL-917877') & (df['Id'] == 'heme')).any()
+    df = get_complex_components_by_complex("R-HSA-2168879", proteins)
+    assert df['Id'].nunique() == 4
+    assert not ((df['Entity'] == 'R-ALL-352327') & (df['Id'] == 'O2')).any()
+    assert not ((df['Entity'] == 'R-ALL-917877') & (df['Id'] == 'heme')).any()
     assert not ((df['Entity'] == 'R-HSA-2168862') & (df['Id'] == 'HBA1')).any()
-    assert ((df['Entity'] == 'R-HSA-2168862') & (df['Id'] == 'P69905')).any()
+    assert (df['Id'] == 'P00738').any()
+    assert (df['Id'] == 'Q86VB7').any()
+    assert (df['Id'] == 'P69905').any()
+    assert (df['Id'] == 'P68871').any()
 
 
 def test_get_complex_components_proteins_with_non_existent_complex_returns_empty_list():
-    df = get_complex_components_by_complex("fake_complex", "proteins", True)
+    df = get_complex_components_by_complex("fake_complex", proteins)
     assert len(df) == 0
 
 
 def test_get_complex_components_proteins_without_small_molecules():
-    df = get_complex_components_by_complex("R-HSA-2168879", "proteins", False)
+    df = get_complex_components_by_complex("R-HSA-2168879", proteins)
     assert len(df) == 5
     assert not ((df['Entity'] == 'R-ALL-352327') & (df['Id'] == 'O2')).any()
     assert not ((df['Entity'] == 'R-ALL-917877') & (df['Id'] == 'heme')).any()
@@ -375,7 +384,7 @@ def test_get_complex_components_proteins_without_small_molecules():
 
 
 def test_get_complex_components_proteoforms_returns_components():
-    df = get_complex_components_by_complex("R-HSA-983126", "proteoforms", True)
+    df = get_complex_components_by_complex("R-HSA-983126", proteoforms)
     assert type(df) == pd.DataFrame
     assert len(df) == 264
     assert ((df['Entity'] == 'R-HSA-141412') & (df['Id'] == 'Q12834;')).any()
@@ -384,22 +393,24 @@ def test_get_complex_components_proteoforms_returns_components():
 
 
 def test_get_complex_components_proteoforms_returns_components_2():
-    df = get_complex_components_by_complex("R-HSA-2168879", "proteoforms", True)
-    assert len(df) == 7
-    assert (df['Id'] == 'O2').any()
-    assert (df['Id'] == 'heme').any()
+    df = get_complex_components_by_complex("R-HSA-2168879", proteoforms)
+    assert df["Id"].nunique() == 5
+    assert not (df['Id'] == 'O2').any()
+    assert not (df['Id'] == 'heme').any()
     assert (df['Id'] == 'P00738;00034:52,00034:111,00034:149').any()
+    assert (df['Id'] == 'P00738;00034:266,00034:309,00034:351').any()
     assert (df['Id'] == 'P69905;').any()
     assert (df['Id'] == 'P68871;').any()
+    assert (df['Id'] == 'Q86VB7;').any()
 
 
 def test_get_complex_components_proteoforms_with_non_existent_complex_returns_empty_list():
-    df = get_complex_components_by_complex("fake_complex", "proteoforms", True)
+    df = get_complex_components_by_complex("fake_complex", proteoforms)
     assert len(df) == 0
 
 
 def test_get_complex_components_proteoforms_without_small_molecules():
-    df = get_complex_components_by_complex("R-HSA-2168879", "proteoforms", False)
+    df = get_complex_components_by_complex("R-HSA-2168879", proteoforms)
     assert len(df) == 5
     assert not ((df['Entity'] == 'R-ALL-352327') & (df['Id'] == 'O2')).any()
     assert not ((df['Entity'] == 'R-ALL-917877') & (df['Id'] == 'heme')).any()
@@ -428,3 +439,39 @@ def test_make_proteoform_string_string():
     value = "P40189-1"
     ans = make_proteoform_string(value)
     assert ans == "P40189-1;"
+
+
+# The selected pathway is R-HSA-9634600 Regulation of glycolysis by fructose 2,6-bisphosphate metabolism
+# It has 6 participant complexes
+
+# Reaction R-HSA-163750 Dephosphorylation of phosphoPFKFB1 by PP2A complex
+def test_get_participants_by_pathway_returns_components_of_reaction_R_HSA_163750():
+    df = get_participants_by_pathway("R-HSA-9634600", proteins)
+    assert ((df['Id'] == "P67775") & (df['Role'] == "catalystActivity")).any()
+    assert ((df['Id'] == "P30153") & (df['Role'] == "catalystActivity")).any()
+    assert ((df['Id'] == "P16118") & (df['Role'] == "input")).any()
+    assert ((df['Id'] == "P16118") & (df['Role'] == "output")).any()
+
+def test_get_complexes_by_pathway1():
+    df = get_complexes_by_pathway("R-HSA-9634600")
+    assert df['Complex'].nunique() == 3
+    assert (df['Complex'] == "R-HSA-165961").any()
+    assert (df['Complex'] == "R-HSA-163745").any()
+    assert (df['Complex'] == "R-HSA-71786").any()
+
+def test_get_participants_by_pathway_returns_components_of_reaction_R_HSA_163750():
+    df = get_components_by_pathway("R-HSA-9634600", proteins)
+
+    # Check it has all the complexes
+    assert df['Complex'].nunique() == 3
+    assert df[df['Complex'] == "R-HSA-163745"]['Id'].nunique() == 1
+    assert df[df['Complex'] == "R-HSA-165961"]['Id'].nunique() == 5
+    assert df[df['Complex'] == "R-HSA-71786"]['Id'].nunique() == 1
+
+    assert ((df['Complex'] == "R-HSA-163745") & (df['Id'] == "P16118")).any()
+    assert ((df['Complex'] == "R-HSA-71786") & (df['Id'] == "P16118")).any()
+    assert ((df['Complex'] == "R-HSA-165961") & (df['Id'] == "P67775")).any()
+    assert ((df['Complex'] == "R-HSA-165961") & (df['Id'] == "P62714")).any()
+    assert ((df['Complex'] == "R-HSA-165961") & (df['Id'] == "P30153")).any()
+    assert ((df['Complex'] == "R-HSA-165961") & (df['Id'] == "P30154")).any()
+    assert ((df['Complex'] == "R-HSA-165961") & (df['Id'] == "Q14738")).any()
