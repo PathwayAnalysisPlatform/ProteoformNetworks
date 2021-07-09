@@ -19,9 +19,13 @@ def create_pathway_interaction_network(pathway, level, method, out_path=""):
     participants = {level: get_participants_by_pathway(pathway, level) for level in [level, sm]}
     components = {level: get_components_by_pathway(pathway, level) for level in [level, sm]}
 
-    g = create_interaction_network(level, method, participants, components, out_path, pathway)
+    filename = get_json_filename(level, method, out_path, pathway)
+    if not Path(filename).exists():
+        create_interaction_network(level, method, participants, components, out_path, pathway)
+    g = read_graph(filename)
 
     return g
+
 
 def create_pathway_interaction_networks(pathway):
     """
@@ -35,9 +39,9 @@ def create_pathway_interaction_networks(pathway):
 
     name = get_pathway_name(pathway)
     if len(name) == 0:
-        return {m: [nx.Graph()]*3 for m in config.METHODS}
+        return {m: [nx.Graph()] * 3 for m in config.METHODS}
     else:
-        return {m: [create_pathway_interaction_network(pathway, l) for l in LEVELS] for m in config.METHODS}
+        return {m: [create_pathway_interaction_network(pathway, level, m) for level in LEVELS] for m in config.METHODS}
 
 
 def merge_graphs(graphs):
@@ -75,6 +79,11 @@ def print_interactome_details(g):
 
 
 def get_json_filename(level, method, out_path="", label=""):
+    if len(out_path) > 0:
+        if out_path[-1] != '/':
+            out_path += "/"
+    if len(label) > 0:
+        return Path(out_path + label + "_" + level + "_" + method + ".json")
     return Path(out_path + level + "_" + method + ".json")
 
 
@@ -265,7 +274,7 @@ def add_edges_complex_components(G, df, method=with_sm, v=False):
         print(f"From complexes, added {len(G.edges)} edges to the graph.")
 
 
-def save_interaction_network(G, graphs_path="", label=""):
+def save_interaction_network(G, level, method, out_path="", label=""):
     """
     Create the json file with all attributes.
     Creates a vertices file for the accessioned entities.
@@ -276,25 +285,29 @@ def save_interaction_network(G, graphs_path="", label=""):
 
     :param G: networkx file with the
     :param level: genes, proteins or protoeforms
-    :param graphs_path: directory where to store the files
+    :param out_path: directory where to store the files
     :param label: string phrase for the file names
     :return: void
     """
-    level = G.graph["level"]
-    method = G.graph["method"]
-    print(f"Storing network level: {level} at directory: {graphs_path}")
+    print(f"Storing network level: {level} at directory: {out_path}")
 
+    if len(out_path) > 0:
+        if out_path[-1] != '/':
+            out_path += "/"
+
+    name_start = ""
     if len(label) > 0:
-        label = label + "_"
+        name_start += label + "_"
 
-    json_file = get_json_filename(level, method, graphs_path)
-    accessioned_entities_file = Path(graphs_path + label + level + "_accessioned_entities.tsv")
-    interactions_file = Path(graphs_path + label + level + "_interactions.tsv")
-    small_molecules_file = Path(graphs_path + label + level + "_small_molecules.tsv")
+    name_start += level + "_" + method + "_"
+    json_file = get_json_filename(level, method, out_path, label)
+    accessioned_entities_file = Path(out_path + name_start + "accessioned_entities.tsv")
+    interactions_file = Path(out_path + name_start + "interactions.tsv")
+    small_molecules_file = Path(out_path + name_start + "small_molecules.tsv")
 
-    if len(str(graphs_path)) > 0:
-        if not os.path.exists(graphs_path):
-            Path(graphs_path).mkdir(parents=True, exist_ok=True)
+    if len(str(out_path)) > 0:
+        if not os.path.exists(out_path):
+            Path(out_path).mkdir(parents=True, exist_ok=True)
 
     with open(json_file, 'w+') as outfile:
         data = nx.json_graph.node_link_data(G)
@@ -319,7 +332,7 @@ def save_interaction_network(G, graphs_path="", label=""):
     print(f"Created small molecule vertices file for {level}")
 
     if level == "proteins":
-        mapping_file = graphs_path + config.MAPPING_FILE.replace('level', 'genes')
+        mapping_file = out_path + config.MAPPING_FILE.replace('level', 'genes')
         with codecs.open(mapping_file, 'w', "utf-8") as map_file:
             for n, t in G.nodes(data='type'):
                 if t != "SimpleEntity":
@@ -327,7 +340,7 @@ def save_interaction_network(G, graphs_path="", label=""):
         print(f"Created mapping proteins to genes file.")
 
     if level == config.proteoforms:
-        mapping_file = graphs_path + config.MAPPING_FILE.replace('level', 'proteoforms')
+        mapping_file = out_path + config.MAPPING_FILE.replace('level', 'proteoforms')
         with codecs.open(mapping_file, 'w', "utf-8") as map_file:
             for n, t in G.nodes(data='type'):
                 if t != "SimpleEntity":
@@ -350,7 +363,6 @@ def create_interaction_network(level, method, participants, components, out_path
     """
 
     print("Creating interactome file...")
-    json_file = get_json_filename(level, method, out_path)
 
     G = nx.Graph()
     G.graph["level"] = level
@@ -371,7 +383,7 @@ def create_interaction_network(level, method, participants, components, out_path
     else:
         raise Exception("No such method to create the interactome")
 
-    save_interaction_network(G, out_path, method + "_")
+    save_interaction_network(G, level, method, out_path, label)
     print(f"Finished creating interactome file for {level}-{method}")
     return G
 
@@ -451,8 +463,8 @@ def index_all_vertices(interactomes):
     return vertices, start_index, end_index
 
 
-def save_indexed_vertices(indexed_vertices, graphs_path):
-    vertices_file = Path(graphs_path + "interactome_vertices.tsv")
+def save_indexed_vertices(indexed_vertices, out_path):
+    vertices_file = Path(out_path + "interactome_vertices.tsv")
     with codecs.open(vertices_file, 'w', "utf-8") as fh:
         for v in indexed_vertices:
             fh.write(f"{v}\n")
@@ -499,12 +511,12 @@ def save_ranges(start_indexes, end_indexes, output_path):
         fh.write(f"{start_indexes['SimpleEntity']}\t{end_indexes['SimpleEntity']}\n")
 
 
-def save_interactomes_with_indexed_vertices(interactomes, graphs_path):
+def save_interactomes_with_indexed_vertices(interactomes, out_path):
     """
     Save interactomes as three separate files with the list of edges using indexed vertices.
 
     :param interactomes: dict with a networkx graph for each level
-    :param graphs_path:
+    :param out_path:
     :return: void
     """
     # Gather the gene, protein, proteoform and small molecule vertices together and index all of them
@@ -515,12 +527,12 @@ def save_interactomes_with_indexed_vertices(interactomes, graphs_path):
     assert sorted(indexed_vertices[start_indexes["proteoforms"]:end_indexes["proteoforms"]])
     assert sorted(indexed_vertices[start_indexes["SimpleEntity"]:end_indexes["SimpleEntity"]])
 
-    save_indexed_vertices(indexed_vertices, graphs_path)
+    save_indexed_vertices(indexed_vertices, out_path)
 
     # Create three files with the interactomes
-    save_edges_with_indexed_vertices(interactomes, graphs_path, indexed_vertices, start_indexes, end_indexes)
+    save_edges_with_indexed_vertices(interactomes, out_path, indexed_vertices, start_indexes, end_indexes)
 
-    save_ranges(start_indexes, end_indexes, graphs_path)
+    save_ranges(start_indexes, end_indexes, out_path)
 
     return
 
@@ -536,7 +548,7 @@ def get_sizes(interactome_dict):
 if __name__ == '__main__':
     # print(f"Working directory: {os.getcwd()}")
 
-    graphs_path = "../../../resources/Reactome/"
-    interactomes = {l: create_interaction_network(l, True, graphs_path) for l in config.LEVELS}
+    out_path = "../../../resources/Reactome/"
+    interactomes = {l: create_interaction_network(l, True, out_path) for l in config.LEVELS}
     print(f"Indexing vertices")
-    save_interactomes_with_indexed_vertices(interactomes, graphs_path)
+    save_interactomes_with_indexed_vertices(interactomes, out_path)

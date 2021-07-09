@@ -1,4 +1,5 @@
 # %%
+import os
 from enum import Enum
 from math import pi
 
@@ -15,10 +16,9 @@ from bokeh.palettes import Colorblind
 from bokeh.plotting import figure
 from bokeh.transform import cumsum
 
-from config import get_entity_color, COLOR_IO, COLOR_CO, COLOR_RO, COLOR_CC, LEVELS, sm, genes
+from config import get_entity_color, COLOR_IO, COLOR_CO, COLOR_RO, COLOR_CC, LEVELS, sm, genes, with_sm, no_sm
 from lib.graph_database_access import get_participants_by_pathway, get_components_by_pathway, get_pathway_name
-from lib.networks import get_or_create_interaction_network, create_pathway_interaction_networks, \
-    get_or_create_pathway_interaction_network
+from lib.networks import create_pathway_interaction_networks, create_pathway_interaction_network
 from lib.networks import merge_graphs
 
 
@@ -247,11 +247,11 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
     Plot the interaction networks generated for a single pathway at the 3 levels; genes, proteins and proteoforms and
     using the 3 methods of constructing the
 
-    :param pathway:
+    :param pathway: string id for the pathway
     :param out_path:
     :param graphs_path:
     :param coloring:
-    :param graphs:
+    :param graphs: dictionary {method: [list of graphs one for each level]}
     :param v:
     :return:
     """
@@ -425,14 +425,13 @@ def main():
     pathway1 = "R-HSA-9634600"  # Regulation of glycolysis by fructose 2,6-bisphosphate metabolism
     pathway2 = "R-HSA-6814122"  # Cooperation of PDCL (PhLP1) and TRiC/CCT in G-protein beta folding
     pathway3 = "R-HSA-9648002"  # Ras Processing
-    graphs = create_pathway_interaction_networks(pathway1)
 
+    print(os. getcwd())
 
-
-    # create_pathway_graphs(pathway)
-    g1 = get_or_create_pathway_interaction_network(pathway1, genes)
-    p1 = plot_interaction_network(g1, coloring.PATHWAY)
-
+    g = create_pathway_interaction_network(pathway1, genes, no_sm, "temp")
+    # graphs = create_pathway_interaction_networks(pathway1)
+    # p = plot_pathway_all_levels(pathway1, graphs=graphs, coloring=Coloring.ENTITY_TYPE)
+    # show(p)
     # p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.ENTITY_TYPE)
     # # show(p)
     # p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.REACTION)
