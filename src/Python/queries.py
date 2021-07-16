@@ -42,7 +42,7 @@ QUERIES_PARTICIPANTS = {
     MATCH (pw:Pathway{speciesName:'Homo sapiens'})-[:hasEvent]->(rle:ReactionLikeEvent{speciesName:'Homo sapiens'}),
               p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:SimpleEntity),
               (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
-        RETURN DISTINCT pw.stId as Pathway, rle.stId as Reaction, pe.stId as Entity, pe.displayName as Name, last(labels(pe)) as Type, "sm_" + pe.displayName as Id, rd.displayName AS Database,  
+        RETURN DISTINCT pw.stId as Pathway, rle.stId as Reaction, pe.stId as Entity, pe.displayName as Name, last(labels(pe)) as Type, "sm_" + pe.displayName as Id, "sm_" + rle.stId + "_" + pe.displayName as UniqueId, rd.displayName AS Database,  
                         head([scores IN relationships(p) | type(scores)]) as Role
         ORDER BY Pathway, Reaction, Role, Type
     """

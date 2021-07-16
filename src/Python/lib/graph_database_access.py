@@ -84,8 +84,9 @@ def fix_neo4j_values(df, level):
     df['Id'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.Id) if x.Type == 'SimpleEntity' else x.Id, axis=1)
     df['Id'] = df.apply(lambda x: str(x.Id).replace(" ", "_").strip() if x.Type == 'SimpleEntity' else x.Id, axis=1)
 
-    # df['UniqueId'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.UniqueId) if x.Type == 'SimpleEntity' else x.Id, axis=1)
-    # df['UniqueId'] = df.apply(lambda x: str(x.UniqueId).replace(" ", "_") if x.Type == 'SimpleEntity' else x.Id, axis=1)
+    if "UniqueId" in df.columns:
+        df['UniqueId'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.UniqueId) if x.Type == 'SimpleEntity' else x.Id, axis=1)
+        df['UniqueId'] = df.apply(lambda x: str(x.UniqueId).replace(" ", "_") if x.Type == 'SimpleEntity' else x.Id, axis=1)
 
     if level == proteoforms:
         df['Id'] = df.apply(
@@ -115,6 +116,7 @@ def get_participants(level, location=""):
 
 
 def get_participants_by_pathway(pathway, level):
+    print(f"Getting participants for pathway {pathway} for level {level}")
     query = get_query_participants_by_pathway(level, pathway)
     participants = get_query_result(query)
     participants = fix_neo4j_values(participants, level)
@@ -141,6 +143,7 @@ def get_complexes_by_pathway(pathway):
 
 
 def get_components_by_pathway(pathway, level):
+    print(f"Getting components for pathway {pathway} for level {level}")
     if len(pathway) > 0:
         # Get list of participating complexes
         df_complexes = get_complexes_by_pathway(pathway)

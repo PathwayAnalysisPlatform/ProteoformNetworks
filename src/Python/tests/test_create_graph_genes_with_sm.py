@@ -10,12 +10,6 @@ def glycolysis_graph_with_sm(tmpdir_factory):
     graphs_path = tmpdir_factory.mktemp("tmpdir")
     return create_pathway_interaction_network("R-HSA-9634600", genes, with_sm, graphs_path)
 
-@pytest.fixture(scope="session")
-def glycolysis_graph_with_unique_sm(tmpdir_factory):
-    # Pathway "Regulation of glycolysis by fructose" R-HSA-9634600
-    graphs_path = tmpdir_factory.mktemp("tmpdir")
-    return create_pathway_interaction_network("R-HSA-9634600", genes, with_unique_sm, graphs_path)
-
 
 @pytest.fixture(scope="session")
 def traffic_graph_with_sm(tmpdir_factory):
@@ -25,10 +19,10 @@ def traffic_graph_with_sm(tmpdir_factory):
 
 
 @pytest.fixture(scope="session")
-def traffic_graph_with_unique_sm(tmpdir_factory):
+def traffic_graph_with_sm(tmpdir_factory):
     # Pathway "RHO GTPases regulate P13569 trafficking" R-HSA-5627083
     graphs_path = tmpdir_factory.mktemp("tmpdir")
-    return create_pathway_interaction_network("R-HSA-5627083", genes, with_unique_sm, graphs_path)
+    return create_pathway_interaction_network("R-HSA-5627083", genes, with_sm, graphs_path)
 
 
 @pytest.fixture(scope="session")

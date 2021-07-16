@@ -16,18 +16,20 @@ def create_pathway_interaction_network(pathway, level, method, out_path=""):
     if level not in LEVELS:
         raise Exception(f"There is no {level} level.")
 
-    participants = {level: get_participants_by_pathway(pathway, level) for level in [level, sm]}
-    components = {level: get_components_by_pathway(pathway, level) for level in [level, sm]}
-
     filename = get_json_filename(level, method, out_path, pathway)
     if not Path(filename).exists():
+        print(f"    * Creating network {filename}")
+        participants = {level: get_participants_by_pathway(pathway, level) for level in [level, sm]}
+        components = {level: get_components_by_pathway(pathway, level) for level in [level, sm]}
         create_interaction_network(level, method, participants, components, out_path, pathway)
+    else:
+        print(f"    * Network {filename} already exists..")
     g = read_graph(filename)
 
     return g
 
 
-def create_pathway_interaction_networks(pathway):
+def create_pathway_interaction_networks(pathway, out_path=""):
     """
     Creates interaction networks for a pathway in all three levels, with the 3 contruction methods
 
@@ -39,9 +41,11 @@ def create_pathway_interaction_networks(pathway):
 
     name = get_pathway_name(pathway)
     if len(name) == 0:
-        return {m: [nx.Graph()] * 3 for m in config.METHODS}
+        print(f"Pathway {pathway} does not exist")
+        return {m: {l: nx.Graph() for l in LEVELS }  for m in config.METHODS}
     else:
-        return {m: [create_pathway_interaction_network(pathway, level, m) for level in LEVELS] for m in config.METHODS}
+        print(f"-- Creating interaction networks for pathway {pathway}")
+        return {m: {level: create_pathway_interaction_network(pathway, level, m, out_path) for level in LEVELS} for m in config.METHODS}
 
 
 def merge_graphs(graphs):
@@ -79,6 +83,8 @@ def print_interactome_details(g):
 
 
 def get_json_filename(level, method, out_path="", label=""):
+    if not isinstance(out_path, str):
+        out_path = out_path.dirname
     if len(out_path) > 0:
         if out_path[-1] != '/':
             out_path += "/"
@@ -132,9 +138,11 @@ def add_nodes(G, df, method=with_sm):
             G.nodes[unique_id]['reactions'].add(row['Reaction'])
             G.nodes[unique_id]['pathways'].add(row['Pathway'])
 
-        if (G.nodes[unique_id]['type'] == "SimpleEntity") or G.nodes[row['Id']]['type'] == "genes":
+        if G.nodes[unique_id]['type'].startswith("S"):
+            G.nodes[unique_id]['prevId'] = row[sm_id_column]
+        elif G.nodes[row['Id']]['type'].startswith("g"):
             G.nodes[unique_id]['prevId'] = row['Id']
-        elif G.nodes[unique_id]['type'] == "proteins" or G.nodes[row['Id']]['type'] == "proteoforms":
+        else: # G.nodes[unique_id]['type'] == "proteins" or G.nodes[row['Id']]['type'] == "proteoforms":
             G.nodes[unique_id]['prevId'] = row['PrevId']
 
     print(f"{level} level - small molecules: {G.graph['num_small_molecules']}")
@@ -291,7 +299,7 @@ def save_interaction_network(G, level, method, out_path="", label=""):
     """
     print(f"Storing network level: {level} at directory: {out_path}")
 
-    if len(out_path) > 0:
+    if isinstance(out_path, str) and len(out_path) > 0:
         if out_path[-1] != '/':
             out_path += "/"
 
@@ -362,7 +370,7 @@ def create_interaction_network(level, method, participants, components, out_path
     :return: The networkx interaction network
     """
 
-    print("Creating interactome file...")
+    print("Creating interaction network...")
 
     G = nx.Graph()
     G.graph["level"] = level
@@ -545,6 +553,29 @@ def get_sizes(interactome_dict):
     return num_interactions, num_entities, num_small_molecules
 
 
+def get_nodes_and_adjacent(nodes, G):
+    """
+    Get the same input nodes along with their adjacent small molecule nodes. Returns only those nodes that actually
+    exist in G. The non-existing nodes are ignored.
+
+    :param nodes: node set
+    :param G: the complete graph
+    :return: a set of nodes with their adjacent small molecule nodes
+    """
+
+    result = set()
+
+    for node in nodes:
+        if node in G.nodes:
+            result.add(node)
+            for neighbor in G.neighbors(node):
+                if G.nodes[neighbor]['type'].startswith("S"):
+                    result.add(neighbor)
+
+    return  result
+
+
+
 if __name__ == '__main__':
     # print(f"Working directory: {os.getcwd()}")
 
@@ -552,3 +583,4 @@ if __name__ == '__main__':
     interactomes = {l: create_interaction_network(l, True, out_path) for l in config.LEVELS}
     print(f"Indexing vertices")
     save_interactomes_with_indexed_vertices(interactomes, out_path)
+
