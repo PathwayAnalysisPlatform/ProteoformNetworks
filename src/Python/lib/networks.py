@@ -9,7 +9,8 @@ import pandas as pd
 
 import config
 from config import no_sm, with_sm, with_unique_sm, sm, LEVELS
-from lib.graph_database_access import get_pathway_name, get_participants_by_pathway, get_components_by_pathway
+from lib.graph_database_access import get_pathway_name, get_participants_by_pathway, get_components_by_pathway, \
+    get_pathways
 
 
 def create_pathway_interaction_network(pathway, level, method, out_path=""):
@@ -19,14 +20,26 @@ def create_pathway_interaction_network(pathway, level, method, out_path=""):
     filename = get_json_filename(level, method, out_path, pathway)
     if not Path(filename).exists():
         print(f"    * Creating network {filename}")
-        participants = {level: get_participants_by_pathway(pathway, level) for level in [level, sm]}
-        components = {level: get_components_by_pathway(pathway, level) for level in [level, sm]}
+        participants = {level: get_participants_by_pathway(pathway, level, out_path) for level in [level, sm]}
+        components = {level: get_components_by_pathway(pathway, level, out_path) for level in [level, sm]}
         create_interaction_network(level, method, participants, components, out_path, pathway)
     else:
         print(f"    * Network {filename} already exists..")
-    g = read_graph(filename)
+    G = read_graph(filename)
 
-    return g
+    missing_bridges = False
+    missing_articulations = False
+    if any("Bridge" not in G.edges[edge] for edge in G.edges):
+        set_bridges(G)
+        missing_bridges = True
+
+    if any("Articulation Point" not in G.nodes[node] for node in G.nodes):
+        set_articulation_points(G)
+
+    if missing_articulations or missing_bridges:
+        update_json_file(G, level, method, out_path, pathway)
+
+    return G
 
 
 def create_pathway_interaction_networks(pathway, out_path=""):
@@ -42,10 +55,13 @@ def create_pathway_interaction_networks(pathway, out_path=""):
     name = get_pathway_name(pathway)
     if len(name) == 0:
         print(f"Pathway {pathway} does not exist")
-        return {m: {l: nx.Graph() for l in LEVELS }  for m in config.METHODS}
+        return {m: {l: nx.Graph() for l in LEVELS} for m in config.METHODS}
     else:
         print(f"-- Creating interaction networks for pathway {pathway}")
-        return {m: {level: create_pathway_interaction_network(pathway, level, m, out_path) for level in LEVELS} for m in config.METHODS}
+        return {
+            m: {level: create_pathway_interaction_network(pathway, level, m, out_path) for level in LEVELS}
+            for m in config.METHODS
+        }
 
 
 def merge_graphs(graphs):
@@ -142,7 +158,7 @@ def add_nodes(G, df, method=with_sm):
             G.nodes[unique_id]['prevId'] = row[sm_id_column]
         elif G.nodes[row['Id']]['type'].startswith("g"):
             G.nodes[unique_id]['prevId'] = row['Id']
-        else: # G.nodes[unique_id]['type'] == "proteins" or G.nodes[row['Id']]['type'] == "proteoforms":
+        else:  # G.nodes[unique_id]['type'] == "proteins" or G.nodes[row['Id']]['type'] == "proteoforms":
             G.nodes[unique_id]['prevId'] = row['PrevId']
 
     print(f"{level} level - small molecules: {G.graph['num_small_molecules']}")
@@ -282,6 +298,20 @@ def add_edges_complex_components(G, df, method=with_sm, v=False):
         print(f"From complexes, added {len(G.edges)} edges to the graph.")
 
 
+def update_json_file(G, level, method, out_path="", label=""):
+
+    name_start = ""
+    if len(label) > 0:
+        name_start += label + "_"
+
+    json_file = get_json_filename(level, method, out_path, label)
+    print(f"Updating file {json_file}")
+
+    with open(json_file, 'w+') as outfile:
+        data = nx.json_graph.node_link_data(G)
+        json.dump(data, outfile)
+    print(f"Updated json file.")
+
 def save_interaction_network(G, level, method, out_path="", label=""):
     """
     Create the json file with all attributes.
@@ -390,6 +420,15 @@ def create_interaction_network(level, method, participants, components, out_path
         add_edges_complex_components(G, df_both_components, method)
     else:
         raise Exception("No such method to create the interactome")
+
+    for node in G.nodes:
+        G.nodes[node]['complexes'] = list(G.nodes[node]['complexes'])
+        G.nodes[node]['roles'] = list(G.nodes[node]['roles'])
+        G.nodes[node]['reactions'] = list(G.nodes[node]['reactions'])
+        G.nodes[node]['pathways'] = list(G.nodes[node]['pathways'])
+
+    set_bridges(G)
+    set_articulation_points(G)
 
     save_interaction_network(G, level, method, out_path, label)
     print(f"Finished creating interactome file for {level}-{method}")
@@ -572,15 +611,31 @@ def get_nodes_and_adjacent(nodes, G):
                 if G.nodes[neighbor]['type'].startswith("S"):
                     result.add(neighbor)
 
-    return  result
+    return result
 
+
+def set_articulation_points(G):
+    if not any("Articulation Point" in G.nodes[node] for node in G.nodes):
+        nx.set_node_attributes(G, False, "Articulation Point")
+
+        # Calculate articulation points
+        for node in list(nx.articulation_points(G)):
+            G.nodes[node]["Articulation Point"] = True
+
+
+def set_bridges(G):
+    if not any("Bridge" in G.edges[edge] for edge in G.edges):
+        nx.set_edge_attributes(G, False, "Bridge")
+
+        # Calculate bridges
+        for edge in list(nx.bridges(G)):
+            nx.set_edge_attributes(G, {edge: {"Bridge": True}})
 
 
 if __name__ == '__main__':
-    # print(f"Working directory: {os.getcwd()}")
+    print(f"Working directory: {os.getcwd()}")
+    # graphs = create_pathway_interaction_networks("R-HSA-9673163", "../../../resources/pathway_networks/")
 
-    out_path = "../../../resources/Reactome/"
-    interactomes = {l: create_interaction_network(l, True, out_path) for l in config.LEVELS}
-    print(f"Indexing vertices")
-    save_interactomes_with_indexed_vertices(interactomes, out_path)
-
+    df_pathways = get_pathways()
+    for pathway in df_pathways["stId"]:
+        create_pathway_interaction_networks(pathway, "../../../resources/pathway_networks/")
