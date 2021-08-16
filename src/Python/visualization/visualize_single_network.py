@@ -1,5 +1,6 @@
 # %%
 import os
+import sys
 from enum import Enum
 from math import pi
 
@@ -19,13 +20,15 @@ from bokeh.transform import cumsum
 from config import get_entity_color, COLOR_IO, COLOR_CO, COLOR_RO, COLOR_CC, with_sm, no_sm, \
     with_unique_sm, proteoforms
 from lib.graph_database_access import get_pathway_name
-from lib.networks import create_pathway_interaction_network
+from lib.networks import create_pathway_interaction_network, create_pathway_interaction_networks
 
 
 class Coloring(Enum):
     ENTITY_TYPE = "Entity Type"
     REACTION = "Reaction"
     PATHWAY = "Pathway"
+    BRIDGES = "Bridges"
+    ARTICULATIONS = "Articulation Points"
 
 
 def show_graph_with_lcc(g):
@@ -62,7 +65,15 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, **kwargs):
     plot_height = kwargs['plot_height'] if 'plot_height' in kwargs else 325
     toolbar_location = kwargs['toolbar_location'] if 'toolbar_location' in kwargs else None
 
-    f = figure(x_range=(-1.1, 1.1), y_range=(-1.1, 1.1), toolbar_location=toolbar_location)
+    TOOLTIPS = [
+        ("Id", "@id"),
+        ("Type", "@type")
+    ]
+
+    # node_hover_tool = HoverTool(tooltips=TOOLTIPS, names=['node'])
+    # f.add_tools(node_hover_tool, BoxZoomTool(), ResetTool())
+
+    f = figure(x_range=(-1.1, 1.1), y_range=(-1.1, 1.1), toolbar_location=toolbar_location, tooltips=TOOLTIPS)
 
     f.title.text = kwargs['title'] if 'title' in kwargs else G.graph['level'].title()
     f.title.text_font_size = '12pt'
@@ -87,6 +98,65 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, **kwargs):
 
     if coloring == Coloring.ENTITY_TYPE:
 
+        ids = []
+        types = []
+        x_values = []
+        y_values = []
+        entity_colors = []
+
+        ids_sm = []
+        types_sm = []
+        x_values_sm = []
+        y_values_sm = []
+        entity_colors_sm = []
+
+        for id in G.nodes:
+            if G.nodes[id]['type'] == "SimpleEntity":
+                if id not in pos.keys():
+                    raise RuntimeError(f"Position not found for Simple Entity with key {id}")
+                x_values_sm.append(pos[id][0])
+                y_values_sm.append(pos[id][1])
+                entity_colors_sm.append(G.nodes[id]['entity_color'])
+                types_sm.append(G.nodes[id]['type'])
+                ids_sm.append(G.nodes[id]['label'])
+            else:
+                if id not in pos.keys():
+                    raise RuntimeError(f"Position not found for Accessioned Entity with key {id}")
+                x_values.append(pos[id][0])
+                y_values.append(pos[id][1])
+                entity_colors.append(G.nodes[id]['entity_color'])
+                types.append(G.nodes[id]['type'])
+                ids.append(G.nodes[id]['label'])
+
+        data = {
+            'id': ids,
+            'type': types,
+            'x': x_values,
+            'y': y_values,
+            'entity_color': entity_colors
+        }
+        data_sm = {
+            'id': ids_sm,
+            'type': types_sm,
+            'x': x_values_sm,
+            'y': y_values_sm,
+            'entity_color': entity_colors_sm
+        }
+
+        if len(data_sm['id']) > 0:
+            f.circle(x='x', y='y',
+                     size=20,
+                     fill_color='entity_color', line_color='black',
+                     legend_label="Small Molecules",
+                     source=ColumnDataSource(data_sm))
+
+        f.rect(x='x', y='y',
+               height=0.08, width=0.11,
+               fill_color='entity_color', line_color='black',
+               legend_label=G.graph["level"].title(),
+               source=ColumnDataSource(data))
+        f.legend.title = coloring.value
+    elif coloring == Coloring.BRIDGES:
         ids = []
         types = []
         x_values = []
@@ -225,17 +295,6 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, **kwargs):
                 f.legend.location = kwargs['legend_location']
             else:
                 f.legend.visible = False
-
-    TOOLTIPS = """
-            <div>
-                <span style="font-size: 12px; font-weight: bold;">Id: @id</span>
-            </div>
-            <div>
-                <span style="font-size: 12px; font-weight: bold; color: @entity_color;">Type: @type</span>
-            </div>
-        """
-    node_hover_tool = HoverTool(tooltips=TOOLTIPS, names=['node'])
-    f.add_tools(node_hover_tool, BoxZoomTool(), ResetTool())
 
     output_file(f"{G.graph['level']}_network.html")
     # show(f)
@@ -479,14 +538,15 @@ def main():
     pathway2 = "R-HSA-6814122"  # Cooperation of PDCL (PhLP1) and TRiC/CCT in G-protein beta folding
     pathway3 = "R-HSA-9648002"  # Ras Processing
 
+    os.chdir(os.path.dirname(os.path.abspath(sys.executable)) + "\\..\\..")
     print(os.getcwd())
 
-    g = create_pathway_interaction_network(pathway1, proteoforms, with_sm, "resources/pathway_networks/" + pathway1)
-    p = plot_interaction_network(g, coloring=Coloring.ENTITY_TYPE, plot_width=600, plot_height=500,
-                                 title="Test title",
-                                 legend_location="right")
-    # graphs = create_pathway_interaction_networks(pathway1, "resources/pathway_networks/" + pathway1)
-    # p = plot_pathway_all_levels(pathway1, out_path="resources/pathway_networks/" + pathway1, graphs=graphs, coloring=Coloring.ENTITY_TYPE)
+    # g = create_pathway_interaction_network(pathway1, proteoforms, with_unique_sm, "resources/pathway_networks/" + pathway1)
+    # p = plot_interaction_network(g, coloring=Coloring.ENTITY_TYPE, plot_width=600, plot_height=500,
+    #                             title="Test title",
+    #                             legend_location="right")
+    graphs = create_pathway_interaction_networks(pathway1, "resources/pathway_networks/")
+    p = plot_pathway_all_levels(pathway1, out_path="resources/pathway_networks/", graphs=graphs, coloring=Coloring.ENTITY_TYPE)
     show(p)
     # p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.ENTITY_TYPE)
     # # show(p)
