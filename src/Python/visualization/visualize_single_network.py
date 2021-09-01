@@ -9,8 +9,7 @@ import pandas as pd
 from bokeh.io import output_file, save
 from bokeh.io import show
 from bokeh.layouts import layout
-from bokeh.models import (BoxZoomTool, HoverTool,
-                          ResetTool, ColumnDataSource, Legend)
+from bokeh.models import (ColumnDataSource, Legend)
 from bokeh.models import Div
 from bokeh.palettes import Colorblind
 # Prepare Data
@@ -18,9 +17,9 @@ from bokeh.plotting import figure
 from bokeh.transform import cumsum
 
 from config import get_entity_color, COLOR_IO, COLOR_CO, COLOR_RO, COLOR_CC, with_sm, no_sm, \
-    with_unique_sm, proteoforms
+    with_unique_sm
 from lib.graph_database_access import get_pathway_name
-from lib.networks import create_pathway_interaction_network, create_pathway_interaction_networks
+from lib.networks import create_pathway_interaction_networks
 
 
 class Coloring(Enum):
@@ -28,7 +27,6 @@ class Coloring(Enum):
     REACTION = "Reaction"
     PATHWAY = "Pathway"
     BRIDGES = "Bridges"
-    ARTICULATIONS = "Articulation Points"
 
 
 def show_graph_with_lcc(g):
@@ -89,12 +87,16 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, **kwargs):
 
     # Display edges
 
+    highlight_bridges = 'highlight_bridges' in kwargs and kwargs['highlight_bridges']
+
     for start, end in G.edges:
         if kwargs["v"] if "v" in kwargs else False:
             print(f"Edge from {start} -- {end}")
         x_start, y_start = pos[start]
         x_end, y_end = pos[end]
-        f.line([x_start, x_end], [y_start, y_end], line_width=2, line_color="black")
+        line_color = "#FF0000" if highlight_bridges and G.edges[start, end]['Bridge'] else "black"
+        line_width = 4 if highlight_bridges and G.edges[start, end]['Bridge'] else 2
+        f.line([x_start, x_end], [y_start, y_end], line_color=line_color, line_width=line_width)
 
     if coloring == Coloring.ENTITY_TYPE:
 
@@ -103,12 +105,16 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, **kwargs):
         x_values = []
         y_values = []
         entity_colors = []
+        entity_border_colors = []
+        entity_border_widths = []
 
         ids_sm = []
         types_sm = []
         x_values_sm = []
         y_values_sm = []
         entity_colors_sm = []
+        entity_border_colors_sm = []
+        entity_border_widths_sm = []
 
         for id in G.nodes:
             if G.nodes[id]['type'] == "SimpleEntity":
@@ -119,6 +125,15 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, **kwargs):
                 entity_colors_sm.append(G.nodes[id]['entity_color'])
                 types_sm.append(G.nodes[id]['type'])
                 ids_sm.append(G.nodes[id]['label'])
+                if 'highlight_articulations' in kwargs and kwargs['highlight_articulations'] and G.nodes[id][
+                    'Articulation Point']:
+                    entity_border_colors_sm.append("#FF0000")
+                    entity_border_widths_sm.append(3)
+                else:
+                    entity_border_colors_sm.append("black")
+                    entity_border_widths_sm.append(1)
+
+
             else:
                 if id not in pos.keys():
                     raise RuntimeError(f"Position not found for Accessioned Entity with key {id}")
@@ -127,91 +142,44 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, **kwargs):
                 entity_colors.append(G.nodes[id]['entity_color'])
                 types.append(G.nodes[id]['type'])
                 ids.append(G.nodes[id]['label'])
+                if 'highlight_articulations' in kwargs and kwargs['highlight_articulations'] and G.nodes[id][
+                    'Articulation Point']:
+                    entity_border_colors.append("#FF0000")
+                    entity_border_widths.append(3)
+                else:
+                    entity_border_colors.append("black")
+                    entity_border_widths.append(1)
 
         data = {
             'id': ids,
             'type': types,
             'x': x_values,
             'y': y_values,
-            'entity_color': entity_colors
+            'entity_color': entity_colors,
+            'entity_border_color': entity_border_colors,
+            'line_width': entity_border_widths
         }
         data_sm = {
             'id': ids_sm,
             'type': types_sm,
             'x': x_values_sm,
             'y': y_values_sm,
-            'entity_color': entity_colors_sm
+            'entity_color': entity_colors_sm,
+            'entity_border_color': entity_border_colors_sm,
+            'line_width': entity_border_widths_sm
+
         }
 
         if len(data_sm['id']) > 0:
             f.circle(x='x', y='y',
                      size=20,
-                     fill_color='entity_color', line_color='black',
+                     fill_color='entity_color', line_color='entity_border_color', line_width='line_width',
                      legend_label="Small Molecules",
                      source=ColumnDataSource(data_sm))
 
         f.rect(x='x', y='y',
                height=0.08, width=0.11,
-               fill_color='entity_color', line_color='black',
-               legend_label=G.graph["level"].title(),
-               source=ColumnDataSource(data))
-        f.legend.title = coloring.value
-    elif coloring == Coloring.BRIDGES:
-        ids = []
-        types = []
-        x_values = []
-        y_values = []
-        entity_colors = []
-
-        ids_sm = []
-        types_sm = []
-        x_values_sm = []
-        y_values_sm = []
-        entity_colors_sm = []
-
-        for id in G.nodes:
-            if G.nodes[id]['type'] == "SimpleEntity":
-                if id not in pos.keys():
-                    raise RuntimeError(f"Position not found for Simple Entity with key {id}")
-                x_values_sm.append(pos[id][0])
-                y_values_sm.append(pos[id][1])
-                entity_colors_sm.append(G.nodes[id]['entity_color'])
-                types_sm.append(G.nodes[id]['type'])
-                ids_sm.append(G.nodes[id]['label'])
-            else:
-                if id not in pos.keys():
-                    raise RuntimeError(f"Position not found for Accessioned Entity with key {id}")
-                x_values.append(pos[id][0])
-                y_values.append(pos[id][1])
-                entity_colors.append(G.nodes[id]['entity_color'])
-                types.append(G.nodes[id]['type'])
-                ids.append(G.nodes[id]['label'])
-
-        data = {
-            'id': ids,
-            'type': types,
-            'x': x_values,
-            'y': y_values,
-            'entity_color': entity_colors
-        }
-        data_sm = {
-            'id': ids_sm,
-            'type': types_sm,
-            'x': x_values_sm,
-            'y': y_values_sm,
-            'entity_color': entity_colors_sm
-        }
-
-        if len(data_sm['id']) > 0:
-            f.circle(x='x', y='y',
-                     size=20,
-                     fill_color='entity_color', line_color='black',
-                     legend_label="Small Molecules",
-                     source=ColumnDataSource(data_sm))
-
-        f.rect(x='x', y='y',
-               height=0.08, width=0.11,
-               fill_color='entity_color', line_color='black',
+               fill_color='entity_color', line_color='entity_border_color', line_width='line_width',
                legend_label=G.graph["level"].title(),
                source=ColumnDataSource(data))
         f.legend.title = coloring.value
@@ -380,7 +348,9 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
                                  plot_width=plot_widths[i],
                                  plot_height=plot_size,
                                  toolbar_location=None, title=titles_with_unique_sm[i],
-                                 legend_location=legend_location_all[i])
+                                 legend_location=legend_location_all[i],
+                                 highlight_articulations=(kwargs['highlight_articulations'] if 'highlight_articulations' in kwargs else False),
+                                 highlight_bridges=(kwargs['highlight_bridges'] if 'highlight_bridges' in kwargs else False))
         for i in range(3)
     ]
 
@@ -395,7 +365,9 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
         plot_interaction_network(graphs_with_sm[i], coloring=coloring, pos=pos_all[i], plot_width=plot_widths[i],
                                  plot_height=plot_size,
                                  toolbar_location=None, title=titles_with_sm[i],
-                                 legend_location=legend_location_all[i])
+                                 legend_location=legend_location_all[i],
+                                 highlight_articulations=(kwargs['highlight_articulations'] if 'highlight_articulations' in kwargs else False),
+                                 highlight_bridges=(kwargs['highlight_bridges'] if 'highlight_bridges' in kwargs else False))
         for i in range(3)
     ]
     # if coloring != Coloring.ENTITY_TYPE:
@@ -405,7 +377,9 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
         plot_interaction_network(graphs_no_sm[i], coloring=coloring, pos=pos_all[i], plot_width=plot_widths[i],
                                  plot_height=plot_size,
                                  toolbar_location=None, title=titles_no_sm[i],
-                                 legend_location=legend_location_all[i])
+                                 legend_location=legend_location_all[i],
+                                 highlight_articulations=(kwargs['highlight_articulations'] if 'highlight_articulations' in kwargs else False),
+                                 highlight_bridges=(kwargs['highlight_bridges'] if 'highlight_bridges' in kwargs else False))
         for i in range(3)
     ]
 
@@ -534,7 +508,7 @@ def plot_pathways(pathways, level, sm, coloring, v=False):
 
 
 def main():
-    pathway1 = "R-HSA-9634600"  # Regulation of glycolysis by fructose 2,6-bisphosphate metabolism
+    pathway1 = "R-HSA-6803211"
     pathway2 = "R-HSA-6814122"  # Cooperation of PDCL (PhLP1) and TRiC/CCT in G-protein beta folding
     pathway3 = "R-HSA-9648002"  # Ras Processing
 
@@ -546,7 +520,10 @@ def main():
     #                             title="Test title",
     #                             legend_location="right")
     graphs = create_pathway_interaction_networks(pathway1, "resources/pathway_networks/")
-    p = plot_pathway_all_levels(pathway1, out_path="resources/pathway_networks/", graphs=graphs, coloring=Coloring.ENTITY_TYPE)
+    p = plot_pathway_all_levels(pathway3, out_path="resources/pathway_networks/", graphs=graphs,
+                                coloring=Coloring.ENTITY_TYPE,
+                                highlight_articulations=False,
+                                highlight_bridges=False)
     show(p)
     # p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.ENTITY_TYPE)
     # # show(p)

@@ -23,8 +23,8 @@ def create_pathway_interaction_network(pathway, level, method, out_path=""):
         participants = {level: get_participants_by_pathway(pathway, level, out_path) for level in [level, sm]}
         components = {level: get_components_by_pathway(pathway, level, out_path) for level in [level, sm]}
         create_interaction_network(level, method, participants, components, out_path, pathway)
-    else:
-        print(f"    * Network {filename} already exists..")
+    # else:
+    #     print(f"    * Network {filename} already exists..")
     G = read_graph(filename)
 
     missing_bridges = False

@@ -133,7 +133,7 @@ def get_empty_participants_dataframe(level):
 
 
 def get_participants_by_pathway(pathway, level, out_path=""):
-    print(f"Getting participants for pathway {pathway} for level {level}")
+    # print(f"Getting participants for pathway {pathway} for level {level}")
 
     filename = out_path + "participants/pathway_" + pathway + "_" + level + ".csv"
 
@@ -188,7 +188,7 @@ def get_complexes_by_pathway(pathway):
 
 
 def get_components_by_pathway(pathway, level, out_path=""):
-    print(f"Getting components for pathway {pathway} for level {level}")
+    # print(f"Getting components for pathway {pathway} for level {level}")
     if len(pathway) > 0:
         # Get list of participating complexes
         df_complexes = get_complexes_by_pathway(pathway)
@@ -257,7 +257,7 @@ def get_complexes():
 
 
 def get_complex_components_by_complex(complex, level, out_path=""):
-    print(f"\tGetting components of complex: {complex}")
+    # print(f"\tGetting components of complex: {complex}")
     filename = out_path + "complexes/complex_" + complex + "_" + level + ".csv"
 
     if not path.exists(filename):
