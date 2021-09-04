@@ -16,8 +16,8 @@ from bokeh.palettes import Colorblind
 from bokeh.plotting import figure
 from bokeh.transform import cumsum
 
-from config import get_entity_color, COLOR_IO, COLOR_CO, COLOR_RO, COLOR_CC, with_sm, no_sm, \
-    with_unique_sm
+import config
+from config import get_entity_color, COLOR_IO, COLOR_CO, COLOR_RO, COLOR_CC, no_sm
 from lib.graph_database_access import get_pathway_name
 from lib.networks import create_pathway_interaction_networks
 
@@ -287,6 +287,71 @@ def select_common_nodes(smaller_graph, larger_graph):
     return common
 
 
+def get_positions(graphs):
+    """
+    Get positions for the vertices of the 9 graphs, methods x levels combinations
+
+    :param graphs: dictionary with methods to construct graphs as methods and a list of graphs (for each level) as values
+    :return: dictionary with the same keys as graphs but with positions of vertices as values
+    """
+    # The graph that contains all other nodes and more is the proteoforms with unique small molecule ids in each reaction
+
+    # Vertically:
+    # -- With small molecules: Keep proteoforms in the same position and small molecules are recalculated
+    # -- Without small molecules: Keep proteoforms in the same position.
+
+    pos = {
+        config.no_sm: [{} for g in graphs[config.no_sm]],
+        config.with_sm: [{} for g in graphs[config.with_sm]],
+        config.with_unique_sm: [{} for g in graphs[config.with_unique_sm]]
+    }
+
+    # For the proteoforms network With reaction-unique small molecules
+    pos[config.with_unique_sm][2] = nx.spring_layout(graphs[config.with_unique_sm][2])
+
+    # For the proteoforms network With not unique small molecules
+    # Fix all proteoforms and set the position for the small molecules freely
+    fixed_nodes = []
+    fixed_positions = {}
+    for node in graphs[config.with_unique_sm][2].nodes:  # For each node in the reaction-unique id
+        if node.startswith("sm"):
+            name_without_reaction = graphs[config.with_unique_sm][2].nodes[node]['label']
+            fixed_positions[name_without_reaction] = pos[config.with_unique_sm][2][node]  # Get the name of the small molecule without the reaction
+        else:
+            fixed_nodes.append(node)
+            fixed_positions[node] = pos[config.with_unique_sm][2][node]
+    pos[config.with_sm][2] = nx.spring_layout(graphs[config.with_sm][2], pos=fixed_positions, fixed=fixed_positions.keys())
+
+    # Horizontally:
+    # With unique small molecules:
+    # -- Proteins take the position of the first proteoform with the same accession. Small molecules are fixed.
+    # -- Genes take the position of the first protein comming from the same gene. Small molecules are fixed.
+
+    # For the proteoforms network With reaction-unique small molecules
+    # 0 - genes, 1 - proteins, 2 proteoforms
+    for i in reversed(range(2)):  # Select graphs of proteins and genes with indexes 1 and 0
+        for node in graphs[config.with_unique_sm][i + 1].nodes:                              # For each node in the larger network
+            prev_id = graphs[config.with_unique_sm][i + 1].nodes[node]['prevId']              # Get the predecesor
+            pos[config.with_unique_sm][i][prev_id] = pos[config.with_unique_sm][i + 1][node]  # Set position in the smaller network
+            print(f"Set position for {prev_id} using {node}")
+
+    # For the proteoforms network With not unique small molecules
+    # Leave small molecules fixed, recalculate the others
+    # 0 - genes, 1 - proteins, 2 proteoforms
+    for i in reversed(range(2)):  # Select graphs of proteins and genes with indexes 1 and 0
+        fixed_positions = {}
+        for node in graphs[config.with_sm][i + 1].nodes:                                    # For each node in the larger network
+            if node.startswith("sm"):
+                fixed_positions[node] = pos[config.with_sm][i+1][node]
+        pos[config.with_sm][i] = nx.spring_layout(graphs[config.with_sm][i], pos=fixed_positions, fixed=fixed_positions.keys())
+
+    # For the proteoforms network without small molecules
+    # Copy directly the position of all proteoforms
+    pos[config.no_sm] = pos[config.with_sm]
+
+    return pos
+
+
 def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_path="../../reports/pathways/",
                             coloring=Coloring.ENTITY_TYPE,
                             graphs=None, **kwargs):
@@ -308,14 +373,18 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
     if len(name) == 0:
         return
 
-    graphs_no_sm = list(graphs[no_sm].values())
-    graphs_with_sm = list(graphs[with_sm].values())
-    graphs_with_unique_sm = list(graphs[with_unique_sm].values())
+    graphs = {
+        config.no_sm: list(graphs[no_sm].values()),
+        config.with_sm: list(graphs[config.with_sm].values()),
+        config.with_unique_sm: list(graphs[config.with_unique_sm].values())
+    }
 
-    titles_no_sm = ['A) Genes without SM', 'B) Proteins without SM', 'C) Proteoforms without SM']
-    titles_with_sm = ['D) Proteins with SM', 'E) Proteins with SM', 'F) Proteoforms with SM']
-    titles_with_unique_sm = ['G) Proteins with unique SM', 'H) Proteins with unique SM',
-                             'I) Proteoforms with unique SM']
+    titles = {
+        config.no_sm: ['A) Genes without SM', 'B) Proteins without SM', 'C) Proteoforms without SM'],
+        config.with_sm: ['D) Proteins with SM', 'E) Proteins with SM', 'F) Proteoforms with SM'],
+        config.with_unique_sm: ['G) Proteins with unique SM', 'H) Proteins with unique SM',
+                                'I) Proteoforms with unique SM']
+    }
 
     plot_size = 600
     legend_location_all = [None, None, 'right']
@@ -324,64 +393,23 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
         legend_location_all = ['top_right', 'top_right', 'top_right']
         plot_widths = [plot_size, plot_size, plot_size]
 
-    # Set all these position values to make the 3 level plots show the translation product entities in the same location
-    pos_all = [nx.spring_layout(g) for g in graphs_with_unique_sm]
+    pos = get_positions(graphs)
 
-    fixed_all = [set(), set(), set()]
-
-    # For each node in the protein graph assign it's position to the first proteoform node with the same accession
-    # For each node in the gene graph, assign it's position to the first protein node with that gene as prevId in the protein network
-
-    # 0 - genes, 1 - proteins, 2 proteoforms
-    for i in reversed(range(2)):  # Select graphs of proteins and genes with indexes 1 and 0
-        for node in graphs_with_unique_sm[i + 1].nodes:  # For each node in the larger network
-            prevId = graphs_with_unique_sm[i + 1].nodes[node]['prevId']  # Get the predecesor
-            # if prevId in node_set_unassigned[i]:                    # If predecesor has no position yet
-            pos_all[i][prevId] = pos_all[i + 1][node]  # Set position in the smaller network
-            # node_set_unassigned[i].remove(prevId)               # Mark predecesor as assigned to a position
-            # fixed_all[i].add(prevId)
-        # pos_all[i] = nx.spring_layout(graphs_with_sm[i], pos=pos_all[i], fixed=fixed_all[i])
-
-    pos_all = [nx.spring_layout(g) for g in graphs_with_unique_sm]
-    figures_with_unique_sm = [
-        plot_interaction_network(graphs_with_unique_sm[i], coloring=coloring, pos=pos_all[i],
-                                 plot_width=plot_widths[i],
-                                 plot_height=plot_size,
-                                 toolbar_location=None, title=titles_with_unique_sm[i],
-                                 legend_location=legend_location_all[i],
-                                 highlight_articulations=(kwargs['highlight_articulations'] if 'highlight_articulations' in kwargs else False),
-                                 highlight_bridges=(kwargs['highlight_bridges'] if 'highlight_bridges' in kwargs else False))
-        for i in range(3)
-    ]
-
-    pos_all = [nx.spring_layout(g) for g in graphs_with_sm]
-    # For each node in the gene graph, assign it's position to the first node with that id in the protein network
-    for i in reversed(range(2)):  # Select graphs of proteins and genes with indexes 1 and 0
-        for node in graphs_with_sm[i + 1].nodes:  # For each node in the larger network
-            prevId = graphs_with_sm[i + 1].nodes[node]['prevId']  # Get the predecesor
-            pos_all[i][prevId] = pos_all[i + 1][node]  # Set position in the smaller network
-    pos_all = [nx.spring_layout(g) for g in graphs_with_sm]
-    figures_with_sm = [
-        plot_interaction_network(graphs_with_sm[i], coloring=coloring, pos=pos_all[i], plot_width=plot_widths[i],
-                                 plot_height=plot_size,
-                                 toolbar_location=None, title=titles_with_sm[i],
-                                 legend_location=legend_location_all[i],
-                                 highlight_articulations=(kwargs['highlight_articulations'] if 'highlight_articulations' in kwargs else False),
-                                 highlight_bridges=(kwargs['highlight_bridges'] if 'highlight_bridges' in kwargs else False))
-        for i in range(3)
-    ]
-    # if coloring != Coloring.ENTITY_TYPE:
-    #     legend_location_all = [None, None, None]
-    #     plot_widths = [plot_size, plot_size, plot_size]
-    figures_no_sm = [
-        plot_interaction_network(graphs_no_sm[i], coloring=coloring, pos=pos_all[i], plot_width=plot_widths[i],
-                                 plot_height=plot_size,
-                                 toolbar_location=None, title=titles_no_sm[i],
-                                 legend_location=legend_location_all[i],
-                                 highlight_articulations=(kwargs['highlight_articulations'] if 'highlight_articulations' in kwargs else False),
-                                 highlight_bridges=(kwargs['highlight_bridges'] if 'highlight_bridges' in kwargs else False))
-        for i in range(3)
-    ]
+    figures = {
+        method: [
+            plot_interaction_network(graphs[method][i], coloring=coloring, pos=pos[method][i],
+                                     plot_width=plot_widths[i],
+                                     plot_height=plot_size,
+                                     toolbar_location=None, title=titles[method][i],
+                                     legend_location=legend_location_all[i],
+                                     highlight_articulations=(kwargs[
+                                                                  'highlight_articulations'] if 'highlight_articulations' in kwargs else False),
+                                     highlight_bridges=(
+                                         kwargs['highlight_bridges'] if 'highlight_bridges' in kwargs else False))
+            for i in range(3)
+        ]
+        for method in config.METHODS
+    }
 
     if kwargs["v"] if "v" in kwargs else False:
         import os
@@ -462,9 +490,9 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
     l = layout([
         [Div(text=f"{title}")],
         # [Div(text=notes)],
-        figures_no_sm,
-        figures_with_sm,
-        figures_with_unique_sm
+        figures[config.no_sm],
+        figures[config.with_sm],
+        figures[config.with_unique_sm]
     ])
 
     # show(l)
@@ -519,7 +547,7 @@ def main():
     # p = plot_interaction_network(g, coloring=Coloring.ENTITY_TYPE, plot_width=600, plot_height=500,
     #                             title="Test title",
     #                             legend_location="right")
-    graphs = create_pathway_interaction_networks(pathway1, "resources/pathway_networks/")
+    graphs = create_pathway_interaction_networks(pathway3, "resources/pathway_networks/")
     p = plot_pathway_all_levels(pathway3, out_path="resources/pathway_networks/", graphs=graphs,
                                 coloring=Coloring.ENTITY_TYPE,
                                 highlight_articulations=False,

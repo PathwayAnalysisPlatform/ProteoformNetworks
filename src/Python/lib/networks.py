@@ -142,7 +142,7 @@ def add_nodes(G, df, method=with_sm):
                        pathways=set(),
                        complexes=set()
                        )
-            if row['Type'] == 'SimpleEntity':
+            if row['Type'].startswith("S"):
                 G.graph['num_small_molecules'] += 1
             else:
                 G.graph['num_entities'] += 1
