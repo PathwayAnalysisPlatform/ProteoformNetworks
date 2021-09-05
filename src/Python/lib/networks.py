@@ -636,6 +636,8 @@ def set_bridges(G):
         for edge in list(nx.bridges(G)):
             nx.set_edge_attributes(G, {edge: {"Bridge": True}})
 
+def set_num_bridges(G):
+    G.graph["Bridges"] = len([True for node1, node2, data in G.edges(data=True) if data['Bridge']])
 
 if __name__ == '__main__':
     print(f"Working directory: {os.getcwd()}")
