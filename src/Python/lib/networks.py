@@ -305,12 +305,12 @@ def update_json_file(G, level, method, out_path="", label=""):
         name_start += label + "_"
 
     json_file = get_json_filename(level, method, out_path, label)
-    print(f"Updating file {json_file}")
+    # print(f"Updating file {json_file}")
 
     with open(json_file, 'w+') as outfile:
         data = nx.json_graph.node_link_data(G)
         json.dump(data, outfile)
-    print(f"Updated json file.")
+    # print(f"Updated json file for {label}")
 
 def save_interaction_network(G, level, method, out_path="", label=""):
     """
@@ -619,9 +619,14 @@ def set_articulation_points(G):
         nx.set_node_attributes(G, False, "Articulation Point")
 
         # Calculate articulation points
-        for node in list(nx.articulation_points(G)):
+        art_points = list(nx.articulation_points(G))
+        for node in art_points:
             G.nodes[node]["Articulation Point"] = True
 
+        G.graph['Articulation Points'] = len(art_points)
+
+def set_num_articulation_points(G):
+    G.graph['Articulation Points'] = len([x for x,y in G.nodes(data=True) if y['Articulation Point']])
 
 def set_bridges(G):
     if not any("Bridge" in G.edges[edge] for edge in G.edges):
