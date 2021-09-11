@@ -1,12 +1,12 @@
 import re
-import os.path
 from os import path
 
 import pandas as pd
 from neo4j import GraphDatabase
 
-from config import proteoforms, LEVELS
-from queries import QUERIES_PARTICIPANTS, QUERIES_COMPONENTS, get_query_participants_by_pathway
+from config import proteoforms, LEVELS, proteins, genes
+from queries import QUERIES_PARTICIPANTS, QUERIES_COMPONENTS, get_query_participants_by_pathway, \
+    QUERY_GET_COMPLEXES_BY_PATHWAY_OR_REACTION
 
 
 def get_query_result(query):
@@ -82,13 +82,17 @@ def fix_neo4j_values(df, level):
         return df
 
     df['Id'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.Id) if x.Type == 'SimpleEntity' else x.Id, axis=1)
-    df['Id'] = df.apply(lambda x: str(x.Id).replace(" ", "_") if x.Type == 'SimpleEntity' else x.Id, axis=1)
+    df['Id'] = df.apply(lambda x: str(x.Id).replace(" ", "_").strip() if x.Type == 'SimpleEntity' else x.Id, axis=1)
 
-    # df['UniqueId'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.UniqueId) if x.Type == 'SimpleEntity' else x.Id, axis=1)
-    # df['UniqueId'] = df.apply(lambda x: str(x.UniqueId).replace(" ", "_") if x.Type == 'SimpleEntity' else x.Id, axis=1)
+    if "UniqueId" in df.columns:
+        df['UniqueId'] = df.apply(
+            lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.UniqueId) if x.Type == 'SimpleEntity' else x.Id, axis=1)
+        df['UniqueId'] = df.apply(lambda x: str(x.UniqueId).replace(" ", "_") if x.Type == 'SimpleEntity' else x.Id,
+                                  axis=1)
 
     if level == proteoforms:
-        df['Id'] = df['Id'].apply(make_proteoform_string)
+        df['Id'] = df.apply(
+            lambda x: make_proteoform_string(x.Id) if x.Type == 'EntityWithAccessionedSequence' else x.Id, axis=1)
     df['Name'] = df['Name'].apply(lambda x: re.sub("\s*\[[\s\w]*\]\s*", '', x))
     return df
 
@@ -112,30 +116,98 @@ def get_participants(level, location=""):
     else:
         return pd.read_csv(filename)
 
-def get_participants_by_pathway(level, pathway):
-    query = get_query_participants_by_pathway(level, pathway)
-    participants = get_query_result(query)
-    participants = fix_neo4j_values(participants, level)
+
+def get_empty_participants_dataframe(level):
+    if level == genes:
+        return pd.DataFrame(
+            columns=["Pathway", "Reaction", "Entity", "Name", "Type", "Id", "Database", "Role"])
+    elif level == proteins:
+        return pd.DataFrame(
+            columns=["Pathway", "Reaction", "Entity", "Name", "Type", "Id", "PrevId", "Database", "Role"])
+    elif level == proteoforms:
+        return pd.DataFrame(
+            columns=["Pathway", "Reaction", "Entity", "Name", "Type", "Id", "PrevId", "Database", "Role"])
+    else:
+        return pd.DataFrame(
+            columns=["Pathway", "Reaction", "Entity", "Name", "Type", "Id", "UniqueId", "Database", "Role"])
+
+
+def get_participants_by_pathway(pathway, level, out_path=""):
+    # print(f"Getting participants for pathway {pathway} for level {level}")
+
+    filename = out_path + "participants/pathway_" + pathway + "_" + level + ".csv"
+
+    participants = pd.DataFrame()
+    if not path.exists(filename):
+        query = get_query_participants_by_pathway(level, pathway)
+        participants = get_query_result(query)
+        participants = fix_neo4j_values(participants, level)
+        if len(participants) == 0:
+            participants = get_empty_participants_dataframe(level)
+        participants.to_csv(filename)
+    else:
+        participants = pd.read_csv(filename)
+        if len(participants) == 0:
+            participants = get_empty_participants_dataframe(level)
     return participants
 
 
-def get_components(level, location=""):
+def get_empty_components_dataframe(level):
+    if level == genes:
+        return pd.DataFrame(columns=['Complex', 'Entity', 'Name', 'Type', 'Id'])
+    elif level == proteins:
+        return pd.DataFrame(columns=['Complex', 'Entity', 'Name', 'Type', 'Id', 'PrevId'])
+    elif level == proteoforms:
+        return pd.DataFrame(columns=['Complex', 'Entity', 'Name', 'Type', 'Id', 'PrevId'])
+    else:
+        return pd.DataFrame(columns=['Complex', 'Entity', 'Name', 'Type', 'Id', 'UniqueId'])
 
+
+def get_components(level, location=""):
     filename = location + "records_complex_components_" + level + ".csv"
 
     if not path.exists(filename):
         components = get_query_result(QUERIES_COMPONENTS[level])
         components = fix_neo4j_values(components, level)
         components.to_csv(filename)
+        if len(components) == 0:
+            return get_empty_components_dataframe(level)
         return components
     else:
-        return pd.read_csv(filename)
+       components = pd.read_csv(filename)
+       if len(components) == 0:
+           components = get_empty_components_dataframe(level)
+       return components
 
-def get_components_by_pathway(level, pathway):
-        query = get_query_participants_by_pathway(level, pathway)
-        participants = get_query_result(query)
-        participants = fix_neo4j_values(participants, level)
-        return participants
+
+def get_complexes_by_pathway(pathway):
+    query = QUERY_GET_COMPLEXES_BY_PATHWAY_OR_REACTION.replace("Pathway{speciesName:'Homo sapiens'}",
+                                                               f"Pathway{{speciesName:'Homo sapiens', stId:'{pathway}'}}")
+    complexes = get_query_result(query)
+    return complexes
+
+
+def get_components_by_pathway(pathway, level, out_path=""):
+    # print(f"Getting components for pathway {pathway} for level {level}")
+    if len(pathway) > 0:
+        # Get list of participating complexes
+        df_complexes = get_complexes_by_pathway(pathway)
+
+        if len(df_complexes) > 0:
+            # Get the components of each complex
+            dfs_components = [get_complex_components_by_complex(complex, level, out_path) for complex in
+                              df_complexes["Complex"]]
+            components = pd.concat(dfs_components)
+            return components
+        else:
+            return get_empty_components_dataframe(level)
+    else:
+        query = QUERIES_COMPONENTS[level]
+        components = get_query_result(query)
+        components = fix_neo4j_values(components, level)
+        if len(components) == 0:
+            components = get_empty_components_dataframe(level)
+        return components
 
 
 if __name__ == "__main__":
@@ -146,14 +218,15 @@ if __name__ == "__main__":
 
 
 def get_pathway_name(pathway):
-    query = f"MATCH (p:Pathway{{stId:\"{pathway}\", speciesName:\"Homo sapiens\"}}) RETURN p.displayName as Name"
+    query = f"MATCH (p:Pathway{{stId:\"{pathway}\", speciesName:\"Homo sapiens\"}})-[:hasEvent]->(rle:ReactionLikeEvent{{speciesName:\"Homo sapiens\"}})" \
+            f" RETURN DISTINCT p.displayName as Name"
     return get_query_result(query)
 
 
 def get_pathways():
     query = """
-    MATCH (p:Pathway{speciesName:"Homo sapiens"})
-    RETURN p.stId as stId, p.displayName as displayName
+    MATCH (p:Pathway{speciesName:"Homo sapiens"})-[:hasEvent]->(rle:ReactionLikeEvent{speciesName:"Homo sapiens"})
+    RETURN DISTINCT p.stId as stId, p.displayName as displayName
     """
     return get_query_result(query)
 
@@ -169,7 +242,9 @@ def get_low_level_pathways():
 
 
 def get_reactions_by_pathway(pathway):
-    return f"MATCH (p:Pathway{{stId:\"{pathway}\"}})-[:hasEvent]->(rle:Reaction{{speciesName:'Homo sapiens'}}) RETURN rle.stId as reaction"
+    query = f"MATCH (p:Pathway{{stId:\"{pathway}\"}})-[:hasEvent]->(rle:Reaction{{speciesName:'Homo sapiens'}}) RETURN rle.stId as reaction"
+    return get_query_result(query)
+
 
 def get_reactions():
     query = "MATCH (rle:ReactionLikeEvent{speciesName:\"Homo sapiens\"}) RETURN rle.stId as stId"
@@ -181,64 +256,26 @@ def get_complexes():
     return get_query_result(query)
 
 
-def get_complex_components_by_complex(complex, level, showSmallMolecules, verbose=True):
-    if level in ["genes", "proteins"]:
-        query = f"""
-        MATCH (c:Complex{{stId:"{complex}"}})-[:hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity)-[:referenceEntity]->(re:ReferenceEntity)
-        WHERE last(labels(pe)) in ["EntityWithAccessionedSequence" """
-        if showSmallMolecules:
-            query += ", \"SimpleEntity\""
-        query += """
-        ]
-        RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName AS Name, last(labels(pe)) as Type, 
-        CASE WHEN last(labels(pe)) = \"SimpleEntity\" THEN pe.displayName """
-        if level == "genes":
-            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN head(re.geneName) ELSE re.identifier END as Id "
-        else:
-            query += " WHEN last(labels(pe)) = \"EntityWithAccessionedSequence\" THEN re.identifier ELSE re.identifier END as Id, head(re.geneName) as PrevId "
-        query += """ 
-        ORDER BY Complex
-        """
+def get_complex_components_by_complex(complex, level, out_path=""):
+    # print(f"\tGetting components of complex: {complex}")
+    filename = out_path + "complexes/complex_" + complex + "_" + level + ".csv"
+
+    if not path.exists(filename):
+        query = QUERIES_COMPONENTS[level].replace(
+            "Complex{speciesName:'Homo sapiens'}",
+            f"Complex{{speciesName:'Homo sapiens', stId:'{complex}'}}")
+        components = get_query_result(query)
+        components = fix_neo4j_values(components, level)
+        if len(components) == 0:
+            components = get_empty_components_dataframe(level)
+        components.to_csv(filename)
+        return components
     else:
-        query = f"""
-        MATCH (c:Complex{{stId:"{complex}"}})-[:hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity)-[:referenceEntity]->(re:ReferenceEntity)
-        WHERE last(labels(pe)) in ["EntityWithAccessionedSequence" """
-        if showSmallMolecules:
-            query += ", \"SimpleEntity\""
-        query += """
-        ]
-        WITH DISTINCT c, pe, last(labels(pe)) as Type, re
-        OPTIONAL MATCH (pe)-[:hasModifiedResidue]->(tm:TranslationalModification)-[:psiMod]->(mod:PsiMod)
-        WITH DISTINCT c.stId as Complex, 
-                      pe.stId AS Entity, 
-                      pe.displayName AS Name,
-                      Type,
-                      CASE 
-                        WHEN Type = "SimpleEntity" THEN pe.displayName  
-                        WHEN Type = "EntityWithAccessionedSequence" THEN 
-                            CASE 
-                                WHEN re.variantIdentifier IS NOT NULL THEN re.variantIdentifier 
-                                ELSE re.identifier
-                            END
-                      END  as Id,
-                      mod.identifier as ptm_type,
-                      tm.coordinate as ptm_coordinate
-        ORDER BY ptm_type, ptm_coordinate
-        WITH DISTINCT Complex, Entity, Name, Type, Id, Id as PrevId,
-                        COLLECT(
-                            ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END
-                        ) AS ptms   
-        RETURN DISTINCT Complex, Entity, Name, Type, CASE WHEN Type = "SimpleEntity" THEN Id ELSE (Id+ptms) END as Id, PrevId
-        ORDER BY Complex
-        """
-
-    if (verbose):
-        print(query)
-
-    df = get_query_result(query)
-    df = fix_neo4j_values(df, level)
-
-    return df
+        components = pd.read_csv(filename)
+        if len(components) == 0:
+            components = get_empty_components_dataframe(level)
+        components.to_csv(filename)
+        return components
 
 
 def get_reaction_participants_by_reaction(reaction, level, showSmallMolecules, verbose=False):

@@ -9,6 +9,8 @@ proteins = "proteins"
 proteoforms = "proteoforms"
 
 sm = "sm"
+
+#Methods for constructing interaction networks
 no_sm = "no_sm"                             # Connecting participants in reactions without small molecules
 with_sm = "with_sm"                         # Connect participants with small molecules
 with_unique_sm = "with_unique_sm"           # Connect participants with reaction-unique small molecules

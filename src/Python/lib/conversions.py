@@ -1,15 +1,11 @@
 import os
 from pathlib import Path
-from sys import path
 
 import networkx as nx
 import pandas as pd
 
-import config
 from config import LEVELS
-from networks import add_nodes, add_edges_reaction_participants, add_edges_complex_components
 from lib.dictionaries import convert_tab_to_dict
-from queries import get_reaction_participants, get_complex_components
 
 
 def map_ids(ids, from_database_name='GENENAME', to_database_name='ACC'):

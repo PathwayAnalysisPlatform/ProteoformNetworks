@@ -9,6 +9,84 @@ import pandas as pd
 
 import config
 from config import no_sm, with_sm, with_unique_sm, sm, LEVELS
+from lib.graph_database_access import get_pathway_name, get_participants_by_pathway, get_components_by_pathway, \
+    get_pathways
+
+
+def create_pathway_interaction_network(pathway, level, method, out_path=""):
+    if level not in LEVELS:
+        raise Exception(f"There is no {level} level.")
+
+    filename = get_json_filename(level, method, out_path, pathway)
+    if not Path(filename).exists():
+        print(f"    * Creating network {filename}")
+        participants = {level: get_participants_by_pathway(pathway, level, out_path) for level in [level, sm]}
+        components = {level: get_components_by_pathway(pathway, level, out_path) for level in [level, sm]}
+        create_interaction_network(level, method, participants, components, out_path, pathway)
+    # else:
+    #     print(f"    * Network {filename} already exists..")
+    G = read_graph(filename)
+
+    missing_bridges = False
+    missing_articulations = False
+    if any("Bridge" not in G.edges[edge] for edge in G.edges):
+        set_bridges(G)
+        missing_bridges = True
+
+    if any("Articulation Point" not in G.nodes[node] for node in G.nodes):
+        set_articulation_points(G)
+
+    if missing_articulations or missing_bridges:
+        update_json_file(G, level, method, out_path, pathway)
+
+    return G
+
+
+def create_pathway_interaction_networks(pathway, out_path=""):
+    """
+    Creates interaction networks for a pathway in all three levels, with the 3 contruction methods
+
+    If pathway does not exists, then returns empty networks.
+    :param pathway: Pathway stId string
+    :param out_path:
+    :return: Get dictionary {method: lists of 3 pathways}.
+    """
+
+    name = get_pathway_name(pathway)
+    if len(name) == 0:
+        print(f"Pathway {pathway} does not exist")
+        return {m: {l: nx.Graph() for l in LEVELS} for m in config.METHODS}
+    else:
+        print(f"-- Creating interaction networks for pathway {pathway}")
+        return {
+            m: {level: create_pathway_interaction_network(pathway, level, m, out_path) for level in LEVELS}
+            for m in config.METHODS
+        }
+
+
+def merge_graphs(graphs):
+    # How does the resulting graph look like?
+    # - Vertices: Composition of nodes in all interactomes
+    #    - Merge: sets of Reactions, Pathways, Complexes
+    #    - Copy value of: Id, Type, Entity Color
+    # - Edges: Composition of edges in all interactomes
+    full_graph = nx.compose_all(graphs)  # Add all nodes setting  Id, Type, and entity_color
+
+    for graph in graphs:
+        for node in graph.nodes:
+            full_graph.nodes[node]['reactions'].update(graph.nodes[node]['reactions'])
+            full_graph.nodes[node]['pathways'].update(graph.nodes[node]['pathways'])
+            full_graph.nodes[node]['roles'].update(graph.nodes[node]['roles'])
+            full_graph.nodes[node]['complexes'].update(graph.nodes[node]['complexes'])
+
+
+def get_multiindex():
+    arrays = [
+        [*(["Not Included"] * 3), *(["Included"] * 3), *(["Reaction-Unique Included"] * 3)], [*(LEVELS * 3)]
+    ]
+    tuples = list(zip(*arrays))
+    index = pd.MultiIndex.from_tuples(tuples, names=["Small Molecules", "Entity Level"])
+    return index
 
 
 def print_interactome_details(g):
@@ -20,7 +98,14 @@ def print_interactome_details(g):
     print("\n***********************\n\n")
 
 
-def get_json_filename(level, method, out_path):
+def get_json_filename(level, method, out_path="", label=""):
+    if not isinstance(out_path, str):
+        out_path = out_path.dirname
+    if len(out_path) > 0:
+        if out_path[-1] != '/':
+            out_path += "/"
+    if len(label) > 0:
+        return Path(out_path + label + "_" + level + "_" + method + ".json")
     return Path(out_path + level + "_" + method + ".json")
 
 
@@ -57,7 +142,7 @@ def add_nodes(G, df, method=with_sm):
                        pathways=set(),
                        complexes=set()
                        )
-            if row['Type'] == 'SimpleEntity':
+            if row['Type'].startswith("S"):
                 G.graph['num_small_molecules'] += 1
             else:
                 G.graph['num_entities'] += 1
@@ -69,9 +154,11 @@ def add_nodes(G, df, method=with_sm):
             G.nodes[unique_id]['reactions'].add(row['Reaction'])
             G.nodes[unique_id]['pathways'].add(row['Pathway'])
 
-        if (G.nodes[unique_id]['type'] == "SimpleEntity") or G.nodes[row['Id']]['type'] == "genes":
+        if G.nodes[unique_id]['type'].startswith("S"):
+            G.nodes[unique_id]['prevId'] = row[sm_id_column]
+        elif G.nodes[row['Id']]['type'].startswith("g"):
             G.nodes[unique_id]['prevId'] = row['Id']
-        elif G.nodes[unique_id]['type'] == "proteins" or G.nodes[row['Id']]['type'] == "proteoforms":
+        else:  # G.nodes[unique_id]['type'] == "proteins" or G.nodes[row['Id']]['type'] == "proteoforms":
             G.nodes[unique_id]['prevId'] = row['PrevId']
 
     print(f"{level} level - small molecules: {G.graph['num_small_molecules']}")
@@ -98,7 +185,6 @@ def save_json_graph(G, filename):
         data = nx.json_graph.node_link_data(G)
         json.dump(data, outfile)
     print(f"Created json file.")
-
 
 
 def add_edges_from_product(G, c1, c2, v=False):
@@ -212,7 +298,21 @@ def add_edges_complex_components(G, df, method=with_sm, v=False):
         print(f"From complexes, added {len(G.edges)} edges to the graph.")
 
 
-def save_interactome(G, graphs_path="", label=""):
+def update_json_file(G, level, method, out_path="", label=""):
+
+    name_start = ""
+    if len(label) > 0:
+        name_start += label + "_"
+
+    json_file = get_json_filename(level, method, out_path, label)
+    # print(f"Updating file {json_file}")
+
+    with open(json_file, 'w+') as outfile:
+        data = nx.json_graph.node_link_data(G)
+        json.dump(data, outfile)
+    # print(f"Updated json file for {label}")
+
+def save_interaction_network(G, level, method, out_path="", label=""):
     """
     Create the json file with all attributes.
     Creates a vertices file for the accessioned entities.
@@ -223,25 +323,29 @@ def save_interactome(G, graphs_path="", label=""):
 
     :param G: networkx file with the
     :param level: genes, proteins or protoeforms
-    :param graphs_path: directory where to store the files
+    :param out_path: directory where to store the files
     :param label: string phrase for the file names
     :return: void
     """
-    level = G.graph["level"]
-    method = G.graph["method"]
-    print(f"Storing network level: {level} at directory: {graphs_path}")
+    print(f"Storing network level: {level} at directory: {out_path}")
 
+    if isinstance(out_path, str) and len(out_path) > 0:
+        if out_path[-1] != '/':
+            out_path += "/"
+
+    name_start = ""
     if len(label) > 0:
-        label = label + "_"
+        name_start += label + "_"
 
-    json_file = get_json_filename(level, method, graphs_path)
-    accessioned_entities_file = Path(graphs_path + label + level + "_accessioned_entities.tsv")
-    interactions_file = Path(graphs_path + label + level + "_interactions.tsv")
-    small_molecules_file = Path(graphs_path + label + level + "_small_molecules.tsv")
+    name_start += level + "_" + method + "_"
+    json_file = get_json_filename(level, method, out_path, label)
+    accessioned_entities_file = Path(out_path + name_start + "accessioned_entities.tsv")
+    interactions_file = Path(out_path + name_start + "interactions.tsv")
+    small_molecules_file = Path(out_path + name_start + "small_molecules.tsv")
 
-    if len(str(graphs_path)) > 0:
-        if not os.path.exists(graphs_path):
-            Path(graphs_path).mkdir(parents=True, exist_ok=True)
+    if len(str(out_path)) > 0:
+        if not os.path.exists(out_path):
+            Path(out_path).mkdir(parents=True, exist_ok=True)
 
     with open(json_file, 'w+') as outfile:
         data = nx.json_graph.node_link_data(G)
@@ -266,7 +370,7 @@ def save_interactome(G, graphs_path="", label=""):
     print(f"Created small molecule vertices file for {level}")
 
     if level == "proteins":
-        mapping_file = graphs_path + config.MAPPING_FILE.replace('level', 'genes')
+        mapping_file = out_path + config.MAPPING_FILE.replace('level', 'genes')
         with codecs.open(mapping_file, 'w', "utf-8") as map_file:
             for n, t in G.nodes(data='type'):
                 if t != "SimpleEntity":
@@ -274,7 +378,7 @@ def save_interactome(G, graphs_path="", label=""):
         print(f"Created mapping proteins to genes file.")
 
     if level == config.proteoforms:
-        mapping_file = graphs_path + config.MAPPING_FILE.replace('level', 'proteoforms')
+        mapping_file = out_path + config.MAPPING_FILE.replace('level', 'proteoforms')
         with codecs.open(mapping_file, 'w', "utf-8") as map_file:
             for n, t in G.nodes(data='type'):
                 if t != "SimpleEntity":
@@ -282,7 +386,7 @@ def save_interactome(G, graphs_path="", label=""):
         print(f"Created mapping proteins to proteoforms file.")
 
 
-def create_interaction_network(level, method, participants, components, out_path=""):
+def create_interaction_network(level, method, participants, components, out_path="", label=""):
     """
     Create interaction network with the participants and components provided as parameter.
     It does not care which level the participants are, it simply connects reaction parcitipants and complex participants.
@@ -296,8 +400,7 @@ def create_interaction_network(level, method, participants, components, out_path
     :return: The networkx interaction network
     """
 
-    print("Creating interactome file...")
-    json_file = get_json_filename(level, method, out_path)
+    print("Creating interaction network...")
 
     G = nx.Graph()
     G.graph["level"] = level
@@ -318,21 +421,38 @@ def create_interaction_network(level, method, participants, components, out_path
     else:
         raise Exception("No such method to create the interactome")
 
-    save_interactome(G, out_path, method + "_")
+    for node in G.nodes:
+        G.nodes[node]['complexes'] = list(G.nodes[node]['complexes'])
+        G.nodes[node]['roles'] = list(G.nodes[node]['roles'])
+        G.nodes[node]['reactions'] = list(G.nodes[node]['reactions'])
+        G.nodes[node]['pathways'] = list(G.nodes[node]['pathways'])
+
+    set_bridges(G)
+    set_articulation_points(G)
+
+    save_interaction_network(G, level, method, out_path, label)
     print(f"Finished creating interactome file for {level}-{method}")
     return G
 
 
-def get_interactome(level, method, participants, components, out_path=""):
+def get_or_create_interaction_network(level, method, participants, components, out_path="", label=""):
     """
     Returns a networkx graph instance of the selected interaction network.
     Tries to read from a json file with the network. If the file does not exists it creates it.
+
+    :param level: genes, proteins or proteoforms. This attribute is just to set it as graph property.
+    :param method: "no_sm", "with_sm" or "with_unique_sm". This is just to set is as graph property.
+    :param participants: pandas dataframe with the reaction participants
+    :param components: pandas dataframe with the complex components
+    :param out_path: path to directory to store the json file
+    :param label: Any text to distinguish the graph file, ex. Pathway name
+    :return: The networkx interaction network
     """
 
-    filename = get_json_filename(level, method, out_path)
+    filename = get_json_filename(level, method, out_path, label)
 
     if not Path(filename).exists():
-        create_interaction_network(level, method, participants, components, out_path)
+        create_interaction_network(level, method, participants, components, out_path, label)
     g = read_graph(filename)
 
     return g
@@ -390,8 +510,8 @@ def index_all_vertices(interactomes):
     return vertices, start_index, end_index
 
 
-def save_indexed_vertices(indexed_vertices, graphs_path):
-    vertices_file = Path(graphs_path + "interactome_vertices.tsv")
+def save_indexed_vertices(indexed_vertices, out_path):
+    vertices_file = Path(out_path + "interactome_vertices.tsv")
     with codecs.open(vertices_file, 'w', "utf-8") as fh:
         for v in indexed_vertices:
             fh.write(f"{v}\n")
@@ -438,12 +558,12 @@ def save_ranges(start_indexes, end_indexes, output_path):
         fh.write(f"{start_indexes['SimpleEntity']}\t{end_indexes['SimpleEntity']}\n")
 
 
-def save_interactomes_with_indexed_vertices(interactomes, graphs_path):
+def save_interactomes_with_indexed_vertices(interactomes, out_path):
     """
     Save interactomes as three separate files with the list of edges using indexed vertices.
 
     :param interactomes: dict with a networkx graph for each level
-    :param graphs_path:
+    :param out_path:
     :return: void
     """
     # Gather the gene, protein, proteoform and small molecule vertices together and index all of them
@@ -454,12 +574,12 @@ def save_interactomes_with_indexed_vertices(interactomes, graphs_path):
     assert sorted(indexed_vertices[start_indexes["proteoforms"]:end_indexes["proteoforms"]])
     assert sorted(indexed_vertices[start_indexes["SimpleEntity"]:end_indexes["SimpleEntity"]])
 
-    save_indexed_vertices(indexed_vertices, graphs_path)
+    save_indexed_vertices(indexed_vertices, out_path)
 
     # Create three files with the interactomes
-    save_edges_with_indexed_vertices(interactomes, graphs_path, indexed_vertices, start_indexes, end_indexes)
+    save_edges_with_indexed_vertices(interactomes, out_path, indexed_vertices, start_indexes, end_indexes)
 
-    save_ranges(start_indexes, end_indexes, graphs_path)
+    save_ranges(start_indexes, end_indexes, out_path)
 
     return
 
@@ -472,10 +592,57 @@ def get_sizes(interactome_dict):
     return num_interactions, num_entities, num_small_molecules
 
 
-if __name__ == '__main__':
-    # print(f"Working directory: {os.getcwd()}")
+def get_nodes_and_adjacent(nodes, G):
+    """
+    Get the same input nodes along with their adjacent small molecule nodes. Returns only those nodes that actually
+    exist in G. The non-existing nodes are ignored.
 
-    graphs_path = "../../resources/Reactome/"
-    interactomes = {l: create_interaction_network(l, True, graphs_path) for l in config.LEVELS}
-    print(f"Indexing vertices")
-    save_interactomes_with_indexed_vertices(interactomes, graphs_path)
+    :param nodes: node set
+    :param G: the complete graph
+    :return: a set of nodes with their adjacent small molecule nodes
+    """
+
+    result = set()
+
+    for node in nodes:
+        if node in G.nodes:
+            result.add(node)
+            for neighbor in G.neighbors(node):
+                if G.nodes[neighbor]['type'].startswith("S"):
+                    result.add(neighbor)
+
+    return result
+
+
+def set_articulation_points(G):
+    if not any("Articulation Point" in G.nodes[node] for node in G.nodes):
+        nx.set_node_attributes(G, False, "Articulation Point")
+
+        # Calculate articulation points
+        art_points = list(nx.articulation_points(G))
+        for node in art_points:
+            G.nodes[node]["Articulation Point"] = True
+
+        G.graph['Articulation Points'] = len(art_points)
+
+def set_num_articulation_points(G):
+    G.graph['Articulation Points'] = len([x for x,y in G.nodes(data=True) if y['Articulation Point']])
+
+def set_bridges(G):
+    if not any("Bridge" in G.edges[edge] for edge in G.edges):
+        nx.set_edge_attributes(G, False, "Bridge")
+
+        # Calculate bridges
+        for edge in list(nx.bridges(G)):
+            nx.set_edge_attributes(G, {edge: {"Bridge": True}})
+
+def set_num_bridges(G):
+    G.graph["Bridges"] = len([True for node1, node2, data in G.edges(data=True) if data['Bridge']])
+
+if __name__ == '__main__':
+    print(f"Working directory: {os.getcwd()}")
+    # graphs = create_pathway_interaction_networks("R-HSA-9673163", "../../../resources/pathway_networks/")
+
+    df_pathways = get_pathways()
+    for pathway in df_pathways["stId"]:
+        create_pathway_interaction_networks(pathway, "../../../resources/pathway_networks/")

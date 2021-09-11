@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 
-from lib.graph_database import get_query_result
+from lib.graph_database_access import get_query_result
 
 
 def test_get_query_result():
