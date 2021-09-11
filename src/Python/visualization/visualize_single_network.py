@@ -9,7 +9,7 @@ import pandas as pd
 from bokeh.io import output_file, save
 from bokeh.io import show
 from bokeh.layouts import layout
-from bokeh.models import (ColumnDataSource, Legend)
+from bokeh.models import (ColumnDataSource, Legend, BoxSelectTool, PointDrawTool)
 from bokeh.models import Div
 from bokeh.palettes import Colorblind
 # Prepare Data
@@ -68,10 +68,10 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, **kwargs):
         ("Type", "@type")
     ]
 
-    # node_hover_tool = HoverTool(tooltips=TOOLTIPS, names=['node'])
-    # f.add_tools(node_hover_tool, BoxZoomTool(), ResetTool())
+
 
     f = figure(x_range=(-1.1, 1.1), y_range=(-1.1, 1.1), toolbar_location=toolbar_location, tooltips=TOOLTIPS)
+    # node_hover_tool = HoverTool(tooltips=TOOLTIPS, names=['node'])
 
     f.title.text = kwargs['title'] if 'title' in kwargs else G.graph['level'].title()
     f.title.text_font_size = '12pt'
@@ -177,8 +177,8 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, **kwargs):
                      legend_label="Small Molecules",
                      source=ColumnDataSource(data_sm))
 
-        f.rect(x='x', y='y',
-               height=0.08, width=0.11,
+        f.square(x='x', y='y',
+               size=20,
                fill_color='entity_color', line_color='entity_border_color', line_width='line_width',
                legend_label=G.graph["level"].title(),
                source=ColumnDataSource(data))
@@ -393,6 +393,8 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
         legend_location_all = ['top_right', 'top_right', 'top_right']
         plot_widths = [plot_size, plot_size, plot_size]
 
+    toolbar_location = kwargs['toolbar_location'] if 'toolbar_location' in kwargs else None
+
     pos = get_positions(graphs)
 
     figures = {
@@ -400,7 +402,7 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
             plot_interaction_network(graphs[method][i], coloring=coloring, pos=pos[method][i],
                                      plot_width=plot_widths[i],
                                      plot_height=plot_size,
-                                     toolbar_location=None, title=titles[method][i],
+                                     toolbar_location=toolbar_location, title=titles[method][i],
                                      legend_location=legend_location_all[i],
                                      highlight_articulations=(kwargs[
                                                                   'highlight_articulations'] if 'highlight_articulations' in kwargs else False),
@@ -536,7 +538,7 @@ def plot_pathways(pathways, level, sm, coloring, v=False):
 
 
 def main():
-    pathway1 = "R-HSA-6803211"
+    pathway1 = "R-HSA-1236382"  # Constitutive Signaling by Ligand-Responsive EGFR Cancer Variants
     pathway2 = "R-HSA-6814122"  # Cooperation of PDCL (PhLP1) and TRiC/CCT in G-protein beta folding
     pathway3 = "R-HSA-9648002"  # Ras Processing
 
@@ -547,11 +549,12 @@ def main():
     # p = plot_interaction_network(g, coloring=Coloring.ENTITY_TYPE, plot_width=600, plot_height=500,
     #                             title="Test title",
     #                             legend_location="right")
-    graphs = create_pathway_interaction_networks(pathway3, "resources/pathway_networks/")
-    p = plot_pathway_all_levels(pathway3, out_path="resources/pathway_networks/", graphs=graphs,
+    graphs = create_pathway_interaction_networks(pathway1, "resources/pathway_networks/")
+    p = plot_pathway_all_levels(pathway1, out_path="resources/pathway_networks/", graphs=graphs,
                                 coloring=Coloring.ENTITY_TYPE,
-                                highlight_articulations=False,
-                                highlight_bridges=False)
+                                highlight_articulations=True,
+                                highlight_bridges=True,
+                                toolbar_location="below")
     show(p)
     # p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.ENTITY_TYPE)
     # # show(p)
