@@ -36,6 +36,7 @@ FILE_PATHWAYMATCHER = "PathwayMatcher.jar"
 URL_PATHWAYMATCHER = "https://github.com/PathwayAnalysisPlatform/PathwayMatcher/releases/latest/download/PathwayMatcher.jar"
 
 GRAPHS_PATH = "resources/Reactome/76/"
+PATHWAY_GRAPHS_PATH = "resources/pathway_networks/"
 MAPPING_FILE = "mapping_proteins_to_level.tsv"
 
 
