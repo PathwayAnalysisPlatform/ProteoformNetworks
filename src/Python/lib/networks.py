@@ -10,7 +10,7 @@ import pandas as pd
 import config
 from config import no_sm, with_sm, with_unique_sm, sm, LEVELS
 from lib.graph_database_access import get_pathway_name, get_participants_by_pathway, get_components_by_pathway, \
-    get_pathways
+    get_pathways, get_participants, get_components
 
 
 def create_pathway_interaction_network(pathway, level, method, out_path=""):
@@ -638,6 +638,22 @@ def set_bridges(G):
 
 def set_num_bridges(G):
     G.graph["Bridges"] = len([True for node1, node2, data in G.edges(data=True) if data['Bridge']])
+
+def get_interactomes(graphs_path):
+    participant_records = {l: get_participants(l, graphs_path) for l in [*LEVELS, sm]}
+    components_records = {l: get_components(l, graphs_path) for l in [*LEVELS, sm]}
+
+    interactomes_no_sm = {
+        l: get_or_create_interaction_network(l, no_sm, participant_records, components_records, graphs_path) for l in
+        LEVELS}
+    interactomes_with_sm = {
+        l: get_or_create_interaction_network(l, with_sm, participant_records, components_records, graphs_path) for l in
+        LEVELS}
+    interactomes_with_unique_sm = {
+        l: get_or_create_interaction_network(l, with_unique_sm, participant_records, components_records, graphs_path)
+        for l in LEVELS}
+    interactomes = [*interactomes_no_sm.values(), *interactomes_with_sm.values(), *interactomes_with_unique_sm.values()]
+    return interactomes
 
 if __name__ == '__main__':
     print(f"Working directory: {os.getcwd()}")
