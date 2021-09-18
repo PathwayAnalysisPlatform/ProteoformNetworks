@@ -17,6 +17,7 @@ with_unique_sm = "with_unique_sm"           # Connect participants with reaction
 
 LEVELS = [genes, proteins, proteoforms]
 METHODS = [no_sm, with_sm, with_unique_sm]
+SMALL_MOLECULES = ["Not Included", "Included", "Reaction-Unique Included"]
 
 # LEVELS_COLOR = {"genes": "#67A9CF", "proteins": "#F1A340", "proteoforms": "#7FBF7B"}
 LEVELS_COLOR = {genes: Colorblind[4][0], proteins: Colorblind[4][1], proteoforms: Colorblind[4][3]}

@@ -538,9 +538,7 @@ def plot_pathways(pathways, level, sm, coloring, v=False):
 
 
 def main():
-    pathway1 = "R-HSA-1236382"  # Constitutive Signaling by Ligand-Responsive EGFR Cancer Variants
-    pathway2 = "R-HSA-6814122"  # Cooperation of PDCL (PhLP1) and TRiC/CCT in G-protein beta folding
-    pathway3 = "R-HSA-9648002"  # Ras Processing
+    pathway1 = "R-HSA-1632852"
 
     os.chdir(os.path.dirname(os.path.abspath(sys.executable)) + "\\..\\..")
     print(os.getcwd())

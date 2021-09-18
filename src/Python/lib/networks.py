@@ -80,6 +80,14 @@ def merge_graphs(graphs):
             full_graph.nodes[node]['complexes'].update(graph.nodes[node]['complexes'])
 
 
+def replace_methods(df):
+    df["Small Molecules"].replace({
+        no_sm: "Not Included",
+        with_sm:"Included",
+        with_unique_sm: "Reaction-Unique Included"
+    }, inplace=True)
+    return df
+
 def get_multiindex():
     arrays = [
         [*(["Not Included"] * 3), *(["Included"] * 3), *(["Reaction-Unique Included"] * 3)], [*(LEVELS * 3)]
