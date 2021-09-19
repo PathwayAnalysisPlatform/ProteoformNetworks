@@ -79,6 +79,15 @@ def merge_graphs(graphs):
             full_graph.nodes[node]['roles'].update(graph.nodes[node]['roles'])
             full_graph.nodes[node]['complexes'].update(graph.nodes[node]['complexes'])
 
+def get_pathway_filenames(files_path):
+    names = []
+    for pathway in get_pathways()['stId']:
+        for method in config.METHODS:
+            for level in LEVELS:
+                filename = get_json_filename(level, method, files_path, pathway)
+                names.append((pathway, filename))
+    return names
+
 
 def replace_methods(df):
     df["Small Molecules"].replace({

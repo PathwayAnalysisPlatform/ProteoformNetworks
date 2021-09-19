@@ -333,7 +333,7 @@ def get_positions(graphs):
         for node in graphs[config.with_unique_sm][i + 1].nodes:                              # For each node in the larger network
             prev_id = graphs[config.with_unique_sm][i + 1].nodes[node]['prevId']              # Get the predecesor
             pos[config.with_unique_sm][i][prev_id] = pos[config.with_unique_sm][i + 1][node]  # Set position in the smaller network
-            print(f"Set position for {prev_id} using {node}")
+            #print(f"Set position for {prev_id} using {node}")
 
     # For the proteoforms network With not unique small molecules
     # Leave small molecules fixed, recalculate the others
@@ -343,7 +343,10 @@ def get_positions(graphs):
         for node in graphs[config.with_sm][i + 1].nodes:                                    # For each node in the larger network
             if node.startswith("sm"):
                 fixed_positions[node] = pos[config.with_sm][i+1][node]
-        pos[config.with_sm][i] = nx.spring_layout(graphs[config.with_sm][i], pos=fixed_positions, fixed=fixed_positions.keys())
+        if len(fixed_positions) > 0:
+            pos[config.with_sm][i] = nx.spring_layout(graphs[config.with_sm][i], pos=fixed_positions, fixed=fixed_positions.keys())
+        else:
+            pos[config.with_sm][i] = nx.spring_layout(graphs[config.with_sm][i])
 
     # For the proteoforms network without small molecules
     # Copy directly the position of all proteoforms
@@ -538,7 +541,7 @@ def plot_pathways(pathways, level, sm, coloring, v=False):
 
 
 def main():
-    pathway1 = "R-HSA-1632852"
+    pathway1 = "R-HSA-69183"
 
     os.chdir(os.path.dirname(os.path.abspath(sys.executable)) + "\\..\\..")
     print(os.getcwd())
