@@ -9,7 +9,7 @@ import pandas as pd
 from bokeh.io import output_file, save
 from bokeh.io import show
 from bokeh.layouts import layout
-from bokeh.models import (ColumnDataSource, Legend, BoxSelectTool, PointDrawTool)
+from bokeh.models import (ColumnDataSource, Legend)
 from bokeh.models import Div
 from bokeh.palettes import Colorblind
 # Prepare Data
@@ -59,18 +59,19 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, **kwargs):
     :return: the figure
     """
 
-    plot_width = kwargs['plot_width'] if 'plot_width' in kwargs else 600
+    plot_width = kwargs['plot_width'] if 'plot_width' in kwargs else 300
     plot_height = kwargs['plot_height'] if 'plot_height' in kwargs else 325
     toolbar_location = kwargs['toolbar_location'] if 'toolbar_location' in kwargs else None
+    node_size = kwargs['node_size'] if 'node_size' in kwargs else 20
 
     TOOLTIPS = [
         ("Id", "@id"),
         ("Type", "@type")
     ]
 
-
-
-    f = figure(x_range=(-1.1, 1.1), y_range=(-1.1, 1.1), toolbar_location=toolbar_location, tooltips=TOOLTIPS)
+    f = figure(x_range=(-1.1, 1.1), y_range=(-1.1, 1.1),
+                plot_width=plot_width, plot_height=plot_height,
+               toolbar_location=toolbar_location, tooltips=TOOLTIPS)
     # node_hover_tool = HoverTool(tooltips=TOOLTIPS, names=['node'])
 
     f.title.text = kwargs['title'] if 'title' in kwargs else G.graph['level'].title()
@@ -79,7 +80,9 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, **kwargs):
     f.axis.visible = False
     f.axis.axis_label = None
     f.grid.grid_line_color = None
-    f.outline_line_width = kwargs['outline_line_width'] if 'outline_line_width' in kwargs else 0
+    f.border_fill_color = '#ffffff'
+    f.outline_line_width = kwargs['outline_line_width'] if 'outline_line_width' in kwargs else 1
+    f.outline_line_color = "black"
 
     pos = kwargs['pos'] if 'pos' in kwargs else nx.spring_layout(G)
     if kwargs["v"] if "v" in kwargs else False:
@@ -172,16 +175,16 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, **kwargs):
 
         if len(data_sm['id']) > 0:
             f.circle(x='x', y='y',
-                     size=20,
+                     size=node_size,
                      fill_color='entity_color', line_color='entity_border_color', line_width='line_width',
                      legend_label="Small Molecules",
                      source=ColumnDataSource(data_sm))
 
         f.square(x='x', y='y',
-               size=20,
-               fill_color='entity_color', line_color='entity_border_color', line_width='line_width',
-               legend_label=G.graph["level"].title(),
-               source=ColumnDataSource(data))
+                 size=node_size,
+                 fill_color='entity_color', line_color='entity_border_color', line_width='line_width',
+                 legend_label=G.graph["level"].title(),
+                 source=ColumnDataSource(data))
         f.legend.title = coloring.value
 
     else:
@@ -316,11 +319,13 @@ def get_positions(graphs):
     for node in graphs[config.with_unique_sm][2].nodes:  # For each node in the reaction-unique id
         if node.startswith("sm"):
             name_without_reaction = graphs[config.with_unique_sm][2].nodes[node]['label']
-            fixed_positions[name_without_reaction] = pos[config.with_unique_sm][2][node]  # Get the name of the small molecule without the reaction
+            fixed_positions[name_without_reaction] = pos[config.with_unique_sm][2][
+                node]  # Get the name of the small molecule without the reaction
         else:
             fixed_nodes.append(node)
             fixed_positions[node] = pos[config.with_unique_sm][2][node]
-    pos[config.with_sm][2] = nx.spring_layout(graphs[config.with_sm][2], pos=fixed_positions, fixed=fixed_positions.keys())
+    pos[config.with_sm][2] = nx.spring_layout(graphs[config.with_sm][2], pos=fixed_positions,
+                                              fixed=fixed_positions.keys())
 
     # Horizontally:
     # With unique small molecules:
@@ -330,21 +335,23 @@ def get_positions(graphs):
     # For the proteoforms network With reaction-unique small molecules
     # 0 - genes, 1 - proteins, 2 proteoforms
     for i in reversed(range(2)):  # Select graphs of proteins and genes with indexes 1 and 0
-        for node in graphs[config.with_unique_sm][i + 1].nodes:                              # For each node in the larger network
-            prev_id = graphs[config.with_unique_sm][i + 1].nodes[node]['prevId']              # Get the predecesor
-            pos[config.with_unique_sm][i][prev_id] = pos[config.with_unique_sm][i + 1][node]  # Set position in the smaller network
-            #print(f"Set position for {prev_id} using {node}")
+        for node in graphs[config.with_unique_sm][i + 1].nodes:  # For each node in the larger network
+            prev_id = graphs[config.with_unique_sm][i + 1].nodes[node]['prevId']  # Get the predecesor
+            pos[config.with_unique_sm][i][prev_id] = pos[config.with_unique_sm][i + 1][
+                node]  # Set position in the smaller network
+            # print(f"Set position for {prev_id} using {node}")
 
     # For the proteoforms network With not unique small molecules
     # Leave small molecules fixed, recalculate the others
     # 0 - genes, 1 - proteins, 2 proteoforms
     for i in reversed(range(2)):  # Select graphs of proteins and genes with indexes 1 and 0
         fixed_positions = {}
-        for node in graphs[config.with_sm][i + 1].nodes:                                    # For each node in the larger network
+        for node in graphs[config.with_sm][i + 1].nodes:  # For each node in the larger network
             if node.startswith("sm"):
-                fixed_positions[node] = pos[config.with_sm][i+1][node]
+                fixed_positions[node] = pos[config.with_sm][i + 1][node]
         if len(fixed_positions) > 0:
-            pos[config.with_sm][i] = nx.spring_layout(graphs[config.with_sm][i], pos=fixed_positions, fixed=fixed_positions.keys())
+            pos[config.with_sm][i] = nx.spring_layout(graphs[config.with_sm][i], pos=fixed_positions,
+                                                      fixed=fixed_positions.keys())
         else:
             pos[config.with_sm][i] = nx.spring_layout(graphs[config.with_sm][i])
 
@@ -389,12 +396,14 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
                                 'I) Proteoforms with unique SM']
     }
 
-    plot_size = 600
+    inner_plot_size =  kwargs['inner_plot_size'] if 'inner_plot_size' in kwargs else 300
     legend_location_all = [None, None, 'right']
-    plot_widths = [plot_size, plot_size, plot_size + 160]
+    plot_widths = [inner_plot_size, inner_plot_size, inner_plot_size + 160]
+    outline_line_width = kwargs['outline_line_width'] if 'outline_line_width' in kwargs else 0
+    node_size = kwargs['node_size'] if 'node_size' in kwargs else 2
     if coloring == Coloring.ENTITY_TYPE:
         legend_location_all = ['top_right', 'top_right', 'top_right']
-        plot_widths = [plot_size, plot_size, plot_size]
+        plot_widths = [inner_plot_size, inner_plot_size, inner_plot_size]
 
     toolbar_location = kwargs['toolbar_location'] if 'toolbar_location' in kwargs else None
 
@@ -403,8 +412,9 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
     figures = {
         method: [
             plot_interaction_network(graphs[method][i], coloring=coloring, pos=pos[method][i],
-                                     plot_width=plot_widths[i],
-                                     plot_height=plot_size,
+                                     plot_width=plot_widths[i], plot_height=inner_plot_size,
+                                     outline_line_width = outline_line_width, outline_line_color = '#e5e5e5',
+                                     node_size = node_size,
                                      toolbar_location=toolbar_location, title=titles[method][i],
                                      legend_location=legend_location_all[i],
                                      highlight_articulations=(kwargs[
@@ -541,7 +551,7 @@ def plot_pathways(pathways, level, sm, coloring, v=False):
 
 
 def main():
-    pathway1 = "R-HSA-69183"
+    pathway1 = "R-HSA-888593"
 
     os.chdir(os.path.dirname(os.path.abspath(sys.executable)) + "\\..\\..")
     print(os.getcwd())
@@ -552,10 +562,12 @@ def main():
     #                             legend_location="right")
     graphs = create_pathway_interaction_networks(pathway1, "resources/pathway_networks/")
     p = plot_pathway_all_levels(pathway1, out_path="resources/pathway_networks/", graphs=graphs,
-                                coloring=Coloring.ENTITY_TYPE,
+                                coloring=Coloring.ENTITY_TYPE, outline_line_width=1,
+                                node_size = 12,
+                                inner_plot_size=350,
                                 highlight_articulations=True,
                                 highlight_bridges=True,
-                                toolbar_location="below")
+                                toolbar_location=None)
     show(p)
     # p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.ENTITY_TYPE)
     # # show(p)
