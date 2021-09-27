@@ -510,7 +510,7 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
         figures[config.with_unique_sm]
     ])
 
-    show(l)
+    # show(l)
     print(f"Generated figure: {output_file}")
     return l
 
@@ -551,7 +551,7 @@ def plot_pathways(pathways, level, sm, coloring, v=False):
 
 
 def main():
-    pathway1 = "R-HSA-888593"
+    pathway1 = "R-HSA-202427"
 
     os.chdir(os.path.dirname(os.path.abspath(sys.executable)) + "\\..\\..")
     print(os.getcwd())
