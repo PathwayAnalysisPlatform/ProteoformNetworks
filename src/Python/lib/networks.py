@@ -79,6 +79,7 @@ def merge_graphs(graphs):
             full_graph.nodes[node]['roles'].update(graph.nodes[node]['roles'])
             full_graph.nodes[node]['complexes'].update(graph.nodes[node]['complexes'])
 
+
 def get_pathway_filenames(files_path):
     names = []
     for pathway in get_pathways()['stId']:
@@ -92,10 +93,11 @@ def get_pathway_filenames(files_path):
 def replace_methods(df):
     df["Small Molecules"].replace({
         no_sm: "Not Included",
-        with_sm:"Included",
+        with_sm: "Included",
         with_unique_sm: "Reaction-Unique Included"
     }, inplace=True)
     return df
+
 
 def get_multiindex():
     arrays = [
@@ -316,7 +318,6 @@ def add_edges_complex_components(G, df, method=with_sm, v=False):
 
 
 def update_json_file(G, level, method, out_path="", label=""):
-
     name_start = ""
     if len(label) > 0:
         name_start += label + "_"
@@ -328,6 +329,7 @@ def update_json_file(G, level, method, out_path="", label=""):
         data = nx.json_graph.node_link_data(G)
         json.dump(data, outfile)
     # print(f"Updated json file for {label}")
+
 
 def save_interaction_network(G, level, method, out_path="", label=""):
     """
@@ -601,10 +603,18 @@ def save_interactomes_with_indexed_vertices(interactomes, out_path):
     return
 
 
-def get_sizes(interactome_dict):
-    num_interactions = pd.Series([interactome_dict[l].size() for l in LEVELS], index=LEVELS)
-    num_entities = pd.Series([interactome_dict[l].graph['num_entities'] for l in LEVELS], index=LEVELS)
-    num_small_molecules = pd.Series([interactome_dict[l].graph['num_small_molecules'] for l in LEVELS], index=LEVELS)
+# def get_sizes(interactome_dict):
+#     num_interactions = pd.Series([interactome_dict[l].size() for l in LEVELS], index=LEVELS)
+#     num_entities = pd.Series([interactome_dict[l].graph['num_entities'] for l in LEVELS], index=LEVELS)
+#     num_small_molecules = pd.Series([interactome_dict[l].graph['num_small_molecules'] for l in LEVELS], index=LEVELS)
+#
+#     return num_interactions, num_entities, num_small_molecules
+
+
+def get_sizes(interactome_list, index):
+    num_interactions = pd.Series([interactome.size() for interactome in interactome_list], index=index)
+    num_entities = pd.Series([interactome.graph['num_entities'] for interactome in interactome_list], index=index)
+    num_small_molecules = pd.Series([interactome.graph['num_small_molecules'] for interactome in interactome_list], index=index)
 
     return num_interactions, num_entities, num_small_molecules
 
@@ -642,8 +652,10 @@ def set_articulation_points(G):
 
         G.graph['Articulation Points'] = len(art_points)
 
+
 def set_num_articulation_points(G):
-    G.graph['Articulation Points'] = len([x for x,y in G.nodes(data=True) if y['Articulation Point']])
+    G.graph['Articulation Points'] = len([x for x, y in G.nodes(data=True) if y['Articulation Point']])
+
 
 def set_bridges(G):
     if not any("Bridge" in G.edges[edge] for edge in G.edges):
@@ -653,8 +665,10 @@ def set_bridges(G):
         for edge in list(nx.bridges(G)):
             nx.set_edge_attributes(G, {edge: {"Bridge": True}})
 
+
 def set_num_bridges(G):
     G.graph["Bridges"] = len([True for node1, node2, data in G.edges(data=True) if data['Bridge']])
+
 
 def get_interactomes(graphs_path):
     participant_records = {l: get_participants(l, graphs_path) for l in [*LEVELS, sm]}
@@ -669,8 +683,11 @@ def get_interactomes(graphs_path):
     interactomes_with_unique_sm = {
         l: get_or_create_interaction_network(l, with_unique_sm, participant_records, components_records, graphs_path)
         for l in LEVELS}
-    interactomes = [*interactomes_no_sm.values(), *interactomes_with_sm.values(), *interactomes_with_unique_sm.values()]
-    return interactomes
+    return interactomes_no_sm, interactomes_with_sm, interactomes_with_unique_sm
+
+def get_increase_percentage(num1, num2):
+    difference = num2 - num1
+    return round(difference * 100 / num2, 2)
 
 if __name__ == '__main__':
     print(f"Working directory: {os.getcwd()}")

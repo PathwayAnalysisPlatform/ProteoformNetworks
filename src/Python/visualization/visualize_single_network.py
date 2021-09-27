@@ -6,7 +6,7 @@ from math import pi
 
 import networkx as nx
 import pandas as pd
-from bokeh.io import output_file, save
+from bokeh.io import output_file, save, export_png
 from bokeh.io import show
 from bokeh.layouts import layout
 from bokeh.models import (ColumnDataSource, Legend)
@@ -399,7 +399,7 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
     inner_plot_size =  kwargs['inner_plot_size'] if 'inner_plot_size' in kwargs else 300
     legend_location_all = [None, None, 'right']
     plot_widths = [inner_plot_size, inner_plot_size, inner_plot_size + 160]
-    outline_line_width = kwargs['outline_line_width'] if 'outline_line_width' in kwargs else 0
+    outline_line_width = kwargs['outline_line_width'] if 'outline_line_width' in kwargs else 1
     node_size = kwargs['node_size'] if 'node_size' in kwargs else 2
     if coloring == Coloring.ENTITY_TYPE:
         legend_location_all = ['top_right', 'top_right', 'top_right']
@@ -430,7 +430,7 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
         import os
         print("In function create_graph: ", os.getcwd())
         print(f"Output path is: {out_path}{pathway}_network.html")
-    output_file(f"{out_path}{pathway}_{coloring.name}_network.html")
+    output_file = f"{out_path}{pathway}_{coloring.name}_network.html"
 
     title = f"<p style=\"font-weight:bold;text-align:left;font-size:22px;width:1800px;\">" \
             f"<span style=\"color:black;\">{name} ({pathway})</span>" \
@@ -510,8 +510,8 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
         figures[config.with_unique_sm]
     ])
 
-    # show(l)
-    save(l)
+    show(l)
+    print(f"Generated figure: {output_file}")
     return l
 
 
