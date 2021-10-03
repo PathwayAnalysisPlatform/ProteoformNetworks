@@ -474,6 +474,13 @@ def get_or_create_interaction_network(level, method, participants, components, o
         create_interaction_network(level, method, participants, components, out_path, label)
     g = read_graph(filename)
 
+    if not 'Articulation Points' in g.graph:
+        set_articulation_points(g)
+        set_num_articulation_points(g)
+        set_bridges(g)
+        set_num_bridges(g)
+        update_json_file(g, level, method, out_path)
+
     return g
 
 
