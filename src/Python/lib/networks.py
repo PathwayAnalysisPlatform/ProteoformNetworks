@@ -621,7 +621,8 @@ def save_interactomes_with_indexed_vertices(interactomes, out_path):
 def get_sizes(interactome_list, index):
     num_interactions = pd.Series([interactome.size() for interactome in interactome_list], index=index)
     num_entities = pd.Series([interactome.graph['num_entities'] for interactome in interactome_list], index=index)
-    num_small_molecules = pd.Series([interactome.graph['num_small_molecules'] for interactome in interactome_list], index=index)
+    num_small_molecules = pd.Series([interactome.graph['num_small_molecules'] for interactome in interactome_list],
+                                    index=index)
 
     return num_interactions, num_entities, num_small_molecules
 
@@ -669,8 +670,10 @@ def set_bridges(G):
         nx.set_edge_attributes(G, False, "Bridge")
 
         # Calculate bridges
-        for edge in list(nx.bridges(G)):
+        bridges = list(nx.bridges(G))
+        for edge in bridges:
             nx.set_edge_attributes(G, {edge: {"Bridge": True}})
+        G.graph["Bridges"] = len(bridges)
 
 
 def set_num_bridges(G):
@@ -692,9 +695,29 @@ def get_interactomes(graphs_path):
         for l in LEVELS}
     return interactomes_no_sm, interactomes_with_sm, interactomes_with_unique_sm
 
+
 def get_increase_percentage(num1, num2):
     difference = num2 - num1
     return round(difference * 100 / num2, 2)
+
+
+def get_combinations():
+    combinations = []
+    for method in config.METHODS:
+        for level in LEVELS:
+            combinations.append((method, level))
+    return combinations
+
+
+def get_combinations_with_pathways(num_pathways):
+    pathways = get_pathways()
+    combinations = []
+    for method in config.METHODS:
+        for level in LEVELS:
+            for pathway in pathways["stId"][:num_pathways]:
+                combinations.append((method, level, pathway))
+    return combinations
+
 
 if __name__ == '__main__':
     print(f"Working directory: {os.getcwd()}")
