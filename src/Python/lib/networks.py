@@ -9,6 +9,7 @@ import pandas as pd
 
 import config
 from config import no_sm, with_sm, with_unique_sm, sm, LEVELS
+from lib.dictionaries import read_dictionary_one_to_set
 from lib.graph_database_access import get_pathway_name, get_participants_by_pathway, get_components_by_pathway, \
     get_pathways, get_participants, get_components
 
@@ -710,13 +711,36 @@ def get_combinations():
 
 
 def get_combinations_with_pathways(num_pathways):
-    pathways = get_pathways()
+    # pathways = get_pathways()["stId"]
+    pathways = get_pathways_with_multiple_proteoforms()
     combinations = []
     for method in config.METHODS:
         for level in LEVELS:
-            for pathway in pathways["stId"][:num_pathways]:
+            for pathway in pathways[:num_pathways]:
                 combinations.append((method, level, pathway))
     return combinations
+
+
+def get_pathways_with_multiple_proteoforms():
+    map_proteins_to_proteoforms = read_dictionary_one_to_set(config.GRAPHS_PATH, "mapping_proteins_to_proteoforms.tsv",
+                                                             col_indices=(0, 1))
+    pathways = get_pathways()["stId"]
+
+    selected_proteins = []
+    for protein, proteoforms in map_proteins_to_proteoforms.items():
+        if len(proteoforms) > 1:
+            selected_proteins.append(protein)
+
+    selected_pathways = []
+    for pathway in pathways:
+        filename = get_json_filename(config.proteins, config.no_sm, config.PATHWAY_GRAPHS_PATH, pathway)
+        if not Path(filename).exists():
+            create_pathway_interaction_network(pathway, config.proteins, config.no_sm, config.PATHWAY_GRAPHS_PATH)
+        G = read_graph(filename)
+        if any(protein in selected_proteins for protein in list(G.nodes)):
+            selected_pathways.append(pathway)
+
+    return selected_pathways
 
 
 if __name__ == '__main__':

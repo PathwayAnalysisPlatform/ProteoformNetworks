@@ -19,7 +19,7 @@ from bokeh.transform import cumsum
 import config
 from config import get_entity_color, COLOR_IO, COLOR_CO, COLOR_RO, COLOR_CC, no_sm
 from lib.graph_database_access import get_pathway_name
-from lib.networks import create_pathway_interaction_networks
+from lib.networks import create_pathway_interaction_networks, create_pathway_interaction_network
 
 
 class Coloring(Enum):
@@ -510,7 +510,7 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
         figures[config.with_unique_sm]
     ])
 
-    # show(l)
+    show(l)
     print(f"Generated figure: {output_file}")
     return l
 
@@ -551,15 +551,15 @@ def plot_pathways(pathways, level, sm, coloring, v=False):
 
 
 def main():
-    pathway1 = "R-HSA-202427"
+    pathway1 = "R-HSA-8876725"
 
     os.chdir(os.path.dirname(os.path.abspath(sys.executable)) + "\\..\\..")
     print(os.getcwd())
 
-    # g = create_pathway_interaction_network(pathway1, proteoforms, with_unique_sm, "resources/pathway_networks/" + pathway1)
-    # p = plot_interaction_network(g, coloring=Coloring.ENTITY_TYPE, plot_width=600, plot_height=500,
-    #                             title="Test title",
-    #                             legend_location="right")
+    g = create_pathway_interaction_network(pathway1, config.proteoforms, config.with_unique_sm, "resources/pathway_networks/")
+    p = plot_interaction_network(g, coloring=Coloring.ENTITY_TYPE, plot_width=600, plot_height=500,
+                                title="Test title",
+                                legend_location="right")
     graphs = create_pathway_interaction_networks(pathway1, "resources/pathway_networks/")
     p = plot_pathway_all_levels(pathway1, out_path="resources/pathway_networks/", graphs=graphs,
                                 coloring=Coloring.ENTITY_TYPE, outline_line_width=1,
@@ -576,8 +576,27 @@ def main():
     # p = plot_pathway_all_levels(pathway, graphs=graphs, coloring=Coloring.PATHWAY)
     # show(p)
 
-    # plot_low_level_pathways(10, 20, "../../figures/pathways/", "../../reports/pathways/")
-    print("Finished")
+    # Examples where LCC is larger with small molecules
+    # pathways = ['R-HSA-70263', 'R-HSA-1482839', 'R-HSA-1482788', 'R-HSA-1855204',
+    #    'R-HSA-75876', 'R-HSA-3295583', 'R-HSA-1482801', 'R-HSA-379726',
+    #    'R-HSA-189200', 'R-HSA-156588']
+
+    # Examples where number of CCs decreases
+    # pathways = ['R-HSA-5619094', 'R-HSA-5659735', 'R-HSA-5619044', 'R-HSA-5619108',
+    #    'R-HSA-5619063', 'R-HSA-5579028', 'R-HSA-5619067', 'R-HSA-5678520',
+    #    'R-HSA-5693548', 'R-HSA-5579009']
+    #
+    # for pathway in pathways:
+    #     graphs = create_pathway_interaction_networks(pathway, "resources/pathway_networks/")
+    #     p = plot_pathway_all_levels(pathway1, out_path="resources/pathway_networks/", graphs=graphs,
+    #                                 coloring=Coloring.ENTITY_TYPE, outline_line_width=1,
+    #                                 node_size=12,
+    #                                 inner_plot_size=350,
+    #                                 highlight_articulations=True,
+    #                                 highlight_bridges=True,
+    #                                 toolbar_location=None)
+    #
+    # print("Finished")
 
 
 if __name__ == '__main__':
