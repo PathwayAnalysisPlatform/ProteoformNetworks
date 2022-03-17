@@ -32,6 +32,9 @@ The starting point are the jupyter notebook files under the 'python/' directory:
 1.2 Pathways into gene, protein and proteoform interaction networks
 1.3 Disease networks with gene, protein and proteoform nodes
 
+- Construct them using a boundary to include only the induced graph from directly related gene products.
+- Alternatively, construct networks including the first-order neighborhood. Meaning, the induced graph of the closed neighborhood of the directly related nodes.
+
 ### 2. Characterization of single network topology:
 
 Metrics will be shown in tables with a color coding scheme:
@@ -48,8 +51,9 @@ Metrics will be shown in tables with a color coding scheme:
 - Cases when proteoform nodes have higher or lower degree with examples. (Fig)
 - Examples when proteoforms have distinct set of neighbors, therefore influencing the 'guilty by association' process. (Fig)
 - Select and plot examples of netowrks that change their topology when using proteoforms or small molecules
+- Metrics of agglomeration of participants of a same disease. The higher the more functional similarity
 
-### 3. Characterization of pairwise network relationshis:
+### 3. Characterization of pairwise network relationships:
 
 - Network separation index
 - Jaccard index
