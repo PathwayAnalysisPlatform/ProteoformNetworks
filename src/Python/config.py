@@ -10,21 +10,27 @@ proteoforms = "proteoforms"
 
 sm = "sm"
 
-#Methods for constructing interaction networks
-no_sm = "no_sm"                             # Connecting participants in reactions without small molecules
-with_sm = "with_sm"                         # Connect participants with small molecules
-with_unique_sm = "with_unique_sm"           # Connect participants with reaction-unique small molecules
+# Methods for constructing interaction networks
+# Connecting participants in reactions without small molecules
+no_sm = "no_sm"
+# Connect participants with small molecules
+with_sm = "with_sm"
+# Connect participants with reaction-unique small molecules
+with_unique_sm = "with_unique_sm"
 
 LEVELS = [genes, proteins, proteoforms]
 METHODS = [no_sm, with_sm, with_unique_sm]
 SMALL_MOLECULES = ["Not Included", "Included", "Reaction-Unique Included"]
 
 # LEVELS_COLOR = {"genes": "#67A9CF", "proteins": "#F1A340", "proteoforms": "#7FBF7B"}
-LEVELS_COLOR = {genes: Colorblind[4][0], proteins: Colorblind[4][1], proteoforms: Colorblind[4][3]}
-PROTEOFORMS_SUBGRAPHS_COLOR = {"mm": Colorblind[6][5], "uu": Colorblind[6][2], "um": Colorblind[6][1]}
+LEVELS_COLOR = {
+    genes: Colorblind[4][0], proteins: Colorblind[4][1], proteoforms: Colorblind[4][3]}
+PROTEOFORMS_SUBGRAPHS_COLOR = {
+    "mm": Colorblind[6][5], "uu": Colorblind[6][2], "um": Colorblind[6][1]}
 
 PATH_REACTOME = "resources/reactome/"
-FILE_REACTOME_GENES = "genes_vertices.tsv"  # these paths are the suffix of PATH_REACTOME
+# these paths are the suffix of PATH_REACTOME
+FILE_REACTOME_GENES = "genes_vertices.tsv"
 FILE_REACTOME_PROTEINS = "proteins_vertices.tsv"
 FILE_REACTOME_PROTEOFORMS = "proteoforms_vertices.tsv"
 FILE_REACTOME_GENE_INTERACTIONS = "genes_interactions.tsv"
@@ -36,17 +42,18 @@ PATH_RESOURCES = "resources/"
 FILE_PATHWAYMATCHER = "PathwayMatcher.jar"
 URL_PATHWAYMATCHER = "https://github.com/PathwayAnalysisPlatform/PathwayMatcher/releases/latest/download/PathwayMatcher.jar"
 
-GRAPHS_PATH = "resources/Reactome/76/"
-PATHWAY_GRAPHS_PATH = "resources/pathway_networks/"
+DATA_REACTOME_PATH = "data/Reactome/76/"
+NETWORKS_PATH = "networks/"
 MAPPING_FILE = "mapping_proteins_to_level.tsv"
 
 
-def set_root_wd():
+def set_root_wd(location="\\..\\.."):
     """Moves to one diretory above the location of the interpreter
 
     Assumes there is a virtual environment located <repo_root>/venv/
     """
-    os.chdir(os.path.dirname(os.path.abspath(sys.executable)) + "\\..\\..")
+    # os.chdir(os.path.dirname(os.path.abspath(sys.executable)) + location)
+    os.chdir(os.getcwd() + location)
     print(f"Working directory: {os.getcwd()}")
 
 
@@ -71,8 +78,10 @@ COLOR_PROTEOFORMS_FILL = "#9ecae1"
 COLOR_SMALL_MOLECULES_BORDER = "#e6550d"
 COLOR_SMALL_MOLECULES_FILL = "#fdae6b"
 
-COLORS_FILL = [COLOR_GENES_FILL, COLOR_PROTEINS_FILL, COLOR_PROTEOFORMS_FILL, COLOR_SMALL_MOLECULES_FILL]
-COLORS_BORDER = [COLOR_GENES_BORDER, COLOR_PROTEINS_BORDER, COLOR_PROTEOFORMS_BORDER, COLOR_SMALL_MOLECULES_BORDER]
+COLORS_FILL = [COLOR_GENES_FILL, COLOR_PROTEINS_FILL,
+               COLOR_PROTEOFORMS_FILL, COLOR_SMALL_MOLECULES_FILL]
+COLORS_BORDER = [COLOR_GENES_BORDER, COLOR_PROTEINS_BORDER,
+                 COLOR_PROTEOFORMS_BORDER, COLOR_SMALL_MOLECULES_BORDER]
 
 EDGES_WEIGHT_IN_REACTION = 1
 EDGES_WEIGHT_IN_COMPLEX = 50

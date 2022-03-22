@@ -21,9 +21,12 @@ def create_pathway_interaction_network(pathway, level, method, out_path=""):
     filename = get_json_filename(level, method, out_path, pathway)
     if not Path(filename).exists():
         print(f"    * Creating network {filename}")
-        participants = {level: get_participants_by_pathway(pathway, level, out_path) for level in [level, sm]}
-        components = {level: get_components_by_pathway(pathway, level, out_path) for level in [level, sm]}
-        create_interaction_network(level, method, participants, components, out_path, pathway)
+        participants = {level: get_participants_by_pathway(
+            pathway, level, out_path) for level in [level, sm]}
+        components = {level: get_components_by_pathway(
+            pathway, level, out_path) for level in [level, sm]}
+        create_interaction_network(
+            level, method, participants, components, out_path, pathway)
     # else:
     #     print(f"    * Network {filename} already exists..")
     G = read_graph(filename)
@@ -60,7 +63,8 @@ def create_pathway_interaction_networks(pathway, out_path=""):
     else:
         print(f"-- Creating interaction networks for pathway {pathway}")
         return {
-            m: {level: create_pathway_interaction_network(pathway, level, m, out_path) for level in LEVELS}
+            m: {level: create_pathway_interaction_network(
+                pathway, level, m, out_path) for level in LEVELS}
             for m in config.METHODS
         }
 
@@ -71,14 +75,18 @@ def merge_graphs(graphs):
     #    - Merge: sets of Reactions, Pathways, Complexes
     #    - Copy value of: Id, Type, Entity Color
     # - Edges: Composition of edges in all interactomes
-    full_graph = nx.compose_all(graphs)  # Add all nodes setting  Id, Type, and entity_color
+    # Add all nodes setting  Id, Type, and entity_color
+    full_graph = nx.compose_all(graphs)
 
     for graph in graphs:
         for node in graph.nodes:
-            full_graph.nodes[node]['reactions'].update(graph.nodes[node]['reactions'])
-            full_graph.nodes[node]['pathways'].update(graph.nodes[node]['pathways'])
+            full_graph.nodes[node]['reactions'].update(
+                graph.nodes[node]['reactions'])
+            full_graph.nodes[node]['pathways'].update(
+                graph.nodes[node]['pathways'])
             full_graph.nodes[node]['roles'].update(graph.nodes[node]['roles'])
-            full_graph.nodes[node]['complexes'].update(graph.nodes[node]['complexes'])
+            full_graph.nodes[node]['complexes'].update(
+                graph.nodes[node]['complexes'])
 
 
 def get_pathway_filenames(files_path):
@@ -86,7 +94,8 @@ def get_pathway_filenames(files_path):
     for pathway in get_pathways()['stId']:
         for method in config.METHODS:
             for level in LEVELS:
-                filename = get_json_filename(level, method, files_path, pathway)
+                filename = get_json_filename(
+                    level, method, files_path, pathway)
                 names.append((pathway, filename))
     return names
 
@@ -102,10 +111,12 @@ def replace_methods(df):
 
 def get_multiindex():
     arrays = [
-        [*(["Not Included"] * 3), *(["Included"] * 3), *(["Reaction-Unique Included"] * 3)], [*(LEVELS * 3)]
+        [*(["Not Included"] * 3), *(["Included"] * 3), *
+         (["Reaction-Unique Included"] * 3)], [*(LEVELS * 3)]
     ]
     tuples = list(zip(*arrays))
-    index = pd.MultiIndex.from_tuples(tuples, names=["Small Molecules", "Entity Level"])
+    index = pd.MultiIndex.from_tuples(
+        tuples, names=["Small Molecules", "Entity Level"])
     return index
 
 
@@ -155,8 +166,10 @@ def add_nodes(G, df, method=with_sm):
         if unique_id not in G.nodes:
             G.add_node(unique_id,
                        label=row['Id'],
-                       type=(row['Type'] if row['Type'] == 'SimpleEntity' else level),
-                       entity_color=config.get_entity_color(row['Type'], level),
+                       type=(row['Type'] if row['Type'] ==
+                             'SimpleEntity' else level),
+                       entity_color=config.get_entity_color(
+                           row['Type'], level),
                        roles=set(),
                        reactions=set(),
                        pathways=set(),
@@ -178,7 +191,8 @@ def add_nodes(G, df, method=with_sm):
             G.nodes[unique_id]['prevId'] = row[sm_id_column]
         elif G.nodes[row['Id']]['type'].startswith("g"):
             G.nodes[unique_id]['prevId'] = row['Id']
-        else:  # G.nodes[unique_id]['type'] == "proteins" or G.nodes[row['Id']]['type'] == "proteoforms":
+        # G.nodes[unique_id]['type'] == "proteins" or G.nodes[row['Id']]['type'] == "proteoforms":
+        else:
             G.nodes[unique_id]['prevId'] = row['PrevId']
 
     print(f"{level} level - small molecules: {G.graph['num_small_molecules']}")
@@ -251,7 +265,8 @@ def add_edges_all_reaction_participants(G, df, method=with_sm, v=False):
         G.nodes[unique_id]['reactions'].add(participant['Reaction'])
         G.nodes[unique_id]['pathways'].add(participant['Pathway'])
         if reaction != participant['Reaction'] or pathway != participant['Pathway']:
-            add_edges_for_reaction(G, inputs, outputs, catalysts, regulators, reaction, v)
+            add_edges_for_reaction(
+                G, inputs, outputs, catalysts, regulators, reaction, v)
             reaction = participant['Reaction']
             pathway = participant['Pathway']
             inputs = set()
@@ -268,7 +283,8 @@ def add_edges_all_reaction_participants(G, df, method=with_sm, v=False):
             catalysts.add(unique_id)
     reaction = df.iloc[-1]['Reaction']
     pathway = df.iloc[-1]['Pathway']
-    add_edges_for_reaction(G, inputs, outputs, catalysts, regulators, reaction, v)
+    add_edges_for_reaction(G, inputs, outputs, catalysts,
+                           regulators, reaction, v)
 
     # Convert the reaction set of each node into a list
     for n in G.nodes:
@@ -359,7 +375,8 @@ def save_interaction_network(G, level, method, out_path="", label=""):
 
     name_start += level + "_" + method + "_"
     json_file = get_json_filename(level, method, out_path, label)
-    accessioned_entities_file = Path(out_path + name_start + "accessioned_entities.tsv")
+    accessioned_entities_file = Path(
+        out_path + name_start + "accessioned_entities.tsv")
     interactions_file = Path(out_path + name_start + "interactions.tsv")
     small_molecules_file = Path(out_path + name_start + "small_molecules.tsv")
 
@@ -398,7 +415,8 @@ def save_interaction_network(G, level, method, out_path="", label=""):
         print(f"Created mapping proteins to genes file.")
 
     if level == config.proteoforms:
-        mapping_file = out_path + config.MAPPING_FILE.replace('level', 'proteoforms')
+        mapping_file = out_path + \
+            config.MAPPING_FILE.replace('level', 'proteoforms')
         with codecs.open(mapping_file, 'w', "utf-8") as map_file:
             for n, t in G.nodes(data='type'):
                 if t != "SimpleEntity":
@@ -433,9 +451,12 @@ def create_interaction_network(level, method, participants, components, out_path
         add_edges_all_reaction_participants(G, participants[level])
         add_edges_complex_components(G, components[level])
     elif method == with_sm or method == with_unique_sm:
-        df_both_participants = pd.concat([participants[level], participants[sm]]).sort_values(["Pathway", "Reaction"])
-        df_both_components = pd.concat([components[level], components[sm]]).sort_values(["Complex"])
-        add_nodes(G, pd.concat([df_both_participants, df_both_components]), method)
+        df_both_participants = pd.concat(
+            [participants[level], participants[sm]]).sort_values(["Pathway", "Reaction"])
+        df_both_components = pd.concat(
+            [components[level], components[sm]]).sort_values(["Complex"])
+        add_nodes(G, pd.concat(
+            [df_both_participants, df_both_components]), method)
         add_edges_all_reaction_participants(G, df_both_participants, method)
         add_edges_complex_components(G, df_both_components, method)
     else:
@@ -453,36 +474,6 @@ def create_interaction_network(level, method, participants, components, out_path
     save_interaction_network(G, level, method, out_path, label)
     print(f"Finished creating interactome file for {level}-{method}")
     return G
-
-
-def get_or_create_interaction_network(level, method, participants, components, out_path="", label=""):
-    """
-    Returns a networkx graph instance of the selected interaction network.
-    Tries to read from a json file with the network. If the file does not exists it creates it.
-
-    :param level: genes, proteins or proteoforms. This attribute is just to set it as graph property.
-    :param method: "no_sm", "with_sm" or "with_unique_sm". This is just to set is as graph property.
-    :param participants: pandas dataframe with the reaction participants
-    :param components: pandas dataframe with the complex components
-    :param out_path: path to directory to store the json file
-    :param label: Any text to distinguish the graph file, ex. Pathway name
-    :return: The networkx interaction network
-    """
-
-    filename = get_json_filename(level, method, out_path, label)
-
-    if not Path(filename).exists():
-        create_interaction_network(level, method, participants, components, out_path, label)
-    g = read_graph(filename)
-
-    if not 'Articulation Points' in g.graph:
-        set_articulation_points(g)
-        set_num_articulation_points(g)
-        set_bridges(g)
-        set_num_bridges(g)
-        update_json_file(g, level, method, out_path)
-
-    return g
 
 
 def index(l, x, lo, hi):
@@ -504,17 +495,22 @@ def index_all_vertices(interactomes):
     """
     vertices = []
 
-    vertices_genes = [n for n, t in interactomes["genes"].nodes(data='type') if t == "genes"]
-    vertices_proteins = [n for n, t in interactomes["proteins"].nodes(data='type') if t == "proteins"]
-    vertices_proteoforms = [n for n, t in interactomes["proteoforms"].nodes(data='type') if t == "proteoforms"]
-    vertices_small_molecules = [n for n, t in interactomes["genes"].nodes(data='type') if t == "SimpleEntity"]
+    vertices_genes = [n for n, t in interactomes["genes"].nodes(
+        data='type') if t == "genes"]
+    vertices_proteins = [n for n, t in interactomes["proteins"].nodes(
+        data='type') if t == "proteins"]
+    vertices_proteoforms = [n for n, t in interactomes["proteoforms"].nodes(
+        data='type') if t == "proteoforms"]
+    vertices_small_molecules = [n for n, t in interactomes["genes"].nodes(
+        data='type') if t == "SimpleEntity"]
 
     vertices_genes.sort()
     vertices_proteins.sort()
     vertices_proteoforms.sort()
     vertices_small_molecules.sort()
 
-    vertices = [*vertices_genes, *vertices_proteins, *vertices_proteoforms, *vertices_small_molecules]
+    vertices = [*vertices_genes, *vertices_proteins, *
+                vertices_proteoforms, *vertices_small_molecules]
 
     start_index = {}
     end_index = {}
@@ -522,11 +518,14 @@ def index_all_vertices(interactomes):
     start_index["genes"] = 0
     end_index["genes"] = len(vertices_genes) - 1
     start_index["proteins"] = end_index["genes"] + 1
-    end_index["proteins"] = start_index["proteins"] + len(vertices_proteins) - 1
+    end_index["proteins"] = start_index["proteins"] + \
+        len(vertices_proteins) - 1
     start_index["proteoforms"] = end_index["proteins"] + 1
-    end_index["proteoforms"] = start_index["proteoforms"] + len(vertices_proteoforms) - 1
+    end_index["proteoforms"] = start_index["proteoforms"] + \
+        len(vertices_proteoforms) - 1
     start_index["SimpleEntity"] = end_index["proteoforms"] + 1
-    end_index["SimpleEntity"] = start_index["SimpleEntity"] + len(vertices_small_molecules) - 1
+    end_index["SimpleEntity"] = start_index["SimpleEntity"] + \
+        len(vertices_small_molecules) - 1
 
     print("Start indexes:")
     print(start_index)
@@ -564,14 +563,18 @@ def save_edges_with_indexed_vertices(interactomes, output_path, indexed_vertices
                 index1 = 0
                 index2 = 0
                 if e[0].startswith("sm_"):
-                    index1 = index(indexed_vertices, e[0], start_indexes["SimpleEntity"], end_indexes["SimpleEntity"])
+                    index1 = index(
+                        indexed_vertices, e[0], start_indexes["SimpleEntity"], end_indexes["SimpleEntity"])
                 else:
-                    index1 = index(indexed_vertices, e[0], start_indexes[level], end_indexes[level])
+                    index1 = index(
+                        indexed_vertices, e[0], start_indexes[level], end_indexes[level])
 
                 if e[1].startswith("sm_"):
-                    index2 = index(indexed_vertices, e[1], start_indexes["SimpleEntity"], end_indexes["SimpleEntity"])
+                    index2 = index(
+                        indexed_vertices, e[1], start_indexes["SimpleEntity"], end_indexes["SimpleEntity"])
                 else:
-                    index2 = index(indexed_vertices, e[1], start_indexes[level], end_indexes[level])
+                    index2 = index(
+                        indexed_vertices, e[1], start_indexes[level], end_indexes[level])
                 fh.write(f"{index1}\t{index2}\n")
     print(f"Created edges file with indexed vertices")
     return
@@ -582,7 +585,8 @@ def save_ranges(start_indexes, end_indexes, output_path):
     with codecs.open(ranges_file, 'w', "utf-8") as fh:
         for level in config.LEVELS:
             fh.write(f"{start_indexes[level]}\t{end_indexes[level]}\n")
-        fh.write(f"{start_indexes['SimpleEntity']}\t{end_indexes['SimpleEntity']}\n")
+        fh.write(
+            f"{start_indexes['SimpleEntity']}\t{end_indexes['SimpleEntity']}\n")
 
 
 def save_interactomes_with_indexed_vertices(interactomes, out_path):
@@ -594,17 +598,23 @@ def save_interactomes_with_indexed_vertices(interactomes, out_path):
     :return: void
     """
     # Gather the gene, protein, proteoform and small molecule vertices together and index all of them
-    indexed_vertices, start_indexes, end_indexes = index_all_vertices(interactomes)
+    indexed_vertices, start_indexes, end_indexes = index_all_vertices(
+        interactomes)
     assert end_indexes["SimpleEntity"] == len(indexed_vertices) - 1
-    assert sorted(indexed_vertices[start_indexes["genes"]:end_indexes["genes"]])
-    assert sorted(indexed_vertices[start_indexes["proteins"]:end_indexes["proteins"]])
-    assert sorted(indexed_vertices[start_indexes["proteoforms"]:end_indexes["proteoforms"]])
-    assert sorted(indexed_vertices[start_indexes["SimpleEntity"]:end_indexes["SimpleEntity"]])
+    assert sorted(
+        indexed_vertices[start_indexes["genes"]:end_indexes["genes"]])
+    assert sorted(
+        indexed_vertices[start_indexes["proteins"]:end_indexes["proteins"]])
+    assert sorted(
+        indexed_vertices[start_indexes["proteoforms"]:end_indexes["proteoforms"]])
+    assert sorted(
+        indexed_vertices[start_indexes["SimpleEntity"]:end_indexes["SimpleEntity"]])
 
     save_indexed_vertices(indexed_vertices, out_path)
 
     # Create three files with the interactomes
-    save_edges_with_indexed_vertices(interactomes, out_path, indexed_vertices, start_indexes, end_indexes)
+    save_edges_with_indexed_vertices(
+        interactomes, out_path, indexed_vertices, start_indexes, end_indexes)
 
     save_ranges(start_indexes, end_indexes, out_path)
 
@@ -620,8 +630,10 @@ def save_interactomes_with_indexed_vertices(interactomes, out_path):
 
 
 def get_sizes(interactome_list, index):
-    num_interactions = pd.Series([interactome.size() for interactome in interactome_list], index=index)
-    num_entities = pd.Series([interactome.graph['num_entities'] for interactome in interactome_list], index=index)
+    num_interactions = pd.Series([interactome.size()
+                                 for interactome in interactome_list], index=index)
+    num_entities = pd.Series([interactome.graph['num_entities']
+                             for interactome in interactome_list], index=index)
     num_small_molecules = pd.Series([interactome.graph['num_small_molecules'] for interactome in interactome_list],
                                     index=index)
 
@@ -663,7 +675,8 @@ def set_articulation_points(G):
 
 
 def set_num_articulation_points(G):
-    G.graph['Articulation Points'] = len([x for x, y in G.nodes(data=True) if y['Articulation Point']])
+    G.graph['Articulation Points'] = len(
+        [x for x, y in G.nodes(data=True) if y['Articulation Point']])
 
 
 def set_bridges(G):
@@ -678,23 +691,8 @@ def set_bridges(G):
 
 
 def set_num_bridges(G):
-    G.graph["Bridges"] = len([True for node1, node2, data in G.edges(data=True) if data['Bridge']])
-
-
-def get_interactomes(graphs_path):
-    participant_records = {l: get_participants(l, graphs_path) for l in [*LEVELS, sm]}
-    components_records = {l: get_components(l, graphs_path) for l in [*LEVELS, sm]}
-
-    interactomes_no_sm = {
-        l: get_or_create_interaction_network(l, no_sm, participant_records, components_records, graphs_path) for l in
-        LEVELS}
-    interactomes_with_sm = {
-        l: get_or_create_interaction_network(l, with_sm, participant_records, components_records, graphs_path) for l in
-        LEVELS}
-    interactomes_with_unique_sm = {
-        l: get_or_create_interaction_network(l, with_unique_sm, participant_records, components_records, graphs_path)
-        for l in LEVELS}
-    return interactomes_no_sm, interactomes_with_sm, interactomes_with_unique_sm
+    G.graph["Bridges"] = len(
+        [True for node1, node2, data in G.edges(data=True) if data['Bridge']])
 
 
 def get_increase_percentage(num1, num2):
@@ -733,9 +731,11 @@ def get_pathways_with_multiple_proteoforms():
 
     selected_pathways = []
     for pathway in pathways:
-        filename = get_json_filename(config.proteins, config.no_sm, config.PATHWAY_GRAPHS_PATH, pathway)
+        filename = get_json_filename(
+            config.proteins, config.no_sm, config.PATHWAY_GRAPHS_PATH, pathway)
         if not Path(filename).exists():
-            create_pathway_interaction_network(pathway, config.proteins, config.no_sm, config.PATHWAY_GRAPHS_PATH)
+            create_pathway_interaction_network(
+                pathway, config.proteins, config.no_sm, config.PATHWAY_GRAPHS_PATH)
         G = read_graph(filename)
         if any(protein in selected_proteins for protein in list(G.nodes)):
             selected_pathways.append(pathway)
@@ -749,4 +749,5 @@ if __name__ == '__main__':
 
     df_pathways = get_pathways()
     for pathway in df_pathways["stId"]:
-        create_pathway_interaction_networks(pathway, "../../../resources/pathway_networks/")
+        create_pathway_interaction_networks(
+            pathway, "../../../resources/pathway_networks/")

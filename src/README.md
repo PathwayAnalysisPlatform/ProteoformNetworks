@@ -6,8 +6,11 @@ The starting point are the jupyter notebook files under the 'python/' directory:
 
 #### 0.0 Set up
 
-- Install Neo4j
-- Run python
+- [Get Reactome Graph database as described here.](https://reactome.org/dev/graph-database)
+
+  Suggest using [Neo4j Desktop](https://reactome.org/dev/graph-database/neo4j-desktop) instead of the manual installation.
+
+- [Install Python](https://www.python.org/downloads/)
 
 #### 0.1 Obtain all reference data:
 
