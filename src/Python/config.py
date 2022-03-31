@@ -1,6 +1,7 @@
 import os
 import sys
 import pandas as pd
+import pathlib
 
 from bokeh.palettes import Colorblind
 
@@ -42,19 +43,20 @@ PATH_RESOURCES = "resources/"
 FILE_PATHWAYMATCHER = "PathwayMatcher.jar"
 URL_PATHWAYMATCHER = "https://github.com/PathwayAnalysisPlatform/PathwayMatcher/releases/latest/download/PathwayMatcher.jar"
 
-DATA_REACTOME_PATH = "data/Reactome/76/"
+DATA_REACTOME_PATH = "data/Reactome/79/"
 NETWORKS_PATH = "networks/"
 MAPPING_FILE = "mapping_proteins_to_level.tsv"
 
 
-def set_root_wd(location="\\..\\.."):
+def set_root_wd():
     """Moves to one diretory above the location of the interpreter
 
     Assumes there is a virtual environment located <repo_root>/venv/
     """
-    # os.chdir(os.path.dirname(os.path.abspath(sys.executable)) + location)
-    os.chdir(os.getcwd() + location)
-    print(f"Working directory: {os.getcwd()}")
+    print(f"Initial working directory: {pathlib.Path(__file__).parent.resolve()}")
+    while(not os.getcwd().endswith("ProteoformNetworks")):
+        os.chdir("..\\")
+    print(f"New working directory: {os.getcwd()}")
 
 
 def get_entity_color(type, level):

@@ -11,6 +11,17 @@ The starting point are the jupyter notebook files under the 'python/' directory:
   Suggest using [Neo4j Desktop](https://reactome.org/dev/graph-database/neo4j-desktop) instead of the manual installation.
 
 - [Install Python](https://www.python.org/downloads/)
+- Make sure [pip tool](https://pip.pypa.io/en/stable/installation/) for Python is installed:
+
+```
+py -m pip install --upgrade pip
+```
+
+- Install dependency packages listed in the _requirements.txt_ file. They are necessary for plotting and data handling.
+
+```
+py -m pip install -r requirements.txt
+```
 
 #### 0.1 Obtain all reference data:
 
@@ -28,6 +39,7 @@ The starting point are the jupyter notebook files under the 'python/' directory:
 - Small molecules
 - Reactions
 - Pathways
+- Count how often proteoforms are identical, intermediate and distinct
 
 ### 1. Network construction:
 
@@ -40,20 +52,22 @@ The starting point are the jupyter notebook files under the 'python/' directory:
 
 ### 2. Characterization of single network topology:
 
-Metrics will be shown in tables with a color coding scheme:
+- 2.1 Size: Number of nodes, links, accessioned entities, small molecules
+- 2.2 Node degree: Cases when proteoforms have higher or lower degree with examples
+- 2.3 Observability (percolation analysis): Quantify predicting power with threshold proteoform interactome
+- 2.4 Connectedness
+- 2.5 Articulation points and Bridges
+- 2.6 Path length
+- 2.7 Average local clustering coefficient
 
-- Size: Number of nodes, links, accessioned entities, small molecules
-- Node degree: Cases when proteoforms have higher or lower degree with examples
-- Count how often proteoforms are identical, intermediate and distinct
-- Observability (percolation analysis): Quantify predicting power with threshold proteoform interactome
-- Connectedness
-- Articulation points
-- Bridges
-- Path length
-- Average local clustering coefficient
+Contextualized differences:
+
 - Cases when proteoform nodes have higher or lower degree with examples. (Fig)
 - Examples when proteoforms have distinct set of neighbors, therefore influencing the 'guilty by association' process. (Fig)
-- Select and plot examples of netowrks that change their topology when using proteoforms or small molecules
+- Example of pathways that when modelled with genes vs proteoforms they become disconnected or connected.
+- Example of pathways that change much the number of articulation points when changing from genes to proteoforms.
+- Examples of pathways that change much the number of bridges when changing from genes to proteoforms.
+- Select and plot examples of networks that change their topology when using proteoforms or small molecules
 - Metrics of agglomeration of participants of a same disease. The higher the more functional similarity
 
 ### 3. Characterization of pairwise network relationships:
