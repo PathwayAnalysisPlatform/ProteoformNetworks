@@ -110,11 +110,13 @@ def get_participants(level, location=""):
     filename = location + "records_reaction_participants_" + level + ".csv"
 
     if not path.exists(filename):
+        print(f"Quering participants of all reactions for level {level}...")
         participants = get_query_result(QUERIES_PARTICIPANTS[level])
         participants = fix_neo4j_values(participants, level)
         participants.to_csv(filename)
         return participants
     else:
+        print(f"Reading participants of all reactions for level {level}...")
         return pd.read_csv(filename)
 
 
@@ -168,6 +170,7 @@ def get_components(level, location=""):
     filename = location + "records_complex_components_" + level + ".csv"
 
     if not path.exists(filename):
+        print(f"Reading components of all complexes for level {level}...")
         components = get_query_result(QUERIES_COMPONENTS[level])
         components = fix_neo4j_values(components, level)
         components.to_csv(filename)
@@ -175,10 +178,11 @@ def get_components(level, location=""):
             return get_empty_components_dataframe(level)
         return components
     else:
-       components = pd.read_csv(filename)
-       if len(components) == 0:
-           components = get_empty_components_dataframe(level)
-       return components
+        print(f"Reading components of all complexes for level {level}...")
+        components = pd.read_csv(filename)
+        if len(components) == 0:
+            components = get_empty_components_dataframe(level)
+        return components
 
 
 def get_complexes_by_pathway(pathway):
