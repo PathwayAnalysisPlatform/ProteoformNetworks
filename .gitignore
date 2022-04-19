@@ -1,3 +1,6 @@
+data/
+networks/
+
 # VS Code
 .vs/
 .vscode/

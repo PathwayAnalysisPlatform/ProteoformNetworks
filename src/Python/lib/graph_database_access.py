@@ -1,6 +1,7 @@
 import re
 from os import path
 
+import config
 import pandas as pd
 from neo4j import GraphDatabase
 
@@ -15,7 +16,7 @@ def get_query_result(query):
     :param query: Cypher string with the query to get the data
     :return: pandas dataframe with the result records
     """
-    db = GraphDatabaseAccess("bolt://localhost", "neo4j", "")
+    db = GraphDatabaseAccess("bolt://localhost", "neo4j", "reactome79")
     df = db.get_result(query)
     db.close()
     return df;
@@ -135,7 +136,7 @@ def get_empty_participants_dataframe(level):
 def get_participants_by_pathway(pathway, level, out_path=""):
     # print(f"Getting participants for pathway {pathway} for level {level}")
 
-    filename = out_path + "participants/pathway_" + pathway + "_" + level + ".csv"
+    filename = out_path + "pathway_" + pathway + "_" + level + ".csv"
 
     participants = pd.DataFrame()
     if not path.exists(filename):
