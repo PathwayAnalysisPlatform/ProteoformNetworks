@@ -2,9 +2,7 @@ This is the root folder with all the code for performing Proteoform Network anal
 
 The starting point are the jupyter notebook files under the 'python/' directory:
 
-### 0. Pre-analysis
-
-#### 0.0 Set up
+## Set up
 
 - [Get Reactome Graph database as described here.](https://reactome.org/dev/graph-database)
 
@@ -23,34 +21,38 @@ py -m pip install --upgrade pip
 py -m pip install -r requirements.txt
 ```
 
-#### 0.1 Obtain all reference data:
+## Gather reference data:
 
 - Accessioned entities
 - Pathways
 - Gene - disease associations
 
-#### 0.2 Reference data overview:
+## 0. Data overview:
 
-- Genes
-- Proteins
-- Proteoforms
+- Number of Genes, Protein and Proteoforms in Reactome.
 - Show distribution current knowledge of diversity for each gene (Fig)
 - Table with top genes with most proteoforms (Fig)
 - Small molecules
 - Reactions
 - Pathways
 - Count how often proteoforms are identical, intermediate and distinct
+- Check for protein products of a single gene, what is the distribution of jaccard index of the reactions in which they participate
+- Check for proteoform products of a single gene, the distribution of jaccard index values of the reactions in which they participate
+- Examples:
+  1. Gene with multiple proteoforms
 
-### 1. Network construction:
+## 1. Network construction:
 
-1.1 Interactomes
-1.2 Pathways into gene, protein and proteoform interaction networks
-1.3 Disease networks with gene, protein and proteoform nodes
+- Networks by biological process, i.e. per pathway (**Functional**)
+- Networks with all known interactions (**Interactome**)
+- Networks for a trait of disease (**Module**)
 
-- Construct them using a boundary to include only the induced graph from directly related gene products.
-- Alternatively, construct networks including the first-order neighborhood. Meaning, the induced graph of the closed neighborhood of the directly related nodes.
+Construct them using a boundary to include only the induced graph from directly related gene products.
+Alternatively, construct networks including the first-order neighborhood. Meaning, the induced graph of the closed neighborhood of the directly related nodes.
 
-### 2. Characterization of single network topology:
+## 2. Single network characterization
+
+#### Metrics
 
 - 2.1 Size: Number of nodes, links, accessioned entities, small molecules
 - 2.2 Node degree: Cases when proteoforms have higher or lower degree with examples
@@ -60,7 +62,7 @@ py -m pip install -r requirements.txt
 - 2.6 Path length
 - 2.7 Average local clustering coefficient
 
-Contextualized differences:
+#### Examples
 
 - Cases when proteoform nodes have higher or lower degree with examples. (Fig)
 - Examples when proteoforms have distinct set of neighbors, therefore influencing the 'guilty by association' process. (Fig)
@@ -70,7 +72,9 @@ Contextualized differences:
 - Select and plot examples of networks that change their topology when using proteoforms or small molecules
 - Metrics of agglomeration of participants of a same disease. The higher the more functional similarity
 
-### 3. Characterization of pairwise network relationships:
+## 3. Pairwise relationship characterization
+
+#### Metrics
 
 - Network separation index
 - Jaccard index
