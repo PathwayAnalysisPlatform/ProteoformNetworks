@@ -30,8 +30,11 @@ def get_or_create_interaction_network(level, method, participants, components, o
     filename = get_json_filename(level, method, out_path, label)
 
     if not Path(filename).exists():
-        create_interaction_network(
-            level, method, participants, components, out_path, label, v)
+        if v: 
+            print(f"Creating interaction network for {label} at {level} level, method {method}...")
+        create_interaction_network(level, method, participants, components, out_path, label, v)
+    else:
+        print(f"Reading interaction network for {label} at {level} level, method {method}...")
     g = read_graph(filename)
 
     if not 'Articulation Points' in g.graph:
@@ -45,7 +48,10 @@ def get_or_create_interaction_network(level, method, participants, components, o
 
 
 def get_interactomes(input_data_path, output_networks_path):
-    """ Get or create interactomes: With only accessioned sequence nodes, with small molecule nodes and with reaction-unique-small molecules"""
+    """ Get or create interactomes: With only accessioned sequence nodes, with small molecule nodes and with reaction-unique-small molecules
+    
+    Returns tuple with 3 dictionaries: level to network
+    """
     participant_records = {l: get_participants(
         l, input_data_path) for l in [*LEVELS, sm]}
     components_records = {l: get_components(
@@ -104,12 +110,13 @@ def create_pathway_interaction_network(pathway, level, method, out_path, v=True)
 
 def create_pathway_interaction_networks(pathway, out_path, v=False):
     """
-    Creates interaction networks for a pathway in all three levels, with the 3 contruction methods
+    Creates 9 interaction networks for a pathway: 3 levels (genes, proteins, proteoforms) and 3 contruction 
+    methods (without small molecules, with small molecules and with reaction-unique small molecules)
 
-    If pathway does not exists, then returns empty networks.
     :param pathway: Pathway stId string
     :param out_path:
-    :return: Get dictionary {method: lists of 3 pathways}.
+    :return: Get dictionary {method: [list of 3 networks for each level]}.
+    If pathway does not exists, then returns empty networks.
     """
 
     name = get_pathway_name(pathway)
@@ -494,8 +501,8 @@ def create_interaction_network(level, method, participants, components, out_path
 
     :param level: genes, proteins or proteoforms. This attribute is just to set it as graph property.
     :param method: "no_sm", "with_sm" or "with_unique_sm". This is just to set is as graph property.
-    :param participants: pandas dataframe with the reaction participants
-    :param components: pandas dataframe with the complex components
+    :param participants: dictionary of 3 pandas dataframes with the reaction participants, one for each level
+    :param components: dictionary of 3 pandas dataframes with the complex components, one for each level
     :param out_path: path to directory to store the json file
     :return: The networkx interaction network
     """
