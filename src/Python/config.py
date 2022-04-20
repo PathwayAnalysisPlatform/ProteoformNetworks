@@ -47,6 +47,7 @@ DATA_REACTOME_PATH = "data/Reactome/79/"
 NETWORKS_PATH = "networks/"
 MAPPING_FILE = "mapping_proteins_to_level.tsv"
 PATHWAY_GRAPHS_PATH = "networks/pathways/"
+INTERACTOMES_PATH = NETWORKS_PATH + "interactomes/"
 
 
 def set_root_wd():
