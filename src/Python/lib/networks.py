@@ -8,7 +8,7 @@ import networkx as nx
 import pandas as pd
 
 import config
-from config import no_sm, with_sm, with_unique_sm, sm, LEVELS
+from config import no_sm, with_sm, with_unique_sm, sm, LEVELS, INTERACTOMES_PATH
 from lib.dictionaries import read_dictionary_one_to_set
 from lib.graph_database_access import get_pathway_name, get_participants_by_pathway, get_components_by_pathway, \
     get_pathways, get_participants, get_components
@@ -52,6 +52,7 @@ def get_interactomes(input_data_path, output_networks_path):
     
     Returns tuple with 3 dictionaries: level to network
     """
+
     participant_records = {l: get_participants(
         l, input_data_path) for l in [*LEVELS, sm]}
     components_records = {l: get_components(
@@ -431,6 +432,9 @@ def save_interaction_network(G, level, method, out_path, label="", v=False):
     if isinstance(out_path, str) and len(out_path) > 0:
         if out_path[-1] != '/':
             out_path += "/"
+
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
 
     name_start = ""
     if len(label) > 0:

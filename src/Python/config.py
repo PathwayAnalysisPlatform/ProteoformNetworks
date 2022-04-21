@@ -48,6 +48,8 @@ NETWORKS_PATH = "networks/"
 MAPPING_FILE = "mapping_proteins_to_level.tsv"
 PATHWAY_GRAPHS_PATH = "networks/pathways/"
 INTERACTOMES_PATH = NETWORKS_PATH + "interactomes/"
+FILE_GENES_TO_PROTEINS = "mapping_proteins_to_genes.tsv"
+FILE_PROTEINS_TO_PROTEOFORMS = "mapping_proteins_to_proteoforms.tsv"
 
 
 def set_root_wd():
