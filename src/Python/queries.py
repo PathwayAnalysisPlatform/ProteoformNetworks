@@ -64,17 +64,23 @@ def get_query_participants_by_pathway(level, pathway="", reaction=""):
 
 QUERIES_COMPONENTS = {
     genes: """
-    MATCH (c:Complex{speciesName:'Homo sapiens'})-[:hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'})-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
+    MATCH (p:Pathway{speciesName:'Homo sapiens'})-[:hasEvent*]->(r:ReactionLikeEvent{speciesName:'Homo sapiens'}),
+    (r)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(c:Complex{speciesName:'Homo sapiens'}),
+    (c)-[:hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'})-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
     RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName AS Name, last(labels(pe)) as Type, head(re.geneName) as Id
     ORDER BY Complex
     """,
     proteins: """
-    MATCH (c:Complex{speciesName:'Homo sapiens'})-[:hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'})-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
+    MATCH (p:Pathway{speciesName:'Homo sapiens'})-[:hasEvent*]->(r:ReactionLikeEvent{speciesName:'Homo sapiens'}),
+    (r)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(c:Complex{speciesName:'Homo sapiens'}),
+    (c)-[:hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'})-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
     RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName AS Name, last(labels(pe)) as Type, re.identifier as Id, head(re.geneName) as PrevId
     ORDER BY Complex
     """,
     proteoforms: """
-    MATCH (c:Complex{speciesName:'Homo sapiens'})-[:hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'})-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
+    MATCH (p:Pathway{speciesName:'Homo sapiens'})-[:hasEvent*]->(r:ReactionLikeEvent{speciesName:'Homo sapiens'}),
+    (r)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(c:Complex{speciesName:'Homo sapiens'}),
+    (c)-[:hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'})-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
     WITH DISTINCT c, pe, last(labels(pe)) as Type, re
     OPTIONAL MATCH (pe)-[:hasModifiedResidue]->(tm:TranslationalModification)-[:psiMod]->(mod:PsiMod)
     WITH DISTINCT c.stId as Complex, 
@@ -96,7 +102,9 @@ QUERIES_COMPONENTS = {
     ORDER BY Complex
     """,
     sm: """
-    MATCH (c:Complex{speciesName:'Homo sapiens'})-[:hasComponent|hasMember|hasCandidate*]->(pe:SimpleEntity)
+    MATCH (p:Pathway{speciesName:'Homo sapiens'})-[:hasEvent*]->(r:ReactionLikeEvent{speciesName:'Homo sapiens'}),
+    (r)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(c:Complex{speciesName:'Homo sapiens'}),
+    (c)-[:hasComponent|hasMember|hasCandidate*]->(pe:SimpleEntity)
     RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName as Name, last(labels(pe)) as Type, "sm_" + pe.displayName as Id, "sm_" + c.stId + "_" + pe.displayName as UniqueId
     ORDER BY Complex
     """
@@ -122,8 +130,24 @@ WHERE size(Type) <= 1 AND "SimpleEntity" in Type
 RETURN Reaction, Entity, Type, names
 """
 
+QUERY_GET_ALL_GENES = """
+MATCH (p:Pathway{speciesName:'Homo sapiens'})-[:hasEvent*]->(r:ReactionLikeEvent{speciesName:'Homo sapiens'}),
+(r)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'}),
+(pe)-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
+RETURN DISTINCT  head(re.geneName) as Id
+"""
+
+QUERY_GET_ALL_PROTEINS = """
+MATCH (p:Pathway{speciesName:'Homo sapiens'})-[:hasEvent*]->(r:ReactionLikeEvent{speciesName:'Homo sapiens'}),
+(r)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'}),
+(pe)-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
+RETURN DISTINCT re.identifier as Id
+"""
+
 QUERY_GET_ALL_PROTEOFORMS = """
-MATCH (pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'})-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
+MATCH (p:Pathway{speciesName:'Homo sapiens'})-[:hasEvent*]->(r:ReactionLikeEvent{speciesName:'Homo sapiens'}),
+(r)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'}),
+(pe)-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
 WITH DISTINCT pe, re
 OPTIONAL MATCH (pe)-[:hasModifiedResidue]->(tm:TranslationalModification)-[:psiMod]->(mod:PsiMod)
 WITH DISTINCT pe.stId as Entity, 
@@ -135,6 +159,11 @@ ORDER BY ptm_type, ptm_coordinate
 WITH DISTINCT Entity, Name, Id, COLLECT(ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END) AS ptms
 WITH DISTINCT Entity, Name, (Id+ptms) as Id
 RETURN DISTINCT Id ORDER BY Id
+"""
+
+QUERY_GET_ALL_REACTIONS = """
+MATCH (p:Pathway{speciesName:'Homo sapiens'})-[:hasEvent*]->(r:ReactionLikeEvent{speciesName:'Homo sapiens'})
+RETURN DISTINCT r.stId as Id, r.displayName as Name
 """
 
 QUERY_GET_PROTEOFORMS_OF_EACH_PROTEIN = """
