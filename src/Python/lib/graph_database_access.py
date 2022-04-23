@@ -21,13 +21,14 @@ def get_query_result(query):
     db = GraphDatabaseAccess("bolt://localhost", "neo4j", DATABASE_NAME)
     df = db.get_result(query)
     db.close()
-    return df;
+    return df
 
 
 class GraphDatabaseAccess:
 
     def __init__(self, uri, user, password):
-        self.driver = GraphDatabase.driver(uri, auth=(user, password), encrypted=False)
+        self.driver = GraphDatabase.driver(
+            uri, auth=(user, password), encrypted=False)
 
     def close(self):
         self.driver.close()
@@ -87,8 +88,10 @@ def fix_neo4j_values(df, level):
     if len(df) == 0:
         return df
 
-    df['Id'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.Id) if x.Type == 'SimpleEntity' else x.Id, axis=1)
-    df['Id'] = df.apply(lambda x: str(x.Id).replace(" ", "_").strip() if x.Type == 'SimpleEntity' else x.Id, axis=1)
+    df['Id'] = df.apply(lambda x: re.sub(
+        r'\s*\[[\w\s]*\]\s*', '', x.Id) if x.Type == 'SimpleEntity' else x.Id, axis=1)
+    df['Id'] = df.apply(lambda x: str(x.Id).replace(
+        " ", "_").strip() if x.Type == 'SimpleEntity' else x.Id, axis=1)
 
     if "UniqueId" in df.columns:
         df['UniqueId'] = df.apply(
@@ -263,7 +266,7 @@ def get_reactions_by_pathway(pathway):
 
 
 def get_reactions():
-    query = "MATCH (rle:ReactionLikeEvent{speciesName:\"Homo sapiens\"}) RETURN rle.stId as stId"
+    query = "MATCH (p:Pathway{speciesName:\"Homo sapiens\"})-[:hasEvent]->(rle:ReactionLikeEvent{speciesName:\"Homo sapiens\"}) RETURN DISTINCT rle.stId as stId"
     return get_query_result(query)
 
 
@@ -299,7 +302,8 @@ def get_reaction_participants_by_reaction(reaction, level, showSmallMolecules, v
         raise Exception
 
     if (verbose):
-        print(f"\n\nQuerying {level} participants of reaction {reaction}...\n\n")
+        print(
+            f"\n\nQuerying {level} participants of reaction {reaction}...\n\n")
     query = ""
     if level in ["genes", "proteins"]:
         query = f"""
