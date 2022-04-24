@@ -43,7 +43,7 @@ QUERIES_PARTICIPANTS = {
               p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:SimpleEntity),
               (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
         RETURN DISTINCT pw.stId as Pathway, rle.stId as Reaction, pe.stId as Entity, pe.displayName as Name, 
-        last(labels(pe)) as Type, "sm_" + pe.displayName as Id, "sm_" + rle.stId + "_" + pe.displayName as UniqueId, 
+        last(labels(pe)) as Type, "sm_" + head(pe.name) as Id, "sm_" + rle.stId + "_" + head(pe.name) as UniqueId, 
         rd.displayName AS Database,  
                         head([scores IN relationships(p) | type(scores)]) as Role
         ORDER BY Pathway, Reaction, Role, Type
@@ -105,7 +105,7 @@ QUERIES_COMPONENTS = {
     MATCH (p:Pathway{speciesName:'Homo sapiens'})-[:hasEvent*]->(r:ReactionLikeEvent{speciesName:'Homo sapiens'}),
     (r)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(c:Complex{speciesName:'Homo sapiens'}),
     (c)-[:hasComponent|hasMember|hasCandidate*]->(pe:SimpleEntity)
-    RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName as Name, last(labels(pe)) as Type, "sm_" + pe.displayName as Id, "sm_" + c.stId + "_" + pe.displayName as UniqueId
+    RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, head(pe.name) as Name, last(labels(pe)) as Type, "sm_" + head(pe.name) as Id, "sm_" + c.stId + "_" + head(pe.name) as UniqueId
     ORDER BY Complex
     """
 }
@@ -159,6 +159,15 @@ ORDER BY ptm_type, ptm_coordinate
 WITH DISTINCT Entity, Name, Id, COLLECT(ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END) AS ptms
 WITH DISTINCT Entity, Name, (Id+ptms) as Id
 RETURN DISTINCT Id ORDER BY Id
+"""
+
+QUERY_GET_ALL_SMALL_MOLECULES = """
+MATCH (pw:Pathway{speciesName:'Homo sapiens'})-[:hasEvent]->(rle:ReactionLikeEvent{speciesName:'Homo sapiens'}),
+      p = (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:SimpleEntity),
+      (pe)-[:referenceEntity]->(re:ReferenceEntity)-[:referenceDatabase]->(rd:ReferenceDatabase)
+RETURN DISTINCT
+      head(pe.name) as Name,
+      collect(DISTINCT pe.stId + ":" + pe.displayName) as stIds
 """
 
 QUERY_GET_ALL_REACTIONS = """
