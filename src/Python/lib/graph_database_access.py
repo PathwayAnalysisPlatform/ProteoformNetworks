@@ -277,14 +277,17 @@ def get_complexes():
 
 def get_complex_components_by_complex(complex, level, out_path=""):
     # print(f"\tGetting components of complex: {complex}")
-    filename = out_path + "complexes/complex_" + complex + "_" + level + ".csv"
+    out_path += "complexes/"
+    filename = out_path + "complex_" + complex + "_" + level + ".csv"
 
-    if not path.exists(filename):
+    if not os.path.exists(filename):
         query = QUERIES_COMPONENTS[level].replace(
             "Complex{speciesName:'Homo sapiens'}",
             f"Complex{{speciesName:'Homo sapiens', stId:'{complex}'}}")
         components = get_query_result(query)
         components = fix_neo4j_values(components, level)
+        if not os.path.exists(out_path):
+            os.makedirs(out_path)
         if len(components) == 0:
             components = get_empty_components_dataframe(level)
         components.to_csv(filename)

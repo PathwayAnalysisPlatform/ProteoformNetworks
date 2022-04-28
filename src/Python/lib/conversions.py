@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 import networkx as nx
@@ -28,7 +29,7 @@ def map_ids(ids, from_database_name='GENENAME', to_database_name='ACC'):
     req = urllib.request.Request(url, data)
     with urllib.request.urlopen(req) as f:
         response = f.read()
-        #print(str(response.decode('utf-8')))
+        # print(str(response.decode('utf-8')))
         return convert_tab_to_dict(str(response.decode('utf-8')))
 
 
@@ -63,7 +64,8 @@ def create_gene_to_protein_mapping(path_file_genes,
                 print(f"  Converting genes {start} to {end}")
                 selected_ids = list(unique_genes.gene)[start:end]
                 print("Converting: \n", selected_ids)
-                mapping = map_ids(selected_ids, from_database_name="GENENAME", to_database_name="ACC")
+                mapping = map_ids(
+                    selected_ids, from_database_name="GENENAME", to_database_name="ACC")
                 for key, values in mapping.items():
                     for value in values:
                         file_gene_to_protein.write(f"{key}\t{value}\n")
@@ -88,7 +90,8 @@ def read_or_create_mapping_proteins_to_level(mapping_file, G, level):
         print("Wrong level to map, can not map proteins to proteins.")
         return
     elif level not in LEVELS:
-        print(f"Unkown entity level {level}, expected {LEVELS[0]} or {LEVELS[2]}")
+        print(
+            f"Unkown entity level {level}, expected {LEVELS[0]} or {LEVELS[2]}")
         return
 
     map = {}
@@ -111,6 +114,11 @@ def read_or_create_mapping_proteins_to_level(mapping_file, G, level):
                 n, p = line.split("\t")
                 map[n] = p
     return map
+
+
+def get_protein_accession(proteoform):
+    p = re.search("[;-]", proteoform).start()
+    return proteoform[:p]
 
 
 if __name__ == '__main__':

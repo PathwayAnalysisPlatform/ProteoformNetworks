@@ -214,7 +214,7 @@ RETURN DISTINCT Protein, Proteoforms, NumProteoforms ORDER BY NumProteoforms DES
 QUERY_GET_PATHWAYS_BY_PROTEIN = """
 MATCH (p:Pathway{speciesName:"Homo sapiens"})-[:hasEvent*]->(rle:ReactionLikeEvent{speciesName:"Homo sapiens"}),
       (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity),
-      (pe)-[:referenceEntity]->(re:ReferenceEntity{identifier:"P04049", databaseName:"UniProt"})
+      (pe)-[:referenceEntity]->(re:ReferenceEntity{identifier:"", databaseName:"UniProt"})
 RETURN DISTINCT p.stId AS PathwayId, p.displayName AS Pathway, re.identifier AS Identifier
 ORDER BY PathwayId, Identifier
 """
