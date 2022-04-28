@@ -1,7 +1,9 @@
 import re
+import os
 from os import path
 
 import config
+from config import DATABASE_NAME
 import pandas as pd
 from neo4j import GraphDatabase
 
@@ -16,16 +18,17 @@ def get_query_result(query):
     :param query: Cypher string with the query to get the data
     :return: pandas dataframe with the result records
     """
-    db = GraphDatabaseAccess("bolt://localhost", "neo4j", "reactome79")
+    db = GraphDatabaseAccess("bolt://localhost", "neo4j", DATABASE_NAME)
     df = db.get_result(query)
     db.close()
-    return df;
+    return df
 
 
 class GraphDatabaseAccess:
 
     def __init__(self, uri, user, password):
-        self.driver = GraphDatabase.driver(uri, auth=(user, password), encrypted=False)
+        self.driver = GraphDatabase.driver(
+            uri, auth=(user, password), encrypted=False)
 
     def close(self):
         self.driver.close()
@@ -49,10 +52,13 @@ def make_proteoform_string(value):
     """
     Create proteoform string in the simple format: isoform;ptm1,ptm2...
     Adds a ';' at the end of the proteoform when there are no ptms, to make sure the string represents a proteoform.
-    Examples: 	["P36507", "00046:null", "00047:null"] or 	["P28482"]
+    Examples: 	
+    ["P36507", "00046:null", "00047:null"] --> "P36507;00046:null,00047:null"
+    ["P28482"] --> "P28482;"
+    ["O60500", "00048:1158", "00048:1176", "00048:1193", "00048:1217"] --> "O60500;00048:1158,00048:1176,00048:1193,00048:1217"
 
-    :param value: array of strings
-    :return:
+    :param value: array of strings; raw proteoform read from Neo4j
+    :return: proteoform in simple string format
     """
     if type(value) == str:
         return value + ";"
@@ -82,8 +88,10 @@ def fix_neo4j_values(df, level):
     if len(df) == 0:
         return df
 
-    df['Id'] = df.apply(lambda x: re.sub(r'\s*\[[\w\s]*\]\s*', '', x.Id) if x.Type == 'SimpleEntity' else x.Id, axis=1)
-    df['Id'] = df.apply(lambda x: str(x.Id).replace(" ", "_").strip() if x.Type == 'SimpleEntity' else x.Id, axis=1)
+    df['Id'] = df.apply(lambda x: re.sub(
+        r'\s*\[[\w\s]*\]\s*', '', x.Id) if x.Type == 'SimpleEntity' else x.Id, axis=1)
+    df['Id'] = df.apply(lambda x: str(x.Id).replace(
+        " ", "_").strip() if x.Type == 'SimpleEntity' else x.Id, axis=1)
 
     if "UniqueId" in df.columns:
         df['UniqueId'] = df.apply(
@@ -113,6 +121,8 @@ def get_participants(level, location=""):
         print(f"Quering participants of all reactions for level {level}...")
         participants = get_query_result(QUERIES_PARTICIPANTS[level])
         participants = fix_neo4j_values(participants, level)
+        if not os.path.exists(location):
+            os.makedirs(location)
         participants.to_csv(filename)
         return participants
     else:
@@ -147,6 +157,8 @@ def get_participants_by_pathway(pathway, level, out_path=""):
         participants = fix_neo4j_values(participants, level)
         if len(participants) == 0:
             participants = get_empty_participants_dataframe(level)
+        if not os.path.exists(out_path):
+            os.makedirs(out_path)
         participants.to_csv(filename)
     else:
         participants = pd.read_csv(filename)
@@ -173,6 +185,8 @@ def get_components(level, location=""):
         print(f"Reading components of all complexes for level {level}...")
         components = get_query_result(QUERIES_COMPONENTS[level])
         components = fix_neo4j_values(components, level)
+        if not os.path.exists(location):
+            os.makedirs(location)
         components.to_csv(filename)
         if len(components) == 0:
             return get_empty_components_dataframe(level)
@@ -252,7 +266,7 @@ def get_reactions_by_pathway(pathway):
 
 
 def get_reactions():
-    query = "MATCH (rle:ReactionLikeEvent{speciesName:\"Homo sapiens\"}) RETURN rle.stId as stId"
+    query = "MATCH (p:Pathway{speciesName:\"Homo sapiens\"})-[:hasEvent]->(rle:ReactionLikeEvent{speciesName:\"Homo sapiens\"}) RETURN DISTINCT rle.stId as stId"
     return get_query_result(query)
 
 
@@ -263,14 +277,17 @@ def get_complexes():
 
 def get_complex_components_by_complex(complex, level, out_path=""):
     # print(f"\tGetting components of complex: {complex}")
-    filename = out_path + "complexes/complex_" + complex + "_" + level + ".csv"
+    out_path += "complexes/"
+    filename = out_path + "complex_" + complex + "_" + level + ".csv"
 
-    if not path.exists(filename):
+    if not os.path.exists(filename):
         query = QUERIES_COMPONENTS[level].replace(
             "Complex{speciesName:'Homo sapiens'}",
             f"Complex{{speciesName:'Homo sapiens', stId:'{complex}'}}")
         components = get_query_result(query)
         components = fix_neo4j_values(components, level)
+        if not os.path.exists(out_path):
+            os.makedirs(out_path)
         if len(components) == 0:
             components = get_empty_components_dataframe(level)
         components.to_csv(filename)
@@ -288,7 +305,8 @@ def get_reaction_participants_by_reaction(reaction, level, showSmallMolecules, v
         raise Exception
 
     if (verbose):
-        print(f"\n\nQuerying {level} participants of reaction {reaction}...\n\n")
+        print(
+            f"\n\nQuerying {level} participants of reaction {reaction}...\n\n")
     query = ""
     if level in ["genes", "proteins"]:
         query = f"""

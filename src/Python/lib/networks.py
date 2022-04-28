@@ -8,10 +8,11 @@ import networkx as nx
 import pandas as pd
 
 import config
-from config import no_sm, with_sm, with_unique_sm, sm, LEVELS
+from config import no_sm, with_sm, with_unique_sm, sm, LEVELS, INTERACTOMES_PATH, genes, proteoforms
 from lib.dictionaries import read_dictionary_one_to_set
 from lib.graph_database_access import get_pathway_name, get_participants_by_pathway, get_components_by_pathway, \
     get_pathways, get_participants, get_components
+
 
 def get_or_create_interaction_network(level, method, participants, components, out_path, label="", v=False):
     """
@@ -30,11 +31,14 @@ def get_or_create_interaction_network(level, method, participants, components, o
     filename = get_json_filename(level, method, out_path, label)
 
     if not Path(filename).exists():
-        if v: 
-            print(f"Creating interaction network for {label} at {level} level, method {method}...")
-        create_interaction_network(level, method, participants, components, out_path, label, v)
+        if v:
+            print(
+                f"Creating interaction network for {label} at {level} level, method {method}...")
+        create_interaction_network(
+            level, method, participants, components, out_path, label, v)
     else:
-        print(f"Reading interaction network for {label} at {level} level, method {method}...")
+        print(
+            f"Reading interaction network for {label} at {level} level, method {method}...")
     g = read_graph(filename)
 
     if not 'Articulation Points' in g.graph:
@@ -49,23 +53,25 @@ def get_or_create_interaction_network(level, method, participants, components, o
 
 def get_interactomes(input_data_path, output_networks_path):
     """ Get or create interactomes: With only accessioned sequence nodes, with small molecule nodes and with reaction-unique-small molecules
-    
+
     Returns tuple with 3 dictionaries: level to network
     """
+
     participant_records = {l: get_participants(
-        l, input_data_path) for l in [*LEVELS, sm]}
+        l, input_data_path) for l in [genes, proteoforms, sm]}
     components_records = {l: get_components(
-        l, input_data_path) for l in [*LEVELS, sm]}
+        l, input_data_path) for l in [genes, proteoforms, sm]}
 
     interactomes_no_sm = {
-        l: get_or_create_interaction_network(l, no_sm, participant_records, components_records, output_networks_path, v=True) for l in
-        LEVELS}
+        l: get_or_create_interaction_network(l, no_sm, participant_records, components_records, output_networks_path, v=True) for l in [genes, proteoforms]
+    }
     interactomes_with_sm = {
-        l: get_or_create_interaction_network(l, with_sm, participant_records, components_records, output_networks_path, v=True) for l in
-        LEVELS}
+        l: get_or_create_interaction_network(l, with_sm, participant_records, components_records, output_networks_path, v=True) for l in [genes, proteoforms]
+    }
     interactomes_with_unique_sm = {
         l: get_or_create_interaction_network(
-            l, with_unique_sm, participant_records, components_records, output_networks_path, v=True) for l in LEVELS}
+            l, with_unique_sm, participant_records, components_records, output_networks_path, v=True) for l in [genes, proteoforms]
+    }
     return interactomes_no_sm, interactomes_with_sm, interactomes_with_unique_sm
 
 
@@ -78,7 +84,7 @@ def create_pathway_interaction_network(pathway, level, method, out_path, v=True)
     """
     if level not in LEVELS:
         raise Exception(f"There is no {level} level.")
-    
+
     filename = get_json_filename(level, method, out_path, pathway)
     if not Path(filename).exists():
         if v:
@@ -104,11 +110,11 @@ def create_pathway_interaction_network(pathway, level, method, out_path, v=True)
 
     if missing_articulations or missing_bridges:
         update_json_file(G, level, method, out_path, pathway)
-    
+
     return G
 
 
-def create_pathway_interaction_networks(pathway, out_path, v=False):
+def create_pathway_interaction_networks(pathway, out_path, v=False, levels=[genes, proteoforms]):
     """
     Creates 9 interaction networks for a pathway: 3 levels (genes, proteins, proteoforms) and 3 contruction 
     methods (without small molecules, with small molecules and with reaction-unique small molecules)
@@ -122,13 +128,17 @@ def create_pathway_interaction_networks(pathway, out_path, v=False):
     name = get_pathway_name(pathway)
     if len(name) == 0:
         print(f"Pathway {pathway} does not exist")
-        return {m: {l: nx.Graph() for l in LEVELS} for m in config.METHODS}
+        return {m: {l: nx.Graph() for l in levels} for m in config.METHODS}
     else:
         if v:
             print(f"-- Creating interaction networks for pathway {pathway}")
+        graphs = {}
         for method in config.METHODS:
-            for level in config.LEVELS:
-                create_pathway_interaction_network(pathway, level, method, out_path, v)
+            for level in levels:
+                create_pathway_interaction_network(
+                    pathway, level, method, out_path, v)
+        return {m: {l: nx.Graph() for l in levels} for m in config.METHODS}
+
 
 def merge_graphs(graphs):
     # How does the resulting graph look like?
@@ -432,6 +442,9 @@ def save_interaction_network(G, level, method, out_path, label="", v=False):
         if out_path[-1] != '/':
             out_path += "/"
 
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
+
     name_start = ""
     if len(label) > 0:
         name_start += label + "_"
@@ -462,7 +475,7 @@ def save_interaction_network(G, level, method, out_path, label="", v=False):
         for n, t in G.nodes(data='type'):
             if t != "SimpleEntity":
                 fh.write('%s\n' % n)
-    if v: 
+    if v:
         print(f"Created entity vertices file for {level}")
 
     with codecs.open(small_molecules_file, 'w', "utf-8") as fh:
@@ -823,11 +836,10 @@ if __name__ == '__main__':
             pathway, "../../../resources/pathway_networks/")
 
 
-
 def get_multiindex():
     arrays = [
-        [*(["Not Included"] * 3), *(["Included"] * 3), *
-         (["Reaction-Unique Included"] * 3)], [*(LEVELS * 3)]
+        [*(["Not Included"] * 2), *(["Included"] * 2), *
+         (["Reaction-Unique Included"] * 2)], [*([genes, proteoforms] * 3)]
     ]
     tuples = list(zip(*arrays))
     index = pd.MultiIndex.from_tuples(
@@ -925,7 +937,7 @@ def get_increase_percentage(num1, num2):
 def get_combinations():
     combinations = []
     for method in config.METHODS:
-        for level in LEVELS:
+        for level in [genes, proteoforms]:
             combinations.append((method, level))
     return combinations
 
@@ -957,9 +969,9 @@ def get_pathways_with_multiple_proteoforms(data_path, output_path):
     pathways = get_pathways()["stId"]   # Get complete list of pathways
     selected_pathways = []
 
-
     for pathway in pathways:
-        participants = get_participants_by_pathway(pathway, config.proteins, output_path)
+        participants = get_participants_by_pathway(
+            pathway, config.proteins, output_path)
     #     filename = get_json_filename(
     #         config.proteins, config.no_sm, output_path, pathway)
     #     if not Path(filename).exists():
@@ -967,7 +979,7 @@ def get_pathways_with_multiple_proteoforms(data_path, output_path):
     #             pathway, config.proteins, config.no_sm, output_path)
     #     G = read_graph(filename)
         if any(protein in selected_proteins for protein in set(participants["Id"])):
-             selected_pathways.append(pathway)
+            selected_pathways.append(pathway)
 
     return selected_pathways
 

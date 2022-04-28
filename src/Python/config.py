@@ -43,10 +43,14 @@ PATH_RESOURCES = "resources/"
 FILE_PATHWAYMATCHER = "PathwayMatcher.jar"
 URL_PATHWAYMATCHER = "https://github.com/PathwayAnalysisPlatform/PathwayMatcher/releases/latest/download/PathwayMatcher.jar"
 
-DATA_REACTOME_PATH = "data/Reactome/79/"
+DATABASE_NAME = "reactome80"
+DATA_REACTOME_PATH = "data/Reactome/80/"
 NETWORKS_PATH = "networks/"
 MAPPING_FILE = "mapping_proteins_to_level.tsv"
 PATHWAY_GRAPHS_PATH = "networks/pathways/"
+INTERACTOMES_PATH = NETWORKS_PATH + "interactomes/"
+FILE_GENES_TO_PROTEINS = "mapping_proteins_to_genes.tsv"
+FILE_PROTEINS_TO_PROTEOFORMS = "mapping_proteins_to_proteoforms.tsv"
 
 
 def set_root_wd():
