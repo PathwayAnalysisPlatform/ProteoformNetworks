@@ -124,20 +124,18 @@ def create_pathway_interaction_networks(pathway, out_path, v=False, levels=[gene
     :return: Get dictionary {method: [list of 3 networks for each level]}.
     If pathway does not exists, then returns empty networks.
     """
-
+    graphs = {m: {l: nx.Graph() for l in levels} for m in config.METHODS}
     name = get_pathway_name(pathway)
     if len(name) == 0:
         print(f"Pathway {pathway} does not exist")
-        return {m: {l: nx.Graph() for l in levels} for m in config.METHODS}
     else:
         if v:
             print(f"-- Creating interaction networks for pathway {pathway}")
-        graphs = {}
         for method in config.METHODS:
             for level in levels:
-                create_pathway_interaction_network(
+                graphs[method][level] = create_pathway_interaction_network(
                     pathway, level, method, out_path, v)
-        return {m: {l: nx.Graph() for l in levels} for m in config.METHODS}
+    return graphs
 
 
 def merge_graphs(graphs):
@@ -258,13 +256,14 @@ def add_nodes(G, df, method=with_sm):
             G.nodes[unique_id]['reactions'].add(row['Reaction'])
             G.nodes[unique_id]['pathways'].add(row['Pathway'])
 
+        # If participant is a small molecule or gene: set itself as predecesor
         if G.nodes[unique_id]['type'].startswith("S"):
             G.nodes[unique_id]['prevId'] = row[sm_id_column]
         elif G.nodes[row['Id']]['type'].startswith("g"):
             G.nodes[unique_id]['prevId'] = row['Id']
-        # G.nodes[unique_id]['type'] == "proteins" or G.nodes[row['Id']]['type'] == "proteoforms":
+        # If participant is a proteoform set the protein accession as predecessor and the origin gene
         else:
-            G.nodes[unique_id]['prevId'] = row['PrevId']
+            G.nodes[unique_id]['prevId'] = row['Gene']
 
     # print(f"{level} level - small molecules: {G.graph['num_small_molecules']}")
     # print(f"{level}: {G.graph['num_entities']}")

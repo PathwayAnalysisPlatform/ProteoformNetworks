@@ -30,12 +30,13 @@ QUERIES_PARTICIPANTS = {
     WHEN re.variantIdentifier IS NOT NULL THEN re.variantIdentifier 
     ELSE re.identifier
     END as Id, re.identifier as PrevId,
+    head(re.geneName) as Gene,
     mod.identifier as ptm_type, tm.coordinate as ptm_coordinate, re.databaseName as Database, Role
     ORDER BY ptm_type, ptm_coordinate
-    WITH DISTINCT Pathway, Reaction, Entity, Name, Type, Id, PrevId,
+    WITH DISTINCT Pathway, Reaction, Entity, Name, Type, Id, PrevId, Gene,
     COLLECT(ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END) AS ptms,
     Database, Role
-    RETURN DISTINCT Pathway, Reaction, Entity, Name, Type, (Id+ptms) as Id, PrevId, Database, Role
+    RETURN DISTINCT Pathway, Reaction, Entity, Name, Type, (Id+ptms) as Id, PrevId, Gene, Database, Role
     ORDER BY Pathway, Reaction, Role
     """,
     sm: """
@@ -91,14 +92,15 @@ QUERIES_COMPONENTS = {
                     WHEN re.variantIdentifier IS NOT NULL THEN re.variantIdentifier 
                     ELSE re.identifier
                   END as Id, re.identifier as PrevId,
+                  head(re.geneName) as Gene,
                   mod.identifier as ptm_type,
                   tm.coordinate as ptm_coordinate
     ORDER BY ptm_type, ptm_coordinate
-    WITH DISTINCT Complex, Entity, Name, Type, Id, PrevId,
+    WITH DISTINCT Complex, Entity, Name, Type, Id, PrevId, Gene,
                     COLLECT(
                         ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END
                     ) AS ptms   
-    RETURN DISTINCT Complex, Entity, Name, Type, (Id+ptms) as Id, PrevId
+    RETURN DISTINCT Complex, Entity, Name, Type, (Id+ptms) as Id, PrevId, Gene
     ORDER BY Complex
     """,
     sm: """

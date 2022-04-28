@@ -58,6 +58,8 @@ def plot_interaction_network(G, coloring=Coloring.ENTITY_TYPE, **kwargs):
     :param coloring: Type of coloring for the nodes and links, by entity type, reaction or pathway
     :return: the figure
     """
+    print(f"Plotting network for {G.graph['level']}")
+    print(f"with method: {G.graph['method']}")
 
     plot_width = kwargs['plot_width'] if 'plot_width' in kwargs else 300
     plot_height = kwargs['plot_height'] if 'plot_height' in kwargs else 325
@@ -299,7 +301,7 @@ def select_common_nodes(smaller_graph, larger_graph):
 
 def get_positions(graphs):
     """
-    Get positions for the vertices of the 9 graphs, methods x levels combinations
+    Get positions for the vertices of the 6 graphs, methods x levels combinations
 
     :param graphs: dictionary with methods to construct graphs as methods and a list of graphs (for each level) as values
     :return: dictionary with the same keys as graphs but with positions of vertices as values
@@ -317,56 +319,49 @@ def get_positions(graphs):
     }
 
     # For the proteoforms network With reaction-unique small molecules
-    pos[config.with_unique_sm][2] = nx.spring_layout(
-        graphs[config.with_unique_sm][2])
+    pos[config.with_unique_sm][1] = nx.spring_layout(
+        graphs[config.with_unique_sm][1])
+
+    # Horizontally:
+    # Genes with unique small molecules:
+    # -- Genes take the position of the first proteoform comming from the same gene. Small molecules are fixed.
+
+    # For the proteoforms network With reaction-unique small molecules: 0 - genes, 1 - proteoforms
+    fixed_positions = {}
+    for node in graphs[config.with_unique_sm][1].nodes:
+        predecesor = graphs[config.with_unique_sm][1].nodes[node]['prevId']
+        fixed_positions[predecesor] = pos[config.with_unique_sm][1][node]
+    pos[config.with_unique_sm][0] = nx.spring_layout(
+        graphs[config.with_unique_sm][0], pos=fixed_positions, fixed=fixed_positions.keys())
 
     # For the proteoforms network With not unique small molecules
     # Fix all proteoforms and set the position for the small molecules freely
-    fixed_nodes = []
     fixed_positions = {}
     # For each node in the reaction-unique id
-    for node in graphs[config.with_unique_sm][2].nodes:
+    for node in graphs[config.with_unique_sm][1].nodes:
         if node.startswith("sm"):
-            name_without_reaction = graphs[config.with_unique_sm][2].nodes[node]['label']
-            fixed_positions[name_without_reaction] = pos[config.with_unique_sm][2][
-                node]  # Get the name of the small molecule without the reaction
+            name_without_reaction = graphs[config.with_unique_sm][1].nodes[node]['label']
+            # Get the name of the small molecule without the reaction
+            # fixed_positions[name_without_reaction] = pos[config.with_unique_sm][1][node]
         else:
-            fixed_nodes.append(node)
-            fixed_positions[node] = pos[config.with_unique_sm][2][node]
-    pos[config.with_sm][2] = nx.spring_layout(graphs[config.with_sm][2], pos=fixed_positions,
+            print(f"Processing node {node}")
+            fixed_positions[node] = pos[config.with_unique_sm][1][node]
+    pos[config.with_sm][1] = nx.spring_layout(graphs[config.with_sm][1], pos=fixed_positions,
                                               fixed=fixed_positions.keys())
-
-    # Horizontally:
-    # With unique small molecules:
-    # -- Proteins take the position of the first proteoform with the same accession. Small molecules are fixed.
-    # -- Genes take the position of the first protein comming from the same gene. Small molecules are fixed.
-
-    # For the proteoforms network With reaction-unique small molecules
-    # 0 - genes, 1 - proteins, 2 proteoforms
-    for i in reversed(range(2)):  # Select graphs of proteins and genes with indexes 1 and 0
-        # For each node in the larger network
-        for node in graphs[config.with_unique_sm][i + 1].nodes:
-            prev_id = graphs[config.with_unique_sm][i +
-                                                    1].nodes[node]['prevId']  # Get the predecesor
-            pos[config.with_unique_sm][i][prev_id] = pos[config.with_unique_sm][i + 1][
-                node]  # Set position in the smaller network
-            # print(f"Set position for {prev_id} using {node}")
 
     # For the proteoforms network With not unique small molecules
     # Leave small molecules fixed, recalculate the others
-    # 0 - genes, 1 - proteins, 2 proteoforms
-    for i in reversed(range(2)):  # Select graphs of proteins and genes with indexes 1 and 0
-        fixed_positions = {}
-        # For each node in the larger network
-        for node in graphs[config.with_sm][i + 1].nodes:
-            if node.startswith("sm"):
-                fixed_positions[node] = pos[config.with_sm][i + 1][node]
-        if len(fixed_positions) > 0:
-            pos[config.with_sm][i] = nx.spring_layout(graphs[config.with_sm][i], pos=fixed_positions,
-                                                      fixed=fixed_positions.keys())
-        else:
-            pos[config.with_sm][i] = nx.spring_layout(
-                graphs[config.with_sm][i])
+    # 0 - genes, 1 - proteoforms
+    fixed_positions = {}
+    # For each node in the larger network
+    for node in graphs[config.with_sm][1].nodes:
+        if node.startswith("sm"):
+            fixed_positions[node] = pos[config.with_sm][1][node]
+    if len(fixed_positions) > 0:
+        pos[config.with_sm][0] = nx.spring_layout(graphs[config.with_sm][0], pos=fixed_positions,
+                                                  fixed=fixed_positions.keys())
+    else:
+        pos[config.with_sm][0] = nx.spring_layout(graphs[config.with_sm][0])
 
     # For the proteoforms network without small molecules
     # Copy directly the position of all proteoforms
@@ -403,20 +398,20 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
     }
 
     titles = {
-        config.no_sm: ['A) Genes without SM', 'B) Proteins without SM', 'C) Proteoforms without SM'],
-        config.with_sm: ['D) Proteins with SM', 'E) Proteins with SM', 'F) Proteoforms with SM'],
-        config.with_unique_sm: ['G) Proteins with unique SM', 'H) Proteins with unique SM',
-                                'I) Proteoforms with unique SM']
+        config.no_sm: ['A) Genes without small molecules', 'B) Proteoforms without small molecules'],
+        config.with_sm: ['C) Genes with small molecules', 'D) Proteoforms with SM'],
+        config.with_unique_sm: [
+            'E) Genes with reaction-unique s.m.', 'F) Proteoforms with reaction-unique s.m.']
     }
 
     inner_plot_size = kwargs['inner_plot_size'] if 'inner_plot_size' in kwargs else 300
-    legend_location_all = [None, None, 'right']
-    plot_widths = [inner_plot_size, inner_plot_size, inner_plot_size + 160]
+    legend_location_all = [None, 'right']
+    plot_widths = [inner_plot_size, inner_plot_size + 160]
     outline_line_width = kwargs['outline_line_width'] if 'outline_line_width' in kwargs else 1
     node_size = kwargs['node_size'] if 'node_size' in kwargs else 2
     if coloring == Coloring.ENTITY_TYPE:
-        legend_location_all = ['top_right', 'top_right', 'top_right']
-        plot_widths = [inner_plot_size, inner_plot_size, inner_plot_size]
+        legend_location_all = ['top_right', 'top_right']
+        plot_widths = [inner_plot_size, inner_plot_size]
 
     toolbar_location = kwargs['toolbar_location'] if 'toolbar_location' in kwargs else None
 
@@ -434,7 +429,7 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
                                          'highlight_articulations'] if 'highlight_articulations' in kwargs else False),
                                      highlight_bridges=(
                                          kwargs['highlight_bridges'] if 'highlight_bridges' in kwargs else False))
-            for i in range(3)
+            for i in range(2)
         ]
         for method in config.METHODS
     }
@@ -492,7 +487,7 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
     </tr>
     <tr>
         <td id="EntityWithAccessionedSequence" class="color_td"></td>
-        <td>Genes, Proteins, Proteoforms</td>
+        <td>Genes, Proteoforms</td>
     </tr>
     """
     # <tr>
