@@ -17,7 +17,7 @@ from bokeh.plotting import figure
 from bokeh.transform import cumsum
 
 import config
-from config import get_entity_color, COLOR_IO, COLOR_CO, COLOR_RO, COLOR_CC, no_sm
+from config import get_entity_color, COLOR_IO, COLOR_CO, COLOR_RO, COLOR_CC, no_sm, with_sm, with_unique_sm, genes, proteoforms
 from lib.graph_database_access import get_pathway_name
 from lib.networks import create_pathway_interaction_networks, create_pathway_interaction_network
 
@@ -313,14 +313,13 @@ def get_positions(graphs):
     # -- Without small molecules: Keep proteoforms in the same position.
 
     pos = {
-        config.no_sm: [{} for g in graphs[config.no_sm]],
-        config.with_sm: [{} for g in graphs[config.with_sm]],
-        config.with_unique_sm: [{} for g in graphs[config.with_unique_sm]]
+        no_sm: [{} for g in graphs[no_sm]],
+        with_sm: [{} for g in graphs[with_sm]],
+        with_unique_sm: [{} for g in graphs[with_unique_sm]]
     }
 
     # For the proteoforms network With reaction-unique small molecules
-    pos[config.with_unique_sm][1] = nx.spring_layout(
-        graphs[config.with_unique_sm][1])
+    pos[with_unique_sm][1] = nx.spring_layout(graphs[with_unique_sm][1])
 
     # Horizontally:
     # Genes with unique small molecules:
@@ -328,9 +327,14 @@ def get_positions(graphs):
 
     # For the proteoforms network With reaction-unique small molecules: 0 - genes, 1 - proteoforms
     fixed_positions = {}
+    map_to_gene = nx.get_node_attributes(
+        graphs[config.with_unique_sm][1], "gene")
     for node in graphs[config.with_unique_sm][1].nodes:
-        predecesor = graphs[config.with_unique_sm][1].nodes[node]['prevId']
-        fixed_positions[predecesor] = pos[config.with_unique_sm][1][node]
+        if node.startswith("sm"):
+            fixed_positions[node] = pos[config.with_unique_sm][1][node]
+        else:
+            gene = map_to_gene[node]
+            fixed_positions[gene] = pos[config.with_unique_sm][1][node]
     pos[config.with_unique_sm][0] = nx.spring_layout(
         graphs[config.with_unique_sm][0], pos=fixed_positions, fixed=fixed_positions.keys())
 
@@ -392,9 +396,10 @@ def plot_pathway_all_levels(pathway, out_path="../../figures/pathways/", graphs_
         return
 
     graphs = {
-        config.no_sm: list(graphs[no_sm].values()),
-        config.with_sm: list(graphs[config.with_sm].values()),
-        config.with_unique_sm: list(graphs[config.with_unique_sm].values())
+        no_sm: [graphs[no_sm][genes], graphs[no_sm][proteoforms]],
+        with_sm: [graphs[with_sm][genes], graphs[with_sm][proteoforms]],
+        with_unique_sm: [graphs[with_unique_sm][genes],
+                         graphs[with_unique_sm][proteoforms]]
     }
 
     titles = {

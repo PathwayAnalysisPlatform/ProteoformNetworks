@@ -58,19 +58,19 @@ def get_interactomes(input_data_path, output_networks_path):
     """
 
     participant_records = {l: get_participants(
-        l, input_data_path) for l in [genes, proteoforms, sm]}
+        l, input_data_path) for l in [*LEVELS, sm]}
     components_records = {l: get_components(
-        l, input_data_path) for l in [genes, proteoforms, sm]}
+        l, input_data_path) for l in [*LEVELS, sm]}
 
     interactomes_no_sm = {
-        l: get_or_create_interaction_network(l, no_sm, participant_records, components_records, output_networks_path, v=True) for l in [genes, proteoforms]
+        l: get_or_create_interaction_network(l, no_sm, participant_records, components_records, output_networks_path, v=True) for l in LEVELS
     }
     interactomes_with_sm = {
-        l: get_or_create_interaction_network(l, with_sm, participant_records, components_records, output_networks_path, v=True) for l in [genes, proteoforms]
+        l: get_or_create_interaction_network(l, with_sm, participant_records, components_records, output_networks_path, v=True) for l in LEVELS
     }
     interactomes_with_unique_sm = {
         l: get_or_create_interaction_network(
-            l, with_unique_sm, participant_records, components_records, output_networks_path, v=True) for l in [genes, proteoforms]
+            l, with_unique_sm, participant_records, components_records, output_networks_path, v=True) for l in LEVELS
     }
     return interactomes_no_sm, interactomes_with_sm, interactomes_with_unique_sm
 
@@ -262,8 +262,11 @@ def add_nodes(G, df, method=with_sm):
         elif G.nodes[row['Id']]['type'].startswith("g"):
             G.nodes[unique_id]['prevId'] = row['Id']
         # If participant is a proteoform set the protein accession as predecessor and the origin gene
+        elif G.graph["level"] == config.proteins:
+            G.nodes[unique_id]['prevId'] = row['PrevId']
         else:
-            G.nodes[unique_id]['prevId'] = row['Gene']
+            G.nodes[unique_id]['prevId'] = row['PrevId']
+            G.nodes[unique_id]['gene'] = row['Gene']
 
     # print(f"{level} level - small molecules: {G.graph['num_small_molecules']}")
     # print(f"{level}: {G.graph['num_entities']}")
@@ -930,7 +933,7 @@ def set_num_bridges(G):
 
 def get_increase_percentage(num1, num2):
     difference = num2 - num1
-    return round(difference * 100 / num2, 2)
+    return round(difference * 100 / num1, 2)
 
 
 def get_combinations():
