@@ -58,19 +58,19 @@ def get_interactomes(input_data_path, output_networks_path):
     """
 
     participant_records = {l: get_participants(
-        l, input_data_path) for l in [genes, proteoforms, sm]}
+        l, input_data_path) for l in [*LEVELS, sm]}
     components_records = {l: get_components(
-        l, input_data_path) for l in [genes, proteoforms, sm]}
+        l, input_data_path) for l in [*LEVELS, sm]}
 
     interactomes_no_sm = {
-        l: get_or_create_interaction_network(l, no_sm, participant_records, components_records, output_networks_path, v=True) for l in [genes, proteoforms]
+        l: get_or_create_interaction_network(l, no_sm, participant_records, components_records, output_networks_path, v=True) for l in LEVELS
     }
     interactomes_with_sm = {
-        l: get_or_create_interaction_network(l, with_sm, participant_records, components_records, output_networks_path, v=True) for l in [genes, proteoforms]
+        l: get_or_create_interaction_network(l, with_sm, participant_records, components_records, output_networks_path, v=True) for l in LEVELS
     }
     interactomes_with_unique_sm = {
         l: get_or_create_interaction_network(
-            l, with_unique_sm, participant_records, components_records, output_networks_path, v=True) for l in [genes, proteoforms]
+            l, with_unique_sm, participant_records, components_records, output_networks_path, v=True) for l in LEVELS
     }
     return interactomes_no_sm, interactomes_with_sm, interactomes_with_unique_sm
 
@@ -124,20 +124,18 @@ def create_pathway_interaction_networks(pathway, out_path, v=False, levels=[gene
     :return: Get dictionary {method: [list of 3 networks for each level]}.
     If pathway does not exists, then returns empty networks.
     """
-
+    graphs = {m: {l: nx.Graph() for l in levels} for m in config.METHODS}
     name = get_pathway_name(pathway)
     if len(name) == 0:
         print(f"Pathway {pathway} does not exist")
-        return {m: {l: nx.Graph() for l in levels} for m in config.METHODS}
     else:
         if v:
             print(f"-- Creating interaction networks for pathway {pathway}")
-        graphs = {}
         for method in config.METHODS:
             for level in levels:
-                create_pathway_interaction_network(
+                graphs[method][level] = create_pathway_interaction_network(
                     pathway, level, method, out_path, v)
-        return {m: {l: nx.Graph() for l in levels} for m in config.METHODS}
+    return graphs
 
 
 def merge_graphs(graphs):
@@ -258,13 +256,17 @@ def add_nodes(G, df, method=with_sm):
             G.nodes[unique_id]['reactions'].add(row['Reaction'])
             G.nodes[unique_id]['pathways'].add(row['Pathway'])
 
+        # If participant is a small molecule or gene: set itself as predecesor
         if G.nodes[unique_id]['type'].startswith("S"):
             G.nodes[unique_id]['prevId'] = row[sm_id_column]
         elif G.nodes[row['Id']]['type'].startswith("g"):
             G.nodes[unique_id]['prevId'] = row['Id']
-        # G.nodes[unique_id]['type'] == "proteins" or G.nodes[row['Id']]['type'] == "proteoforms":
+        # If participant is a proteoform set the protein accession as predecessor and the origin gene
+        elif G.graph["level"] == config.proteins:
+            G.nodes[unique_id]['prevId'] = row['PrevId']
         else:
             G.nodes[unique_id]['prevId'] = row['PrevId']
+            G.nodes[unique_id]['gene'] = row['Gene']
 
     # print(f"{level} level - small molecules: {G.graph['num_small_molecules']}")
     # print(f"{level}: {G.graph['num_entities']}")
@@ -931,7 +933,7 @@ def set_num_bridges(G):
 
 def get_increase_percentage(num1, num2):
     difference = num2 - num1
-    return round(difference * 100 / num2, 2)
+    return round(difference * 100 / num1, 2)
 
 
 def get_combinations():
