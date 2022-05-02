@@ -348,7 +348,6 @@ def get_positions(graphs):
             # Get the name of the small molecule without the reaction
             # fixed_positions[name_without_reaction] = pos[config.with_unique_sm][1][node]
         else:
-            print(f"Processing node {node}")
             fixed_positions[node] = pos[config.with_unique_sm][1][node]
     pos[config.with_sm][1] = nx.spring_layout(graphs[config.with_sm][1], pos=fixed_positions,
                                               fixed=fixed_positions.keys())
