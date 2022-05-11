@@ -563,7 +563,7 @@ def plot_pathways(pathways, level, sm, coloring, v=False):
 
 
 def main():
-    pathway1 = "R-HSA-1474244"
+    pathway1 = "R-HSA-196819"
 
     os.chdir(os.path.dirname(os.path.abspath(sys.executable)) + "\\..\\..\\..")
     print(os.getcwd())

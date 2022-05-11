@@ -158,9 +158,9 @@ def merge_graphs(graphs):
                 graph.nodes[node]['complexes'])
 
 
-def get_pathway_filenames(files_path):
+def get_pathway_filenames(files_path, pathways):
     names = []
-    for pathway in get_pathways()['stId']:
+    for pathway in pathways:
         for method in config.METHODS:
             for level in LEVELS:
                 filename = get_json_filename(
