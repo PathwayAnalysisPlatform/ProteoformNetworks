@@ -706,25 +706,6 @@ def save_interactomes_with_indexed_vertices(interactomes, out_path):
     return
 
 
-# def get_sizes(interactome_dict):
-#     num_interactions = pd.Series([interactome_dict[l].size() for l in LEVELS], index=LEVELS)
-#     num_entities = pd.Series([interactome_dict[l].graph['num_entities'] for l in LEVELS], index=LEVELS)
-#     num_small_molecules = pd.Series([interactome_dict[l].graph['num_small_molecules'] for l in LEVELS], index=LEVELS)
-#
-#     return num_interactions, num_entities, num_small_molecules
-
-
-def get_sizes(interactome_list, index):
-    num_interactions = pd.Series([interactome.size()
-                                 for interactome in interactome_list], index=index)
-    num_entities = pd.Series([interactome.graph['num_entities']
-                             for interactome in interactome_list], index=index)
-    num_small_molecules = pd.Series([interactome.graph['num_small_molecules'] for interactome in interactome_list],
-                                    index=index)
-
-    return num_interactions, num_entities, num_small_molecules
-
-
 def get_nodes_and_adjacent(nodes, G):
     """
     Get the same input nodes along with their adjacent small molecule nodes. Returns only those nodes that actually
@@ -856,24 +837,6 @@ def print_interactome_details(g):
     print(f"Graph {g.graph['level']} nodes: {g.graph['num_entities']}")
     print(f"Graph small molecule nodes: {g.graph['num_small_molecules']}")
     print("\n***********************\n\n")
-
-# def get_sizes(interactome_dict):
-#     num_interactions = pd.Series([interactome_dict[l].size() for l in LEVELS], index=LEVELS)
-#     num_entities = pd.Series([interactome_dict[l].graph['num_entities'] for l in LEVELS], index=LEVELS)
-#     num_small_molecules = pd.Series([interactome_dict[l].graph['num_small_molecules'] for l in LEVELS], index=LEVELS)
-#
-#     return num_interactions, num_entities, num_small_molecules
-
-
-def get_sizes(interactome_list, index):
-    num_interactions = pd.Series([interactome.size()
-                                 for interactome in interactome_list], index=index)
-    num_entities = pd.Series([interactome.graph['num_entities']
-                             for interactome in interactome_list], index=index)
-    num_small_molecules = pd.Series([interactome.graph['num_small_molecules'] for interactome in interactome_list],
-                                    index=index)
-
-    return num_interactions, num_entities, num_small_molecules
 
 
 def get_nodes_and_adjacent(nodes, G):
