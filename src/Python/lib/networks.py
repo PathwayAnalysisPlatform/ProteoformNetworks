@@ -907,13 +907,11 @@ def get_combinations():
     return combinations
 
 
-def get_combinations_with_pathways(num_pathways):
-    # pathways = get_pathways()["stId"]
-    pathways = get_pathways_with_multiple_proteoforms()
+def get_combinations_with_pathways(pathways):
     combinations = []
     for method in config.METHODS:
-        for level in LEVELS:
-            for pathway in pathways[:num_pathways]:
+        for level in [genes, proteoforms]:
+            for pathway in pathways:
                 combinations.append((method, level, pathway))
     return combinations
 

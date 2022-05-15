@@ -563,10 +563,10 @@ def plot_pathways(pathways, level, sm, coloring, v=False):
 
 
 def main():
-    pathway1 = "R-HSA-196819"
+    pathway1 = "R-HSA-8934903"
 
-    os.chdir(os.path.dirname(os.path.abspath(sys.executable)) + "\\..\\..\\..")
-    print(os.getcwd())
+    # os.chdir(os.path.dirname(os.path.abspath(sys.executable)) + "\\..\\..\\..")
+    # print(os.getcwd())
 
     g = create_pathway_interaction_network(
         pathway1, config.proteoforms, config.with_unique_sm, config.PATHWAY_GRAPHS_PATH)
