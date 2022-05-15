@@ -75,7 +75,7 @@ QUERIES_COMPONENTS = {
     MATCH (p:Pathway{speciesName:'Homo sapiens'})-[:hasEvent*]->(r:ReactionLikeEvent{speciesName:'Homo sapiens'}),
     (r)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(c:Complex{speciesName:'Homo sapiens'}),
     (c)-[:hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'})-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
-    RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName AS Name, last(labels(pe)) as Type, re.identifier as Id, head(re.geneName) as PrevId
+    RETURN DISTINCT c.stId as Complex, pe.stId AS Entity, pe.displayName AS Name, last(labels(pe)) as Type, re.identifier as Id, head(re.geneName) as PrevId, head(re.geneName) as Gene
     ORDER BY Complex
     """,
     proteoforms: """

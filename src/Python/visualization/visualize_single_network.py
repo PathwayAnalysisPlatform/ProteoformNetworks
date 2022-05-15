@@ -348,7 +348,6 @@ def get_positions(graphs):
             # Get the name of the small molecule without the reaction
             # fixed_positions[name_without_reaction] = pos[config.with_unique_sm][1][node]
         else:
-            print(f"Processing node {node}")
             fixed_positions[node] = pos[config.with_unique_sm][1][node]
     pos[config.with_sm][1] = nx.spring_layout(graphs[config.with_sm][1], pos=fixed_positions,
                                               fixed=fixed_positions.keys())
@@ -564,10 +563,10 @@ def plot_pathways(pathways, level, sm, coloring, v=False):
 
 
 def main():
-    pathway1 = "R-HSA-1474244"
+    pathway1 = "R-HSA-8934903"
 
-    os.chdir(os.path.dirname(os.path.abspath(sys.executable)) + "\\..\\..\\..")
-    print(os.getcwd())
+    # os.chdir(os.path.dirname(os.path.abspath(sys.executable)) + "\\..\\..\\..")
+    # print(os.getcwd())
 
     g = create_pathway_interaction_network(
         pathway1, config.proteoforms, config.with_unique_sm, config.PATHWAY_GRAPHS_PATH)
