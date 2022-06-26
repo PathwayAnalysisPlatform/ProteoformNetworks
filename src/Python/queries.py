@@ -220,3 +220,34 @@ MATCH (p:Pathway{speciesName:"Homo sapiens"})-[:hasEvent*]->(rle:ReactionLikeEve
 RETURN DISTINCT p.stId AS PathwayId, p.displayName AS Pathway, re.identifier AS Identifier
 ORDER BY PathwayId, Identifier
 """
+
+QUERY_GET_REACTIONS_BY_PROTOEFORM = """
+MATCH (p:Pathway{speciesName:"Homo sapiens"})-[:hasEvent*]->(rle:ReactionLikeEvent{speciesName:"Homo sapiens"}),
+      (rle)-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:PhysicalEntity),
+      (pe)-[:referenceEntity]->(re:ReferenceEntity{identifier:"", databaseName:"UniProt"})
+RETURN DISTINCT p.stId AS PathwayId, p.displayName AS Pathway, re.identifier AS Identifier
+ORDER BY PathwayId, Identifier
+"""
+
+QUERY_GET_EWAS_BY_PROTEOFORM = """
+MATCH p = (rle:ReactionLikeEvent{speciesName:'Homo sapiens'})-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'}),
+    (pe)-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
+WITH DISTINCT 
+    re.identifier as Protein,
+    pe,
+    rle.stId as Reaction, 
+    CASE WHEN re.variantIdentifier IS NOT NULL THEN re.variantIdentifier ELSE re.identifier END as Isoform,
+    head([x IN relationships(p) | type(x)]) as Role
+OPTIONAL MATCH (pe)-[:hasModifiedResidue]->(tm:TranslationalModification)-[:psiMod]->(mod:PsiMod)
+WITH DISTINCT 
+    Reaction, Protein, Isoform, Role,
+    pe,
+    mod.identifier as ptm_type, 
+    tm.coordinate as ptm_coordinate
+ORDER BY ptm_type, ptm_coordinate
+WITH DISTINCT Reaction, Protein, Isoform, pe, Role, COLLECT(ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END) AS ptms
+WITH DISTINCT Reaction, Protein, pe, Role, (Isoform+ptms) as Proteoform
+WITH DISTINCT Protein, size(COLLECT(DISTINCT pe)) as NumPEs, Proteoform, COLLECT(DISTINCT pe) as PEs
+WHERE  NumPEs > 1
+RETURN *
+"""
