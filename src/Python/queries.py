@@ -282,13 +282,12 @@ WITH DISTINCT
     mod.identifier as ptm_type, 
     tm.coordinate as ptm_coordinate
 ORDER BY ptm_type, ptm_coordinate
-WITH DISTINCT rle, Protein, Isoform, pe, Role, COLLECT(ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END) AS ptms
-WITH DISTINCT rle, Protein, pe, Role, (Isoform+ptms) as Proteoform
-WITH DISTINCT Protein, Proteoform, rle.stId as Reaction
-WITH Protein, Proteoform, COLLECT(DISTINCT Reaction) as Reactions
-WITH Protein, Proteoform, Reactions, size(Reactions) as NumReactions
-WITH Protein, COLLECT(Proteoform) as Proteoforms, COLLECT(Reactions) as ReactionSets
+WITH DISTINCT Protein, Isoform, COLLECT(ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END) AS ptms, pe, Role, rle
+WITH DISTINCT Protein, (Isoform+ptms) as Proteoform, pe, Role, rle
+WITH Protein, Proteoform, COLLECT(DISTINCT pe.stId) as PhysicalEntities, COLLECT(DISTINCT Role) as Roles, COLLECT(DISTINCT rle.stId) as Reactions
+WITH Protein, Proteoform, PhysicalEntities, Roles, Reactions, size(Reactions) as NumReactions
+WITH Protein, COLLECT(Proteoform) as Proteoforms, COLLECT(PhysicalEntities) as PhysicalEntitySets, COLLECT(Roles) as RoleSets, COLLECT(Reactions) as ReactionSets
 WHERE size(Proteoforms) > 1
-RETURN Protein, size(Proteoforms) as NumProteoforms, Proteoforms, ReactionSets 
+RETURN Protein, size(Proteoforms) as NumProteoforms, Proteoforms, PhysicalEntitySets, RoleSets, ReactionSets 
 ORDER BY NumProteoforms ASC
 """
