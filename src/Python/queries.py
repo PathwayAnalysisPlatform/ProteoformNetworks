@@ -220,3 +220,74 @@ MATCH (p:Pathway{speciesName:"Homo sapiens"})-[:hasEvent*]->(rle:ReactionLikeEve
 RETURN DISTINCT p.stId AS PathwayId, p.displayName AS Pathway, re.identifier AS Identifier
 ORDER BY PathwayId, Identifier
 """
+
+QUERY_GET_REACTIONS_BY_PROTEOFORM = """
+MATCH p = (rle:ReactionLikeEvent{speciesName:'Homo sapiens'})-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'}),
+    (pe)-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
+WITH DISTINCT 
+    re.identifier as Protein,
+    pe,
+    rle.stId as Reaction, 
+    CASE WHEN re.variantIdentifier IS NOT NULL THEN re.variantIdentifier ELSE re.identifier END as Isoform,
+    head([x IN relationships(p) | type(x)]) as Role
+OPTIONAL MATCH (pe)-[:hasModifiedResidue]->(tm:TranslationalModification)-[:psiMod]->(mod:PsiMod)
+WITH DISTINCT 
+    Reaction, Protein, Isoform, Role,
+    pe,
+    mod.identifier as ptm_type, 
+    tm.coordinate as ptm_coordinate
+ORDER BY ptm_type, ptm_coordinate
+WITH DISTINCT Reaction, Protein, Isoform, pe, Role, COLLECT(ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END) AS ptms
+WITH DISTINCT Reaction, Protein, pe, Role, (Isoform+ptms) as Proteoform
+WITH DISTINCT Protein, Proteoform, COLLECT(DISTINCT Reaction) as Reactions
+RETURN *
+"""
+
+QUERY_GET_EWAS_BY_PROTEOFORM = """
+MATCH p = (rle:ReactionLikeEvent{speciesName:'Homo sapiens'})-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'}),
+    (pe)-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
+WITH DISTINCT 
+    re.identifier as Protein,
+    pe,
+    rle.stId as Reaction, 
+    CASE WHEN re.variantIdentifier IS NOT NULL THEN re.variantIdentifier ELSE re.identifier END as Isoform,
+    head([x IN relationships(p) | type(x)]) as Role
+OPTIONAL MATCH (pe)-[:hasModifiedResidue]->(tm:TranslationalModification)-[:psiMod]->(mod:PsiMod)
+WITH DISTINCT 
+    Reaction, Protein, Isoform, Role,
+    pe,
+    mod.identifier as ptm_type, 
+    tm.coordinate as ptm_coordinate
+ORDER BY ptm_type, ptm_coordinate
+WITH DISTINCT Reaction, Protein, Isoform, pe, Role, COLLECT(ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END) AS ptms
+WITH DISTINCT Reaction, Protein, pe, Role, (Isoform+ptms) as Proteoform
+WITH DISTINCT Protein, size(COLLECT(DISTINCT pe)) as NumPEs, Proteoform, COLLECT(DISTINCT pe) as PEs
+WHERE  NumPEs > 1
+RETURN *
+"""
+
+QUERY_GET_REACTIONS_BY_PROTEIN_FOR_MULTIPROTEOFORM_PROTEINS = """
+MATCH p = (rle:ReactionLikeEvent{speciesName:'Homo sapiens'})-[:input|output|catalystActivity|physicalEntity|regulatedBy|regulator|hasComponent|hasMember|hasCandidate*]->(pe:EntityWithAccessionedSequence{speciesName:'Homo sapiens'}),
+    (pe)-[:referenceEntity]->(re:ReferenceEntity{databaseName:"UniProt"})
+WITH DISTINCT 
+    re.identifier as Protein,
+    pe,
+    rle, 
+    CASE WHEN re.variantIdentifier IS NOT NULL THEN re.variantIdentifier ELSE re.identifier END as Isoform,
+    head([x IN relationships(p) | type(x)]) as Role
+OPTIONAL MATCH (pe)-[:hasModifiedResidue]->(tm:TranslationalModification)-[:psiMod]->(mod:PsiMod)
+WITH DISTINCT 
+    rle, Protein, Isoform, Role,
+    pe,
+    mod.identifier as ptm_type, 
+    tm.coordinate as ptm_coordinate
+ORDER BY ptm_type, ptm_coordinate
+WITH DISTINCT Protein, Isoform, COLLECT(ptm_type + ":" + CASE WHEN ptm_coordinate IS NOT NULL THEN ptm_coordinate ELSE "null" END) AS ptms, pe, Role, rle
+WITH DISTINCT Protein, (Isoform+ptms) as Proteoform, pe, Role, rle
+WITH Protein, Proteoform, COLLECT(DISTINCT pe.stId) as PhysicalEntities, COLLECT(DISTINCT Role) as Roles, COLLECT(DISTINCT rle.stId) as Reactions
+WITH Protein, Proteoform, PhysicalEntities, Roles, Reactions, size(Reactions) as NumReactions
+WITH Protein, COLLECT(Proteoform) as Proteoforms, COLLECT(PhysicalEntities) as PhysicalEntitySets, COLLECT(Roles) as RoleSets, COLLECT(Reactions) as ReactionSets
+WHERE size(Proteoforms) > 1
+RETURN Protein, size(Proteoforms) as NumProteoforms, Proteoforms, PhysicalEntitySets, RoleSets, ReactionSets 
+ORDER BY NumProteoforms ASC
+"""
